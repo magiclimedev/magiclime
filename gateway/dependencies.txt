@@ -1,0 +1,15 @@
+axios
+better-sqlite3
+express
+ejs
+ip
+queue-fifo
+aedes
+mqtt 
+node-ipc 
+ws 
+serialport 
+@serialport/parser-readline 
+pumpify 
+cors 
+dotenv

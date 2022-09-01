@@ -1,0 +1,67 @@
+<%- include('./header'); %>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <br>
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                  <a class="nav-link" aria-current="page" href="/" >                
+                        Home</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link active" href="/api">API</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/mqtt">MQTT</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="/settings">Settings</a>
+                </li>
+                
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="tab-content" id="myTabContent">
+    <div class="container-fluid tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+        <br>
+        <div class="row justify-content-between" style="min-height: 42px;">
+            <div class="col-3">
+                <h3>REST API</h3>
+            </div>         
+        </div>
+        <br>
+        <div class="row">
+            <div class="col-md-8">
+                <p>
+                    <b>Base URL</b>
+                </br>
+                    http://localhost/api
+                </p>
+                <p>
+                    The MagicLime API is organized around REST. Our API has predictable resource-oriented 
+                    URLs, accepts form-encoded request bodies, returns JSON-encoded responses, and uses 
+                    standard HTTP response codes, authentication, and verbs.
+                </p>
+                <p>
+                    The following REST endpoints are available:
+                </p>    
+                
+                <table class="table">
+                    <thead>
+                        <tr><th>Resource</th><th>Endpoint</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Sensors</td><td>/sensors</td><td></td></tr>
+                        <tr><td>Logs</td><td>/sensors/{uid}/logs</td><td></td></tr>
+                </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

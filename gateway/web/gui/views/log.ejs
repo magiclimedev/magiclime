@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <link rel="shortcut icon" href="#">
+    <title>MagicLime Gateway</title>
+
+    <!-- stylesheets -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css" >
+    <link rel="stylesheet" href="/css/font-awesome.all.css">
+    <link rel="stylesheet" href="/css/style.css">
+
+    <!-- scripts: -->
+    <!-- order must be: jquery -> bootstrap -->
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/socket.io.js"></script>
+    <!-- <script src="gui/js/log.js"></script> -->
+    <script src="/js/gui.js"></script>
+</head>
+<body>
+<nav class="navbar navbar-light sticky-top p-0 shadow" style="background-color: #3dad5b;">
+    <a class="navbar-brand col-sm-3 col-md-2 mr-0" style="background-color: #fff;" href="http://thingbits.com"
+       target="_blank">
+        <img src="/img/thingbits-logo.png" width="120" height="30" alt=""></a>
+
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div id="data">
+                <br>
+                <a href="..">
+                    <button type="button" class="btn btn-outline-success">
+                        <i class="fa fa-arrow-left"></i>
+                        Dashboard
+                    </button>
+                </a>
+                <br>
+                <br>
+                <div id="sensor_card" class="shadow card">
+                    <h6 class="card-header">Sensor Details</h6>
+                    <div class="card-body">
+                        <div class="card-title">
+                            <strong>Name: </strong>
+                            <!-- <i class="fa fa-edit" style="margin: 0 0 0 8px"></i> -->
+                            <a href="" data-toggle="modal" id="sensorNameText" data-target="#nameFormModal">
+                                <span></span>
+                            </a>
+                        </div>
+                        <div class="card-title">
+                            <strong>ID: </strong>
+                            <span><%= id %>                              
+                            </span>
+                        </div>
+                        <div class="card-title">
+                            <strong>Type: </strong>
+                            <span>
+                                
+                            </span>
+                        </div>
+                        <div class="card-title">
+                            <strong>Active: </strong>
+                            <span>Placeholder</span>
+                        </div>
+                    </div>
+                </div>
+                <br>
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered table-sm" font-family: monospace>
+                        <thead>
+                        <tr>
+                            <th style="width: 25%">Time</th>
+                            <th style="width: 7.5%">Signal</th>
+                            <th style="width: 10%">Bat</th>
+                            <th style="width: 15%">Data</th>
+                        </tr>
+                        </thead>
+                        <tbody id="log_table">
+                            
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="contianer">
+    <div class="modal fade" id="nameFormModal" tabindex="-1" role="dialog" aria-labelledby="nameFormModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title" id="exampleModalLongTitle">Update Sensor Name</h5>
+                    <button type="button" class="close close-name-form" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="nameChangeForm" class="needs-validation" novalidate>
+                        <div id="nameFormGroup" class="form-group form-row">
+                            <label for="inputName" class="col-2 col-form-label">Name</label>
+                            <div class="col-10">
+                                <input id="ncfNameInput" type="text" class="form-control" placeholder="enter name" name="sensorName" maxlength="32" required>
+                                <div id="ncfNameError" class="invalid-feedback">
+                                    Name must be at least 4 characters.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-6">
+                                <button type="button" class="btn btn-secondary close-name-form" id="nameFormCancel" data-dismiss="modal">Cancel</button>
+                                <button id="nameFormSub" type="submit" class="btn btn-primary">Save</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
