@@ -12,7 +12,6 @@ const database = require("./db.js");
 const mqttbroker = require("./mqttbroker.js");
 const mqttclient = require("./mqttclient.js");
 const websocket = require("./web/websocket.js");
-const ipclib = require("./ipc.js");
 const server = require("./web/webserver.js");
 const serial = require("./serial.js");
 const { Console } = require("console");
