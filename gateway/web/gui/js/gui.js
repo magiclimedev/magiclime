@@ -46,7 +46,7 @@ $(document).ready(function(){
           if (url.pathname === '/'){
             // console.log("On Dashboard page");
             let matchingRows = sensorTable.children(`[uid=${obj.uid}]`);
-            
+            matchingRows.addClass("flash")
             if (matchingRows.length > 0){
               matchingRows.attr('last-seen', obj.timestamp)
               matchingRows.children(':nth-child(4)').text(
