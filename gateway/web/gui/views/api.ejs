@@ -54,12 +54,37 @@
                         <tr><th>Resource</th><th>Endpoint</th><th>Description</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td>Sensors</td><td>/sensors</td><td></td></tr>
-                        <tr><td>Logs</td><td>/sensors/{uid}/logs</td><td></td></tr>
+                        <tr><td>Sensors</td><td>/api/sensors</td><td>All sensors connected to the receiver</td></tr>
+                        <tr><td>Sensor Details</td><td>/api/sensors/{uid}</td><td>The details for an individual sensor</td></tr>
+                        <tr><td>Logs</td><td>/api/sensors/{uid}/logs</td><td>The last ten events for an individual sensor</td></tr>
                 </tbody>
                 </table>
             </div>
         </div>
+    </div>
+    <div class="documentation">
+        <section>
+            <p>To receive an array of all sensors, make a GET request to /api/sensors.</p>
+            <p>The fetched data will resemble the below:</p>
+            <p style="font-family:monospace;">
+                [{"uid":"NKVSG8","name":"Stairwell","type":"Motion","last_seen":"2022-09-06 12:00:30","status":"active"},{"uid":"WBRS7R","name":"Front Door","type":"Button","last_seen":"2022-09-06 12:20:17","status":"active"}]
+              </p>
+        </section>
+        <section>
+            <p>To receive details on an individual sensor, make a GET request to /api/sensors/{uid of sensor}.</p>
+            <p>The fetched data will resemble the below:</p>
+            <p style="font-family:monospace;">
+                {"uid":"NKVSG8","name":"Stairwell","type":"Motion","last_seen":"2022-09-06 12:00:30","status":"active"}
+            </p>
+        </section>
+        <section>
+            <p>To receive a log of the last ten events of an individual sensor, make a GET request to /api/sensors/{uid of sensor}/logs.</p>
+            <p>The fetched data will resemble the below:</p>
+
+            <p style="font-family:monospace;">
+                [{"date_created":"2022-09-06 12:00:30","rss":86,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 12:00:25","rss":82,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:54:07","rss":86,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:51:49","rss":81,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:51:44","rss":93,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:51:40","rss":87,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:41:50","rss":88,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:41:34","rss":89,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:41:17","rss":89,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:40:24","rss":89,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"}]
+              </p>
+        </section>
     </div>
 </div>
 
