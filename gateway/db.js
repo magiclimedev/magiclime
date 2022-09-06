@@ -9,6 +9,8 @@ module.exports = {
   },
 
   log: function (obj) {
+    
+    
     const uid = obj.uid;
 
     // Call this.checkUid(uid) and get the returned rowID if the record exists

@@ -49,17 +49,81 @@
                     </thead>
                     <tbody>
                         <tr><td>Sensors</td><td>magiclime/sensors</td><td>List all sensors</td></tr>
-                        <tr>&nbsp<td></td><td>magiclime/sensors/{uid}</td><td>Details on a sensor</td></tr>
+                        <tr>&nbsp<td>Sensor</td><td>magiclime/sensors/{uid}</td><td>Details on a sensor</td></tr>
                         <tr><td>Logs</td><td>magiclime/sensors/{uid}/logs</td><td>Logs for a sensor</td></tr>
                 </tbody>
                 </table>
-                <p>
-                  If you have the mosquitto client installed for your OS from <a href="https://mosquitto.org/download/" target="_blank">https://mosquitto.org/download/</a>, 
-                  connect to the magiclime broker using the following command.
-                </p>
-                <p style="font-family:monospace;">
-                  $ mosquitto_sub -h localhost -t "magiclime/sensors"
-                </p>
+                <div class="documentation">
+
+                  <section>
+                    <p>
+                    If you have the mosquitto client installed for your OS from <a href="https://mosquitto.org/download/" target="_blank">https://mosquitto.org/download/</a>, 
+                    connect to the magiclime broker using the following command.
+                  </p>
+                  <p style="font-family:monospace;">
+                    $ mosquitto_sub -h localhost -t "magiclime"
+                  </p>
+                </section>
+                <section>
+                  <p>
+                    To receive the list of all active sensors, navigate to the directory where your mosquitto application is located and run the following command in your CLI.
+                  </p>
+                  <p style="font-family:monospace;">
+                    $ mosquitto_sub -h localhost -t "magiclime/sensors"
+                  </p>
+                  <p>
+                    You will receive back data in this format:
+                  </p>
+                  <p style="font-family:monospace;">
+                    [{"uid":"NKVSG8","name":"NKVSG8","type":"Motion","last_seen":"2022-09-06 12:00:30","status":"active"},{"uid":"WBRS7R","name":"WBRS7R","type":"Button","last_seen":"2022-09-06 12:20:17","status":"active"}]
+                  </p>
+                </section>
+                <section>
+                  <p>
+                    To receive details on a specific sensor, you will need the uid of the sensor. Within the mosquitto directory, enter the following into your CLI:
+                  </p>
+                  <p style="font-family:monospace;">
+                    $ mosquitto_sub -h localhost -t "magiclime/sensors/{uid}"
+                  </p>
+                  <p>
+                    You will receive back data in this format:
+                  </p>
+                  <p style="font-family:monospace;">
+                    {"uid":"NKVSG8","name":"NKVSG8","type":"Motion","last_seen":"2022-09-06 12:00:30","status":"active"}
+                  </p>
+                </section>
+                <section>
+                  <p>
+                    To receive logs of the past events of a specific sensor, you will need the uid of the sensor. Within the mosquitto directory, enter the following into your CLI:
+                  </p>
+                  <p style="font-family:monospace;">
+                    $ mosquitto_sub -h localhost -t "magiclime/sensors/{uid}/logs"
+                  </p>
+                  <p>
+                    You will receive back data in this format:
+                  </p>
+                  <p style="font-family:monospace;">
+                    [{"date_created":"2022-09-06 12:00:30","rss":86,"bat":2.9,"data":"MOTION","name":"NKVSG8","type":"Motion"},{"date_created":"2022-09-06 12:00:25","rss":82,"bat":2.9,"data":"MOTION","name":"NKVSG8","type":"Motion"},{"date_created":"2022-09-06 11:54:07","rss":86,"bat":2.9,"data":"MOTION","name":"NKVSG8","type":"Motion"},{"date_created":"2022-09-06 11:51:49","rss":81,"bat":2.9,"data":"MOTION","name":"NKVSG8","type":"Motion"},{"date_created":"2022-09-06 11:51:44","rss":93,"bat":2.9,"data":"MOTION","name":"NKVSG8","type":"Motion"},{"date_created":"2022-09-06 11:51:40","rss":87,"bat":2.9,"data":"MOTION","name":"NKVSG8","type":"Motion"},{"date_created":"2022-09-06 11:41:50","rss":88,"bat":2.9,"data":"MOTION","name":"NKVSG8","type":"Motion"},{"date_created":"2022-09-06 11:41:34","rss":89,"bat":2.9,"data":"MOTION","name":"NKVSG8","type":"Motion"},{"date_created":"2022-09-06 11:41:17","rss":89,"bat":2.9,"data":"MOTION","name":"NKVSG8","type":"Motion"},{"date_created":"2022-09-06 11:40:24","rss":89,"bat":2.9,"data":"MOTION","name":"NKVSG8","type":"Motion"}]
+                  </p>
+                </section>
+                <section>
+                  <p>
+                    To receive the most recent event of a specific sensor, you will need the uid of the sensor. Within the mosquitto directory, enter the following into your CLI:
+                  </p>
+                  <p style="font-family:monospace;">
+                    $ mosquitto_sub -h localhost -t "magiclime/sensors/{uid}/event"
+                  </p>
+                  <p>
+                    You will receive back data in this format:
+                  </p>
+                  <p style="font-family:monospace;">
+                    {"date_created":"2022-09-06 12:00:30","rss":86,"bat":2.9,"data":"MOTION","name":"NKVSG8","type":"Motion"}
+                  </p>
+                  <p>
+                    Note: On first subscribing, it will show a past event if the events involve a state-reading or a state-change. It will only show pulse events <em>after</em> subscription.
+                  </p>
+                </section>
+              </div>
             </div>
         </div>
     </div>

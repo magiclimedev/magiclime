@@ -20,6 +20,8 @@ const express = require("express");
 const ejs = require("ejs");
 //const open = require('open');
 var ip = require("ip");
+const { subscribeToMQTT, publishAllSensors,publishSensor, publishSensorLog } = require("./mqttclient.js");
+const { getAllSensors } = require("./db.js");
 
 if (os.platform() === "linux") {
   if (process.getuid()){
@@ -40,6 +42,14 @@ async function main() {
   global.rxQueue = new Queue();
   setInterval(checkRXQueue, 100);
   mqttclient.checkMQTTServer();
+  //publishing sensors and sensor details to MQTT
+  publishAllSensors()
+  const allSensors = getAllSensors()
+  allSensors.forEach(({uid})=>{
+    publishSensor(uid);
+    publishSensorLog(uid)
+  })
+
 
   function checkRXQueue() {
     if (!rxQueue.isEmpty()) {
