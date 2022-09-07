@@ -1,5 +1,5 @@
 const mqtt = require('mqtt');
-const { getAllSensors, getSensor, getSensorLog } = require('./db.js');
+const { getAllSensors, getSensor, getSensorLog, getSensorName } = require('./db.js');
 const lib = require('./lib.js');
 
 module.exports = {
@@ -96,7 +96,8 @@ module.exports = {
             "rss": obj.rss,
             "bat": obj.bat,
             "type": obj.type,
-            "data": obj.data
+            "data": obj.data,
+            "name": getSensorName(obj.uid).name
         }
 
         var mqttPacket = {

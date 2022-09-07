@@ -1,5 +1,6 @@
 const express = require("express");
 var path = require('path');
+const { publishAllSensors, publishSensor } = require("../../../mqttclient.js");
 const database = require("./../../../db.js");
 
 const router = express.Router();
@@ -47,7 +48,8 @@ router.post('/sensors/:uid', function(req, res) {
         const uid = req.params.uid
         const name = req.body.name;
         const sensor = database.updateSensorName(uid, name);
-
+        publishAllSensors()
+        publishSensor(uid)
         res.json({ name: name })
 });
 

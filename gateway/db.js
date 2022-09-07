@@ -94,7 +94,7 @@ module.exports = {
 
   getSensorName: function (id) {
     let stmt = db.prepare(
-      "SELECT name FROM sensor WHERE sensor_id = '" + id + "'"
+      "SELECT name FROM sensor WHERE uid = '" + id + "'"
     );
     let sensorName = stmt.get();
 
