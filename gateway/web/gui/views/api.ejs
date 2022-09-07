@@ -62,24 +62,40 @@
             </div>
         </div>
     </div>
-    <div class="documentation">
+    <div class="documentation m-2">
+        <h4>Sensors</h4>
         <section>
-            <p>To receive an array of all sensors, make a GET request to /api/sensors.</p>
-            <p>The fetched data will resemble the below:</p>
+            <p>For a detailed list of all active sensors, make a GET request to /api/sensors. For example, a GET request such as:</p>
+            <p style="font-family:monospace;">
+                "/api/sensors"
+              </p>
+            <p>would return the following JSON:</p>
             <p style="font-family:monospace;">
                 [{"uid":"NKVSG8","name":"Stairwell","type":"Motion","last_seen":"2022-09-06 12:00:30","status":"active"},{"uid":"WBRS7R","name":"Front Door","type":"Button","last_seen":"2022-09-06 12:20:17","status":"active"}]
               </p>
         </section>
+        <h4>Sensor</h4>
         <section>
-            <p>To receive details on an individual sensor, make a GET request to /api/sensors/{uid of sensor}.</p>
-            <p>The fetched data will resemble the below:</p>
+            <p>For details on a particular sensor, make a GET request to /api/sensors/{uid}. For example, a GET request such as:</p>
+            <p style="font-family:monospace;">
+                "/api/sensors/NKVSG8"
+              </p>
+              <p>
+                would return the following JSON:
+              </p>
             <p style="font-family:monospace;">
                 {"uid":"NKVSG8","name":"Stairwell","type":"Motion","last_seen":"2022-09-06 12:00:30","status":"active"}
             </p>
         </section>
+        <h4>Logs</h4>
         <section>
-            <p>To receive a log of the last ten events of an individual sensor, make a GET request to /api/sensors/{uid of sensor}/logs.</p>
-            <p>The fetched data will resemble the below:</p>
+            <p>To receive the event log of an individual sensor, make a GET request to /api/sensors/{uid}/logs. For example, a GET request such as:</p>
+            <p style="font-family:monospace;">
+                "/api/sensors/NKVSG8/logs"
+              </p>
+              <p>
+                would return the following JSON:
+              </p>
 
             <p style="font-family:monospace;">
                 [{"date_created":"2022-09-06 12:00:30","rss":86,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 12:00:25","rss":82,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:54:07","rss":86,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:51:49","rss":81,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:51:44","rss":93,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:51:40","rss":87,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:41:50","rss":88,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:41:34","rss":89,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:41:17","rss":89,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"},{"date_created":"2022-09-06 11:40:24","rss":89,"bat":2.9,"data":"MOTION","name":"Stairwell","type":"Motion"}]
@@ -87,6 +103,5 @@
         </section>
     </div>
 </div>
-
 </body>
 </html>
