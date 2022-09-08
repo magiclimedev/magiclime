@@ -36,15 +36,35 @@
         <div class="row">
             <div class="col-md-8">
                 <form action="">
-                    <!--  -->
-                    <div class="form-group">
-                        <label for="external-mqtt">
-                            External MQTT?
-                        </label>
-                        <input class="enable-checkbox" name="external-mqtt" id="external-mqtt-checkbox" type="checkbox">
-                        <input value="Disabled" name="external-mqtt-ip" id="external-mqtt-input" type="text" disabled>
+        
+        <% for(let setting of settings) {%>
+            <div 
+            name="<%= setting.name %>"
+            condition="<%= setting.condition %>"
+            class="input-group <%= setting.htmlClassAdd() %>">
+
+                <label class="text-large"><%= setting.formatName() %></label>
+                <input
+                name="<%= setting.name%>"
+                data-dependents="<%= setting.dependents.join(';') %>"
+                type="<%= setting.htmlInputType() %>" 
+                value="<%= setting.convertFromString() %>" >
+                <%_ if(setting.htmlInputType()!=="checkbox"){ %>
+                    <div class="input-btns-cont">
+
+                        <button data-setting="<%= setting.name %>" class="btn btn-sm btn-primary switch on edit-btn">
+                            <i class="fa fa-edit"></i>
+                        </button>
+                        <button data-setting="<%= setting.name %>" class="btn btn-sm btn-danger switch reset-btn">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                        <button data-setting="<%= setting.name %>" class="btn btn-sm btn-success switch save-btn">
+                            <i class="fa fa-save"></i>
+                        </button>
                     </div>
-                    <button class="btn btn-primary">Submit</button>
+                        <%_ } %>
+            </div>
+        <% } %>
                 </form>
             </div>
         </div>

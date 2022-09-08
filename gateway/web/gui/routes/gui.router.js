@@ -1,6 +1,8 @@
+const { log } = require("console");
 const express = require("express");
 var path = require('path');
 const { publishAllSensors, publishSensor } = require("../../../mqttclient.js");
+const { getAllSettings } = require("./../../../db.js");
 const database = require("./../../../db.js");
 
 const router = express.Router();
@@ -14,7 +16,10 @@ router.get('/', function(req, res) {
 });
 
 router.get('/settings', function(req, res) {
-        res.render('settings');
+        const settings = getAllSettings()
+        res.render('settings',{
+                settings
+        });
 });
 
 router.get('/mqtt', function(req, res) {
@@ -52,5 +57,10 @@ router.post('/sensors/:uid', function(req, res) {
         publishSensor(uid)
         res.json({ name: name })
 });
+
+router.post("/settings",async (req,res)=>{
+        const {setting,value} = req.body;
+        await database.updateSetting(setting,value)
+})
 
 module.exports = router;

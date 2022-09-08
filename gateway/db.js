@@ -1,11 +1,35 @@
 const ddl = require('./ddl.js');
+const defaultSettings = require('./defaultSettings');
 var db;
 
 module.exports = {
-  initialize: function(filename){
-      console.log("Initializing database: " + filename);
+  initialize: async function(filename){
+
       db = require("better-sqlite3")(filename);
-      db.exec(ddl.schema);
+      const info = db.exec(ddl.schema);
+
+      this.initializeSettings(db)
+  },
+  initializeSettings:function(db){
+    let checkStmt = db.prepare(
+      "SELECT * FROM settings"
+    );
+    let previousSettings = checkStmt.all();
+
+    if (previousSettings.length>0) {
+      return
+    }
+
+    for (let settingKey in defaultSettings){
+
+      const setting = defaultSettings[settingKey];
+
+      const updateStmt = db.prepare(
+        `INSERT INTO settings(id,name,value) VALUES (null,'${settingKey}','${String(setting.value)}')`
+      )
+      let info = updateStmt.run()
+    }
+
   },
 
   log: function (obj) {
@@ -73,7 +97,7 @@ module.exports = {
       strftime('%s', 'now')
       )     
       `
-    // console.log(sql);
+
     let stmt = db.prepare(sql);
     stmt.run();
   },
@@ -169,7 +193,36 @@ module.exports = {
       return sensorLog;
     }
   },
+  updateSetting: function(name,value){
+    value = String(value)
+    const sql = db.prepare(`
+      UPDATE settings
+      SET value = '${value}'
+      WHERE 
+        name = '${name}';
+    `)
+    sql.run()
+    const getStmt = db.prepare(`
+    SELECT * from settings;
+    `)
+    const res = getStmt.all()
+    defaultSettings[name].value = value
 
+  }
+  ,
+  getAllSettings: function () {
+    let sql = db.prepare(`
+    SELECT * from settings
+    `)
+    const dbSettingsList = sql.all();
+    const settingsArray = []
+    for (let settingName in defaultSettings){
+      defaultSettings[settingName].loadDBValue(dbSettingsList)
+      settingsArray.push(defaultSettings[settingName])
+    }
+    return settingsArray;
+  }
+,
   getAllSensors: function () {
     // Mark sensor dead if not heard from in 3 hours
     let sql = db.prepare(`
