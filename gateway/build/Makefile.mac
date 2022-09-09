@@ -1,5 +1,11 @@
 build: gateway
 
 gateway:
-	pkg -t node18-macos -o dist/gateway-mac -c ../package.json ../gateway.js
-	
+	@echo "Building for MacOS"
+	pkg -t node18-macos --no-native-build -o dist/mac/gateway-macos -c ../package.json ../gateway.js
+
+deploy: 
+	scp -i ~/magiclime-ec2.pem -r ./dist/mac/* ubuntu@www.magiclime.io:/var/www/www.magiclime.io/html/downloads/gateway/mac
+
+clean:
+	rm -rf ./dist/*

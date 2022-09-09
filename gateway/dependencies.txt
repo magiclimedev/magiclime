@@ -6,7 +6,6 @@ ip
 queue-fifo
 aedes
 mqtt 
-node-ipc 
 ws 
 serialport 
 @serialport/parser-readline 

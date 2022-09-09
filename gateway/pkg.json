@@ -1,12 +1,7 @@
 "pkg": {
-    "scripts": "build/**/*.js",
     "assets": [
       "node_modules/@serialport/binding*/**/*",
+      "node_modules/better-sqlite3/build/Release/*",
       "web/**/*"
-    ],
-    "targets": [
-      "node16-macos-x64",
-      "node16-win-x64"
-    ],
-    "outputPath": "dist"
-}
+    ]
+},
