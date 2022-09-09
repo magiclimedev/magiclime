@@ -227,10 +227,12 @@ body {
 
 /* Settings Page */
 .input-group,.input-group.switch.on{
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   width:80vw;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
+  margin-bottom:1rem;
+  align-items: center;
 }
 
 
@@ -244,7 +246,7 @@ body {
 }
 /* to make an disabled input look like typical text */
 .masked-input{
-  background: none;
+  background: none !important;
   border:none;
 }
 
@@ -252,7 +254,19 @@ body {
   text-align: center;
 }
 
+input:not([type="checkbox"]){
+  background: #f2f5f3;
+}
+
 .input-group input[type="checkbox"]{
   height:28px;
   cursor: pointer;
+}
+
+.input-btns-cont{
+  margin-left:0.8rem
+}
+
+.input-btns-cont button{
+  margin-right:0.5rem;
 }

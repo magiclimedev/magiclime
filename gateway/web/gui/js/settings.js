@@ -105,3 +105,6 @@ function saveField(setting,value){
     updateSetting(setting,value)
 }
 
+document.querySelectorAll("input").forEach(input=>{
+    editedFields[input.getAttribute("name")] = input.getAttribute("value")
+})
