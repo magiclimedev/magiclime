@@ -227,14 +227,18 @@ body {
 
 /* Settings Page */
 .input-group,.input-group.switch.on{
-  font-size: 1.1rem;
-  width:80vw;
+  width: 100%;
+  font-size: 1rem;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 5fr 2fr 10fr 3fr;
   margin-bottom:1rem;
   align-items: center;
+  /* background: red; */
 }
 
+.input-group:first-of-type{
+  margin-top: 1rem;
+}
 
 /* For input fields that are hidden */
 .switch{
@@ -252,21 +256,31 @@ body {
 
 .input-group input{
   text-align: center;
+  
 }
 
 input:not([type="checkbox"]){
-  background: #f2f5f3;
+  /* background: #f2f5f3; */
 }
 
 .input-group input[type="checkbox"]{
-  height:28px;
+  height:22px;
   cursor: pointer;
 }
 
 .input-btns-cont{
-  margin-left:0.8rem
+  margin-left:0.8rem;
+  display:flex;
+
 }
 
 .input-btns-cont button{
   margin-right:0.5rem;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+}
+
+.input-group button>i{
+  font-size: 14px;
 }
