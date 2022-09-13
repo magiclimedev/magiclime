@@ -46,7 +46,7 @@ $(document).ready(function(){
           if (url.pathname === '/'){
             // console.log("On Dashboard page");
             let matchingRows = sensorTable.children(`[uid=${obj.uid}]`);
-            matchingRows.addClass("flash")
+            flash(matchingRows)
             if (matchingRows.length > 0){
               matchingRows.attr('last-seen', obj.timestamp)
               matchingRows.children(':nth-child(4)').text(
@@ -76,7 +76,7 @@ $(document).ready(function(){
           if (uid === obj.uid){
             logTable.prepend("<tr></tr>")
             let curRow = logTable.children(':first-child');
-            curRow.addClass("flash")
+            flash(curRow)
             curRow.append("<td>" + obj.timestamp + "</td>");
             curRow.append("<td>" + obj.rss + "</td>");
             curRow.append("<td>" + obj.bat + "</td>");
@@ -219,4 +219,9 @@ function submitNameForm(){
       }
     });
   $('#nameFormModal').modal('toggle');    // close modal
+}
+
+function flash(element){
+    element.addClass("flash");
+    setTimeout(()=>element.removeClass("flash"),500)
 }
