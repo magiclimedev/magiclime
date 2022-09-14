@@ -436,7 +436,7 @@ void key_SEND(String &idTx,String &keyTx,String &keyPublic) {
   char msg[64]; sMSG.toCharArray(msg,idkeyLEN+1);
   msg_SEND(msg,idkeyLEN,keyTx,10); //the TX should decode this, it made the key
   Serial.print(F("{\"source\":\"rx\",\"type\":\"info\",\"key-to\",\""));
-  Serial.print(idTx); Serial.print(F("\"}")); Serial.flush();
+  Serial.print(idTx); Serial.println(F("\"}")); Serial.flush();
 }
 
 //*****************************************
