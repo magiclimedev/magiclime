@@ -5,7 +5,7 @@ gateway:
 	pkg -t node18-win --no-native-build -o dist/win/gateway-win.exe -c ../package.json ../gateway.js
 
 deploy: 
-	scp -i ~/magiclime-ec2.pem -r ./dist/win/* ubuntu@www.magiclime.io:/var/www/www.magiclime.io/html/downloads/gateway/win
+	scp -i ~/magiclime-ec2.pem -r ./dist/win/gateway-win.exe ubuntu@www.magiclime.io:/var/www/www.magiclime.io/html/downloads/gateway/win
 
 clean:
 	rm -rf ./dist/*

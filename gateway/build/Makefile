@@ -1,4 +1,6 @@
 UNAME_S := $(shell uname -s)
+UNAME_O := $(shell uname -o)
+
 ifeq ($(UNAME_S),Linux)
 UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_M),armv7l)
@@ -7,6 +9,12 @@ else
 TARGET_MAKEFILE := Makefile.lin
 endif
 endif
+
+ifeq ($(UNAME_O),Msys)
+TARGET_MAKEFILE := Makefile.win
+endif
+
+
 ifeq ($(UNAME_S),Darwin)
 TARGET_MAKEFILE := Makefile.mac
 endif

@@ -27,29 +27,34 @@
 <div class="tab-content" id="myTabContent">
     <div class="container-fluid tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
         <br>
-        <div class="row justify-content-between" style="min-height: 42px;">
+        <div class="row justify-content-center" style="min-height: 42px;">
             <div class="col-3">
-                <h3>Settings</h3>
+                <h3 class="text-center" >Settings</h3>
             </div>
         </div>
         <br>
-        <div class="row">
+        <div class="row justify-content-center">
             <div class="col-md-8">
-                <form action="">
+                <form class="card shadow-sm rounded" action="">
         
         <% for(let setting of settings) {%>
             <div 
             name="<%= setting.name %>"
             condition="<%= setting.condition %>"
             class="input-group <%= setting.htmlClassAdd() %>">
+            
+            <label class="text-large mb-0 ml-4"><%= setting.formatName() %></label>
+            <%_ if(setting.htmlInputType()!=="checkbox"){ %>
+                <div>
 
-                <label class="text-large"><%= setting.formatName() %></label>
-                <input
-                name="<%= setting.name%>"
-                data-dependents="<%= setting.dependents.join(';') %>"
-                type="<%= setting.htmlInputType() %>" 
-                value="<%= setting.convertFromString() %>" >
-                <%_ if(setting.htmlInputType()!=="checkbox"){ %>
+                </div>
+                <%_ } %>
+            <input
+            name="<%= setting.name%>"
+            data-dependents="<%= setting.dependents.join(';') %>"
+            type="<%= setting.htmlInputType() %>" 
+            value="<%= setting.convertFromString() %>" >
+            <%_ if(setting.htmlInputType()!=="checkbox"){ %>
                     <div class="input-btns-cont">
 
                         <button data-setting="<%= setting.name %>" class="btn btn-sm btn-primary switch on edit-btn">
