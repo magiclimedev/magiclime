@@ -124,7 +124,7 @@ void setup() {  debugON=0;//1;
   
   while (!Serial);
   Serial.begin(57600);
-  if (debugON>0) {Serial.println(F("{\"source\":\"rx\",\"info\":\"ver=radio_hub_220527\"}"));Serial.flush();}
+  Serial.println(F("{\"source\":\"rx\",\"info\":\"ver=receiver\"}"));Serial.flush();
   if (rf95.init()) { rf95.setFrequency(RF95_FREQ); 
     if (debugON>0) { Serial.println(F("INFO:rf95.init OK")); Serial.flush(); }}
     else { if (debugON>0) { Serial.println(F("INFO:rf95.init FAIL"));Serial.flush(); while (1); }

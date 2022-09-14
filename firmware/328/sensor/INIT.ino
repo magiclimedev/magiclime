@@ -13,7 +13,7 @@ void init_SETUP(){
   analogReference(EXTERNAL); //3.0V vref.
 
   Serial.begin(57600);
-  Serial.println(F("radio_sensor_220831"));
+  Serial.println(F("sensor"));
   //freeMemory();
   for (byte i=4;i<=13;i++) {pinMode(i, OUTPUT);digitalWrite(i, LOW);}
   pinMode(pinRF95_INT, INPUT);
@@ -81,10 +81,11 @@ void init_SETUP(){
     }
     
 //***********************************************
-  sMSG="INFO:"; sMSG+=TX_ID; 
-  sMSG+=",D:"; sMSG+=String(((float(txINTERVAL)*8.0)/60.0),1);
-  sMSG+=",HB:"; sMSG+=String(((float(txHRTBEAT)*8.0)/60.0),1); 
-  sMSG+=",PWR:";  sMSG+=String((txPWR));
+  //sMSG="INFO:"; sMSG+=TX_ID; 
+  //sMSG+=",D:"; sMSG+=String(((float(txINTERVAL)*8.0)/60.0),1);
+  //sMSG+=",HB:"; sMSG+=String(((float(txHRTBEAT)*8.0)/60.0),1); 
+  //sMSG+=",PWR:";  sMSG+=String((txPWR));
+  sMSG="{\"source\":\"tx\",\"info\":\"ver=sensor\"}";
   msg_SEND(sMSG, TX_KEY,10);
   delay(100);
   sMSG=get_DATA(SBN,1);
