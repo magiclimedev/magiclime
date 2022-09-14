@@ -222,7 +222,7 @@ void ProcessRXbuf() { //rxBuf[0-3]
           switch (protocol) { 
             case '1': {   pNum=5; // 5 pairs in this protocol
               //compose rss pair and first-half of data pairs, 
-              strcpy(jp[0],"\"rss\":\"");
+              strcpy(jp[0],"\"rss\":"); //no preceding quote for rss number
                 char chr[10]; itoa(rxRSS[ptr],chr,10);
               strcat(jp[0],chr); strcat(jp[0],","); //integer
               strcpy(jp[1],"\"uid\":\"");     //data is string (6) , 20-5=15 left for data object
