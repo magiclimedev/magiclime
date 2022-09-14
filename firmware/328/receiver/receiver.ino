@@ -5,7 +5,7 @@
 //
  
 
-const static char VER[] = "radio_hub_220704";
+const static char VER[] = "receiver";
 
 #include <EEPROM.h>
 #include <avr/interrupt.h>
@@ -109,7 +109,7 @@ byte debugON;
 const byte keyRSS=80;
  
 //**********************************************************************
-void setup() {  debugON=1;//1;
+void setup() {  debugON=0;//1;
   pinMode(LED_red,OUTPUT);
   digitalWrite(LED_red,LOW); //on
   pinMode(LED_green,OUTPUT);
@@ -124,12 +124,12 @@ void setup() {  debugON=1;//1;
   
   while (!Serial);
   Serial.begin(57600);
-  Serial.print(F("INFO: radio_hub, "));Serial.flush();
-  
-  if (rf95.init()) {
-    rf95.setFrequency(RF95_FREQ); 
-    Serial.println(F("rf95.init OK")); Serial.flush(); }
-  else { Serial.println(F("rf95.init FAIL"));Serial.flush(); while (1); }
+  if (debugON>0) {Serial.println(F("{\"source\":\"rx\",\"info\":\"ver=radio_hub_220527\"}"));Serial.flush();}
+  if (rf95.init()) { rf95.setFrequency(RF95_FREQ); 
+    if (debugON>0) { Serial.println(F("INFO:rf95.init OK")); Serial.flush(); }}
+    else { if (debugON>0) { Serial.println(F("INFO:rf95.init FAIL"));Serial.flush(); while (1); }
+  }
+  if (debugON>0) {Serial.print(F("INFO:debugON="));Serial.println(debugON);Serial.flush(); }
 
   //Serial.println("RFM95 register settings...");
   //rf95.printRegisters();
@@ -139,9 +139,11 @@ void setup() {  debugON=1;//1;
   //key_EE_ERASE();
   //param_EE_ERASE();
   keyPUBLIC=key_EE_GET();
+  
   if (key_VALIDATE(keyPUBLIC)==false) { //bad key? - make a new one?
     key_EE_MAKE(16); keyPUBLIC=key_EE_GET(); }
-  Serial.print(F("INFO:KEY,key:"));Serial.println(keyPUBLIC); 
+  if (debugON>0) {Serial.print(F("{\"source\":\"rx\",\"info\":\"key="));}
+    if (debugON>0) {Serial.println(keyPUBLIC); Serial.flush();}
    
   rxBufLen[0]=0;
   
