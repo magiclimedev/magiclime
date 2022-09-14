@@ -15,7 +15,7 @@ const {Settings} = require("./Settings")
 const websocket = require("./web/websocket.js");
 const server = require("./web/webserver.js");
 const serial = require("./serial.js");
-const { Console } = require("console");
+const { Console, log } = require("console");
 const db = require("better-sqlite3");
 const express = require("express");
 const ejs = require("ejs");
@@ -94,8 +94,8 @@ async function main() {
   }
 
   //adds external mqtt if it has been set in the settings
-  function addMQTTEndpoints(){
-    const settings = Settings.getAll();
+  async function addMQTTEndpoints(){
+    const settings = await Settings.getAll();
     if (settings.externalMqtt!=="true"){
       return
     }

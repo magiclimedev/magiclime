@@ -1,7 +1,10 @@
 
 
+// DROP TABLE settings;
+
 const schema = 
 `  
+
 CREATE TABLE IF NOT EXISTS sensor
 (
 		id INTEGER PRIMARY KEY,

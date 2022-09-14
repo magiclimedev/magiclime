@@ -59,19 +59,24 @@ router.post("/settings",async (req,res)=>{
         const {clientObj} = require("../../../gateway.js")
         const {mqttClientList} = clientObj
         const {setting,value} = req.body;
-        const resp = await Settings.update(setting,value);
-        if(setting!=="externalMqtt"||setting!=="externalMqttIp"){
+        await Settings.update(setting,value);
+        if(setting!=="externalMqtt"&&setting!=="externalMqttIp"){
                 return
         }
-        else if(setting==="externalMqtt"&&value=="false"){
+        else if(setting==="externalMqtt"&&!value){
                 mqttClientList.clear()
-              }
-        else if(setting==="externalMqtt"&&value=="true"){
-                mqttClientList.replace(Settings.get("externalMqttIp")) 
-              }
+        }
+        else if(setting==="externalMqtt"&&value){
+                const externalMqttIp = await Settings.get("externalMqttIp")
+                mqttClientList.replace(externalMqttIp.value) 
+        }
         else if(setting==="externalMqttIp"){
                 mqttClientList.replace(value)
         }
+        // comment out below to see the list of mqttclients when they are edited
+        // console.log("------------------------------------------");
+        // console.log(mqttClientList);
+        // console.log("------------------------------------------");
 })
 
 module.exports = router;

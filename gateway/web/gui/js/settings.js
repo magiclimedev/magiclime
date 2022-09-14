@@ -38,7 +38,7 @@ body.on("click",".edit-btn",(e)=>{
     }catch(err){
         console.log(err);
     }
-})2
+})
 
 // This hides the reset and save button, displays the edit button, and performs the save or edit button depending on which is clicked.
 body.on("click",".reset-btn, .save-btn",(e)=>{

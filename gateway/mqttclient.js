@@ -135,11 +135,11 @@ class MQTTClientList{
         this.clientList.push(new MQTTClient(host))
     }
     clear(){
-        this.clientList = this.clientList.filter(client=>client.host==="localhost");
+        this.clientList = [this.clientList.find(client=>client.host==="localhost")];
     }
     // this method can take a single ip address as a string or an array of ip address strings
     replace(hosts){
-        this.clientList = this.clientList.filter(client=>client.host==="localhost");
+        this.clientList = [this.clientList.find(client=>client.host==="localhost")];
         if (typeof hosts === "string"){
             this.add(hosts)
         }
