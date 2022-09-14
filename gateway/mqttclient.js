@@ -2,24 +2,24 @@ const mqtt = require('mqtt');
 const { getAllSensors, getSensor, getSensorLog, getSensorName } = require('./db.js');
 const lib = require('./lib.js');
 
-module.exports = {
-
-    /*
-     * checkMQTTServer()
-     * TODO Implement
-     */
+class MQTTClient{
     
-    checkMQTTServer: function() {   
-        var client  = mqtt.connect("mqtt://localhost");
-        console.log("MQTT Broker:     found on localhost:1883")
-    },
+    constructor(host){
+        this.client = mqtt.connect(`mqtt://${host}`);
+        this.options = {
+            qos: 0
+        }
+        this.host = host
+    }
+    
+    checkMQTTServer() {   
+        var client  = mqtt.connect(`mqtt://${this.host}`);
+        console.log(`MQTT Broker:     found on ${this.host}:1883`)
+    }
+    
 
-    /*
-     * Publish data to MQTT server
-     *
-     */
-    publishAllSensors: function(){
-        const client = mqtt.connect("mqtt://localhost");
+    publishAllSensors(){
+        const client = mqtt.connect(`mqtt://${this.host}`);
         const mqttPacket = {
             topic:"magiclime/sensors",
             "message":getAllSensors()
@@ -28,7 +28,7 @@ module.exports = {
             qos: 0,
             retain:true
         };
-
+        
         client.on("error", function(error) {
             console.error(error)
             console.log("Error: Could not connect or publish to MQTT server");
@@ -39,14 +39,13 @@ module.exports = {
             client.end()
         })
     }
-    ,
-    publishSensor:function(uid){
+    
+    publishSensor(uid){
         try{
-            console.log("UID in pub",uid);
-            const client = mqtt.connect("mqtt://localhost")
-        const mqttPacket = {
-            "topic":`magiclime/sensors/${uid}`,
-            "message":getSensor(uid),
+            const client = mqtt.connect(`mqtt://${this.host}`);
+            const mqttPacket = {
+                "topic":`magiclime/sensors/${uid}`,
+                "message":getSensor(uid),
         }
         const options = {
             qos: 0,
@@ -65,72 +64,106 @@ module.exports = {
     }catch(err){
         console.log(err)
     }
+}
+
+async publishSensorLog(uid){
+    const client = mqtt.connect(`mqtt://${this.host}`)
+    const mqttPacket = {
+        "topic":`magiclime/sensors/${uid}/logs`,
+        "message":getSensorLog(uid),
+        "retain":true
     }
-    ,
-    publishSensorLog:(uid)=>{
-        const client = mqtt.connect("mqtt://localhost")
-        const mqttPacket = {
-            "topic":`magiclime/sensors/${uid}/logs`,
-            "message":getSensorLog(uid),
-            "retain":true
-        }
-        const options = {
-            qos: 0,
-            retain:true
-        };
-        client.on("error", function(error) {
-            console.error(error)
-            console.log("Error: Could not connect or publish to MQTT server");
-            client.end();
-        });
-        client.on("connect",()=>{
-            client.publish(mqttPacket.topic,JSON.stringify(mqttPacket.message),options)
-            client.end()
-        })
+    const options = {
+        qos: 0,
+        retain:true
+    };
+    client.on("error", function(error) {
+        console.error(error)
+        console.log("Error: Could not connect or publish to MQTT server");
+        client.end();
+    });
+    client.on("connect",()=>{
+        client.publish(mqttPacket.topic,JSON.stringify(mqttPacket.message),options)
+        client.end()
+    })
+};
+forwardToMQTT(obj){
+    const host = this.host
+
+    const mqttMessage = {
+        "uid": obj.uid,
+        "rss": obj.rss,
+        "bat": obj.bat,
+        "type": obj.type,
+        "data": obj.data,
+        "name": getSensorName(obj.uid).name
     }
-    ,
-    forwardToMQTT: async function(obj) {
-        var mqttPacket = {};
-        var mqttMessage = {
-            "uid": obj.uid,
-            "rss": obj.rss,
-            "bat": obj.bat,
-            "type": obj.type,
-            "data": obj.data,
-            "name": getSensorName(obj.uid).name
-        }
+    
+    const mqttPacket = {
+        "topic": "magiclime",
+        "message": mqttMessage
+    }
 
-        var mqttPacket = {
-            "topic": "magiclime",
-            "message": mqttMessage
-        }
+    const client = mqtt.connect("mqtt://"+this.host);
 
-        var client = mqtt.connect("mqtt://localhost");
-
-        /* MQTT options */
-        var options = {
-            qos: 0
-        };
-
-        client.on("error", function(error) {
-            console.log("Error: Could not connect or publish to MQTT server");
-            client.end();
-        });
-
-        client.on("connect", ()=> {
-
-            client.publish(
-                String(mqttPacket.topic),
-                JSON.stringify(mqttPacket.message),
-                options);
+    client.on("error", function(error) {
+        console.log("Error: Could not connect or publish to MQTT server at "+host);
+        client.end();
+    });
+    
+    client.on("connect", ()=> {
+        
+        client.publish(
+            String(mqttPacket.topic),
+            JSON.stringify(mqttPacket.message),
+            this.options);
             const eventPacket = {...mqttPacket,topic:`magiclime/sensors/${obj.uid}/event`,eventType:obj.eventType||"pulse"}
-            console.log(eventPacket);
             client.publish(String(eventPacket.topic),JSON.stringify(eventPacket.message),{qos:0,retain:eventPacket.eventType==="pulse"?false:true})
-            console.log(this);
             this.publishSensorLog(mqttMessage.uid)
             this.publishSensor(mqttMessage.uid)
             this.publishAllSensors()
             client.end();
         });
-    },
-};
+    }
+}
+
+class MQTTClientList{
+    constructor(){
+        this.clientList = [new MQTTClient("localhost")];
+    }
+    add(host){
+        this.clientList.push(new MQTTClient(host))
+    }
+    clear(){
+        this.clientList = this.clientList.filter(client=>client.host==="localhost");
+    }
+    // this method can take a single ip address as a string or an array of ip address strings
+    replace(hosts){
+        this.clientList = this.clientList.filter(client=>client.host==="localhost");
+        if (typeof hosts === "string"){
+            this.add(hosts)
+        }
+        else{
+            hosts.forEach(host=>{
+                this.add(host)
+            })
+        }
+    }
+    checkMQTTServers(){
+        this.clientList.forEach(client=>client.checkMQTTServer())
+    }
+    publishAllSensors(){
+        this.clientList.forEach(client=>client.publishAllSensors()) 
+    }
+    publishSensor(uid){
+        this.clientList.forEach(client=>client.publishSensor(uid)) 
+    }
+    publishSensorLog(uid){
+        this.clientList.forEach(client=>client.publishSensorLog(uid)) 
+    }
+    forwardToMQTT(obj){
+        this.clientList.forEach(client=>client.forwardToMQTT(obj)) 
+    }
+}
+
+module.exports = MQTTClientList

@@ -36,40 +36,53 @@
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <form class="card shadow-sm rounded" action="">
-        
-        <% for(let setting of settings) {%>
-            <div 
-            name="<%= setting.name %>"
-            condition="<%= setting.condition %>"
-            class="input-group <%= setting.htmlClassAdd() %>">
-            
-            <label class="text-large mb-0 ml-4"><%= setting.formatName() %></label>
-            <%_ if(setting.htmlInputType()!=="checkbox"){ %>
-                <div>
-
-                </div>
-                <%_ } %>
-            <input
-            name="<%= setting.name%>"
-            data-dependents="<%= setting.dependents.join(';') %>"
-            type="<%= setting.htmlInputType() %>" 
-            value="<%= setting.convertFromString() %>" >
-            <%_ if(setting.htmlInputType()!=="checkbox"){ %>
-                    <div class="input-btns-cont">
-
-                        <button data-setting="<%= setting.name %>" class="btn btn-sm btn-primary switch on edit-btn">
-                            <i class="fa fa-edit"></i>
-                        </button>
-                        <button data-setting="<%= setting.name %>" class="btn btn-sm btn-danger switch reset-btn">
-                            <i class="fa fa-trash"></i>
-                        </button>
-                        <button data-setting="<%= setting.name %>" class="btn btn-sm btn-success switch save-btn">
-                            <i class="fa fa-save"></i>
-                        </button>
-                    </div>
-                        <%_ } %>
-            </div>
+    <div
+        name="externalMqtt"
+        condition="undefined"
+        class="input-group"
+        >
+        <label class="text-large mb-0 ml-4">
+            External MQTT
+        </label>
+        <input
+        name="externalMqtt"
+        data-dependents="externalMqttIp"
+        type="checkbox"
+        value="<%= settings.externalMqtt %>"
+        >
+    </div>
+    <div
+        name="externalMqttIp"
+        condition="externalMqttIp"
+        class="input-group switch 
+        <% if (settings.externalMqtt==="true"){ %>
+            on
         <% } %>
+        "
+    >
+        <label class="text-large mb-0 ml-4">
+            External MQTT IP
+        </label>
+        <div></div>
+        <input
+        name="externalMqttIp"
+        data-dependents=""
+        type="text"
+        value="<%= settings.externalMqttIp %>"
+        >
+        <div class="input-btns-cont">
+            <button data-setting="externalMqttIp" class="btn btn-sm btn-primary switch on edit-btn">
+                <i class="fa fa-edit"></i>
+            </button>
+            <button data-setting="externalMqttIp" class="btn btn-sm btn-danger switch reset-btn">
+                <i class="fa fa-trash"></i>
+            </button>
+            <button data-setting="externalMqttIp" class="btn btn-sm btn-success switch save-btn">
+                <i class="fa fa-save"></i>
+            </button>
+        </div>
+    </div>
+
                 </form>
             </div>
         </div>

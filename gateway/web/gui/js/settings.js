@@ -4,6 +4,7 @@ const form = $("form");
 
 const editedFields = {}
 
+// this opens up fields if their display is dependent on a checkbox
 body.on("click","input[type=checkbox]",(e)=>{
     const open = e.target.checked
     const dependentNames = e.target.dataset.dependents.split(";");
@@ -18,6 +19,7 @@ body.on("click","input[type=checkbox]",(e)=>{
     saveField(e.target.name,open)
 })
 
+// this enables the field, hides the edit button,  displays the save and reset button
 body.on("click",".edit-btn",(e)=>{
     try{
         const getSetting = (element)=>{
@@ -25,7 +27,6 @@ body.on("click",".edit-btn",(e)=>{
                 return (element.getAttribute("name"))
             }
                 return getSetting(element.parentElement)
-
         }
         const setting = getSetting(e.target)
 
@@ -37,8 +38,9 @@ body.on("click",".edit-btn",(e)=>{
     }catch(err){
         console.log(err);
     }
-})
+})2
 
+// This hides the reset and save button, displays the edit button, and performs the save or edit button depending on which is clicked.
 body.on("click",".reset-btn, .save-btn",(e)=>{
     try{
         const btn = e.currentTarget;
@@ -61,6 +63,7 @@ body.on("click",".reset-btn, .save-btn",(e)=>{
 form.on("submit",(e)=>{
     e.preventDefault();
 })
+
 
 async function updateSetting(setting,value){
     const resp = await fetch("/settings",{

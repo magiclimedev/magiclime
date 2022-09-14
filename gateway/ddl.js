@@ -27,7 +27,10 @@ CREATE TABLE IF NOT EXISTS settings(
     name VARCHAR(56),
     value VARCHAR(56)
 );
-`;
+
+
+`
+;
 
 module.exports = {
         
