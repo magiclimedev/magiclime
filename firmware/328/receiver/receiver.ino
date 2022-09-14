@@ -252,7 +252,7 @@ void ProcessRXbuf() { //rxBuf[0-3]
               strcat(jp[2],"\","); //data is string
               strcat(jp[3],",");   //data is number
               strcat(jp[4],"\"}"); //data is string 
-              json_PRINT(jp,pNum); //move this down if data validation works well
+              json_PRINTdata(jp,pNum); //move this down if data validation works well
             } //End of case:'1'
           } //EndOfSwtchProtocol
         }//validate protocol format
@@ -290,7 +290,7 @@ boolean CheckRXbuf() {//********* get RF Messages
 }
 
 //*****************************************
-void json_PRINT(char jsn[][20], byte pNum) {
+void json_PRINTdata(char jsn[][20], byte pNum) {
   Serial.print(F("{\"source\":\"tx\","));
   for (byte pn=0;pn<pNum;pn++) { //Pair Number
     Serial.print( jsn[pn] ); }
@@ -435,7 +435,8 @@ void key_SEND(String &idTx,String &keyTx,String &keyPublic) {
   byte idkeyLEN=sMSG.length(); 
   char msg[64]; sMSG.toCharArray(msg,idkeyLEN+1);
   msg_SEND(msg,idkeyLEN,keyTx,10); //the TX should decode this, it made the key
-  Serial.print(F("INFO:KEY_SEND,TO:"));Serial.println(idTx);Serial.flush();
+  Serial.print(F("{\"source\":\"rx\",\"type\":\"info\",\"key-to\",\""));
+  Serial.print(idTx); Serial.print(F("\"}")); Serial.flush();
 }
 
 //*****************************************
