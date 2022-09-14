@@ -290,7 +290,7 @@ boolean CheckRXbuf() {//********* get RF Messages
 
 //*****************************************
 void json_PRINT(char jsn[][20], byte pNum) {
-  Serial.print(F("DATA: "));
+  //Serial.print(F("DATA: "));
   for (byte pn=0;pn<pNum;pn++) { //Pair Number
     Serial.print( jsn[pn] ); }
   Serial.println(""); Serial.flush();  
