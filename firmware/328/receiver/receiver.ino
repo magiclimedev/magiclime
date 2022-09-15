@@ -124,7 +124,7 @@ void setup() {  debugON=0;//1;
   
   while (!Serial);
   Serial.begin(57600);
-  Serial.println(F("{\"source\":\"rx\",\"info\":\"ver=receiver\"}"));Serial.flush();
+  Serial.println(F("{\"source\":\"rx\",\"info\":\"ver=receiver.ino\"}"));Serial.flush();
   if (rf95.init()) { rf95.setFrequency(RF95_FREQ); 
     if (debugON>0) { Serial.println(F("INFO:rf95.init OK")); Serial.flush(); }}
     else { if (debugON>0) { Serial.println(F("INFO:rf95.init FAIL"));Serial.flush(); while (1); }
@@ -142,8 +142,8 @@ void setup() {  debugON=0;//1;
   
   if (key_VALIDATE(keyPUBLIC)==false) { //bad key? - make a new one?
     key_EE_MAKE(16); keyPUBLIC=key_EE_GET(); }
-  if (debugON>0) {Serial.print(F("{\"source\":\"rx\",\"info\":\"key="));}
-    if (debugON>0) {Serial.println(keyPUBLIC); Serial.flush();}
+  if (debugON>0) {Serial.print(F("{\"source\":\"rx\",\"info\":\"key=\""));}
+    if (debugON>0) {Serial.println(keyPUBLIC); Serial.print(F("\""))}; Serial.flush();}
    
   rxBufLen[0]=0;
   
@@ -206,8 +206,9 @@ void ProcessRXbuf() { //rxBuf[0-3]
       
       if (sINFO!="") { //is this 'INFO' a request for parameters?
         if (param_ReqChk(sINFO)==false) { //not a param request? Just pass on the INFO
-          Serial.print(F("INFO:"));Serial.println(sINFO); Serial.flush();} //INFO: ':param0' in 'ididid:param0'  ?
-        }
+          byte lenInfo = sInfo.length;
+          json_PRINTinfo(sInfo,lenInfo); }
+          
       else { //not INFO, must be DATA
           if (debugON>1) {Serial.print(sMSG); Serial.print(F(" is DATA. "));} //was not a KEY OR INFO thing, should be data
         byte msgLen=sMSG.length();
@@ -297,6 +298,12 @@ void json_PRINTdata(char jsn[][20], byte pNum) {
   Serial.println(""); Serial.flush();  
 }
 
+//*****************************************
+void json_PRINTinfo(char info[20], byte iNum) {
+  Serial.print(F("{\"source\":\"tx\",\"info\":\""));
+  for (byte i=0;i<iNum;i++) {Serial.print( info[i] ); }
+  Serial.println(""); Serial.flush();  
+}
 
 //*****************************************
 String pair_VALIDATE(char *buf,byte len) { //returns message with !ID!KEY as ID:KEY
