@@ -2,12 +2,9 @@ const { log } = require("console");
 const express = require("express");
 var path = require('path');
 const { publishAllSensors, publishSensor } = require("../../../mqttclient.js");
-const { getAllSettings } = require("./../../../db.js");
+const {Settings} = require("./../../../Settings")
 const database = require("./../../../db.js");
-
 const router = express.Router();
-
-
 router.get('/', function(req, res) {
         var sensors = database.getAllSensors();
         res.render('index', {
@@ -15,8 +12,8 @@ router.get('/', function(req, res) {
               });
 });
 
-router.get('/settings', function(req, res) {
-        const settings = getAllSettings()
+router.get('/settings',async function(req, res) {
+        const settings = await Settings.getAll()
         res.render('settings',{
                 settings
         });
@@ -59,8 +56,27 @@ router.post('/sensors/:uid', function(req, res) {
 });
 
 router.post("/settings",async (req,res)=>{
+        const {clientObj} = require("../../../gateway.js")
+        const {mqttClientList} = clientObj
         const {setting,value} = req.body;
-        await database.updateSetting(setting,value)
+        await Settings.update(setting,value);
+        if(setting!=="externalMqtt"&&setting!=="externalMqttIp"){
+                return
+        }
+        else if(setting==="externalMqtt"&&!value){
+                mqttClientList.clear()
+        }
+        else if(setting==="externalMqtt"&&value){
+                const externalMqttIp = await Settings.get("externalMqttIp")
+                mqttClientList.replace(externalMqttIp.value) 
+        }
+        else if(setting==="externalMqttIp"){
+                mqttClientList.replace(value)
+        }
+        // comment out below to see the list of mqttclients when they are edited
+        // console.log("------------------------------------------");
+        // console.log(mqttClientList);
+        // console.log("------------------------------------------");
 })
 
 module.exports = router;
