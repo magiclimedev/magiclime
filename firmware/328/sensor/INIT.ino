@@ -6,12 +6,12 @@ void init_SETUP(){
   TX_KEY.reserve(34);
   sSTR8.reserve(8);
   sSTR18.reserve(18);
-  sSTR34.reserve(34); //key_GET_PUBLIC only
-  sMSG.reserve(64); //packet_SEND, key_GET_PUBLIC
-  sRET.reserve(64); //msg_GET, key_GET_PUBLIC, 
+  sSTR34.reserve(34); //key_GET_PRIVATE only
+  sMSG.reserve(64); //packet_SEND, key_GET_PRIVATE
+  sRET.reserve(64); //msg_GET, key_GET_PRIVATE, 
   
   analogReference(EXTERNAL); //3.0V vref.
-
+  
   Serial.begin(57600);
   Serial.println(F("sensor"));
   //freeMemory();
@@ -26,7 +26,7 @@ void init_SETUP(){
   boost_ON();
   digitalWrite(pinLED, HIGH);
   delay(200);
-  param0_GET(); 
+  param0_GET(); //from eeprom
   digitalWrite(pinLED, LOW);
   
    if (SBN==255) {SBN=get_SBNum();}
@@ -35,16 +35,17 @@ void init_SETUP(){
   TX_ID=id_GET(SBN);
   Serial.print(F("TX_ID: "));Serial.println(TX_ID);Serial.flush();
   delay(1000); //keeps green led on for a sec before checking pair pin
-  
+  dBV = get_BatteryVoltage(); //good time to get this?
+    
   if (pinPAIR_SW==LOW) { //long press means - remove key/disassociate from rx.
     TX_KEY=key_NEW();
     key_EE_SET(TX_KEY);
-    led_PAIR_BLINK(5,50,50);
-      if (debugON>0) {Serial.println(F("TX_KEY randomized... "));Serial.flush();}
+    led_PAIR_BLINK(10,50,50);
+      if (debugON>0) { Serial.println(F("TX_KEY randomized... ")); Serial.flush(); }
   } 
   else {
     if (init_RF95()==true) {
-      TX_KEY=key_GET_PUBLIC(TX_ID); 
+      TX_KEY=key_GET_PRIVATE(TX_ID); 
       if (TX_KEY!="") {
         if (key_VALIDATE(TX_KEY)==false){TX_KEY="thisisathingbits"; }
         key_EE_SET(TX_KEY);
@@ -60,15 +61,16 @@ void init_SETUP(){
   dBV = get_BatteryVoltage();
  
 //***********************************************
-  //and now params? just look/expect or, yes...  ask for it.
-  // RX expects INFO: IDxxxx:param0 as a request. 
+  if (debugON>0) {Serial.println(F("requesting paramters... "));Serial.flush();}
+  //and now the TX parameters? just look/expect or, yes...  ask for them.
+  // RX expects PUR:IDxxxx:PRM0 - that's Parameter Update Request, the TXID and PaRaMeter set #0. 
   // RX responds with  ididid:ml:p:s 
-    sMSG="INFO: "; sMSG+= TX_ID; sMSG+= ":param0";
-    msg_SEND(sMSG, TX_KEY,10); //String &msgIN, String &key, int txPWR)
+    sMSG="PUR:"; sMSG+= TX_ID; sMSG+= ":PRM0";
+    msg_SEND(sMSG, TX_KEY,1); //String &msgIN, String &key, int txPWR)
     // and now look for ... 500mSec?
     byte tryCtr=50; 
   if (debugON>0) {Serial.println(F("looking for param: "));Serial.flush();}
-    while (tryCtr>0) { delay(20); tryCtr--;
+    while (tryCtr>0) { delay(10); tryCtr--;
       if (rf95.available()==true) {
         uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
         uint8_t len = sizeof(buf);
@@ -81,13 +83,13 @@ void init_SETUP(){
     }
     
 //***********************************************
-  //sMSG="INFO:"; sMSG+=TX_ID; 
-  //sMSG+=",D:"; sMSG+=String(((float(txINTERVAL)*8.0)/60.0),1);
-  //sMSG+=",HB:"; sMSG+=String(((float(txHRTBEAT)*8.0)/60.0),1); 
-  //sMSG+=",PWR:";  sMSG+=String((txPWR));
-  sMSG="{\"source\":\"tx\",\"info\":\"ver=sensor\"}";
-  msg_SEND(sMSG, TX_KEY,10);
-  delay(100);
+ if (debugON>0) {Serial.println(F("...sending param info"));}
+  sMSG="PRM0:"; sMSG+=TX_ID; 
+  sMSG+=":"; sMSG+=String(((float(txINTERVAL)*8.0)/60.0),1);
+  sMSG+=":"; sMSG+=String(((float(txHRTBEAT)*8.0)/60.0),1); 
+  sMSG+=":";  sMSG+=String((txPWR));
+  msg_SEND(sMSG, TX_KEY,1);
+  if (debugON>0) {Serial.println(F("...sending first data"));}
   sMSG=get_DATA(SBN,1);
   packet_SEND(SBN,sMSG,0); // does boost_OFF();
      //watchdog timer - 8 sec
@@ -119,8 +121,8 @@ void param0_SET(byte *buf, String &sID) {//ididid:d:h:p:s
 
 
 //*****************************************
-void param0_GET() { //and set to defaults if EEPROM erased.
-    if (debugON>0) {Serial.println(F("param0_GET..."));Serial.flush();}
+void param0_GET() { if (debugON>0) {Serial.println(F("...param0_GET"));Serial.flush();}
+//and set to defaults if EEPROM erased.
   if (EEPROM.read(EE_POWER)>10){ //the one that should be 1-10
     if (debugON>0) {Serial.println(F("writing default params..."));}   
     EEPROM.write(EE_INTERVAL,INTERVAL_DATA); //*16=64 sec. (might be 255)
@@ -177,7 +179,7 @@ void init_SENSORS(byte sbn) { DATA_TYPE = BEACON; //preset default
 
    
 //*****************************************
-void init_TYPE(TYPE sbt){ //
+void init_TYPE(TYPE sbt){ if (debugON>0) {Serial.print(F("...init_TYPE"));}
    //="BEACON", "EVENT_LOW","EVENT_CHNG","EVENT_RISE",
    //="EVENT_FALL","ANALOG", "DIGITAL_SPI", "DIGITAL_I2C"
   switch (sbt) {
@@ -198,20 +200,20 @@ void init_TYPE(TYPE sbt){ //
 }
 
 //*****************************************
-bool init_RF95()  {
-    if (debugON>0) {Serial.print(F("init_RF95..."));}
-  bool ret=false;
-  byte VBS = digitalRead(pinBOOST); if (VBS == 0) { boost_ON(); }
-  byte timeout=0;
-  while (!rf95.init() && (timeout<20)) { delay(10); timeout++; }
-if (debugON>0) {Serial.print(F(" timeout<20: "));Serial.println(timeout);Serial.flush();}
-  if (timeout!=20) {
-    rf95.setFrequency(RF95_FREQ); delay(10);
-    rf95.setTxPower(txPWR*2, false);  delay(10);
-    ret=true;
+bool init_RF95()  { if (debugON>0) {Serial.println(F("...init_RF95"));}
+  if (RF95_UP==false) { //not already done before?
+    if (digitalRead(pinBOOST) == 0) { boost_ON(); }
+    byte timeout=0;
+    while (!rf95.init() && (timeout<20)) { delay(10); timeout++; }
+      if (debugON>0) {Serial.print(F(" timeout<20: "));Serial.println(timeout);Serial.flush();}
+    if (timeout!=20) {
+      rf95.setFrequency(RF95_FREQ); delay(10);
+      if (txPWR==0) {txPWR=1;}
+      rf95.setTxPower(txPWR*2, false);  delay(10);
+      RF95_UP=true;
+    }
   }
-  RF95_UP=ret;
-  return ret;
+  return RF95_UP;
 }
 
  

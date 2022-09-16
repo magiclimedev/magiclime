@@ -22,13 +22,13 @@ if (debugON>0) {Serial.print(F("get_SBNum: "));}
   
 //*****************************************
 void boost_ON() {
-    if (debugON>0) {Serial.println(F("\nboost-ON *****"));Serial.flush();}
   if (digitalRead(pinBOOST) == 0) { 
     pinMode(pinMOSI, OUTPUT);
     pinMode(pinSCK, OUTPUT);
     digitalWrite(pinRF95_CS,HIGH);
     digitalWrite(pinBOOST, HIGH); delay(10); }
   digitalWrite(pinLED, HIGH);
+  if (debugON>0) {Serial.println(F("\nboost-ON *****"));Serial.flush();}
 }
 
 //*****************************************
@@ -67,8 +67,8 @@ void led_PAIR_BLINK(byte count,byte bON,byte bOFF) { //dur,rate is 10mS per
 //*****************************************
 float get_BatteryVoltage() {
   byte VBS = digitalRead(pinBOOST); if (VBS == 0) { boost_ON(); delay(50); }
-  float fBV =get_Average(pinBV, 5); fBV = (fBV * mV_bit) / 1000.0;
-if (debugON>0) {Serial.print(F("BV: "));Serial.println(String (fBV,1));}
+  float fBV = get_Average(pinBV, 5); fBV = (fBV * mV_bit) / 1000.0;
+if (debugON>1) {Serial.print(F("BV: "));Serial.println(fBV);}
   if (VBS == 0) { boost_OFF(); }
   return fBV;
 }
@@ -100,10 +100,10 @@ ISR(WDT_vect) { //in avr library
 }
 
 //*****************************************
-void wakeStuff(){SPI.begin();}
+void wakeStuff(){if (digitalRead(pinBOOST)==0){boost_ON();}}//SPI.begin();}
 
 //*****************************************
-void sleepStuff(){SPI.end();}
+void sleepStuff(){boost_OFF(); SPI.end();}
 
 //*****************************************
 void systemSleep() {

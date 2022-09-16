@@ -16,7 +16,8 @@ void setup () {
 
 //*****************************************
 void loop () {
-  if (sendDATA!=0) { //wakeStuff(); //1 is Data, 2 is Heartbeat
+  if (sendDATA!=0) {//1 is Data, 2 is Heartbeat
+    if (digitalRead(pinBOOST)==0){boost_ON();}
       if (debugON>0) {Serial.print(F("\n\n*sendDATA=")); Serial.print(sendDATA);}
     /*if (SBN==1) {
       packet_SEND(SBN,get_DATA(20,sendDATA),0);

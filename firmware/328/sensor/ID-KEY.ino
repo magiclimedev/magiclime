@@ -1,13 +1,13 @@
 
 // oh, btw... csb is before encoding, csb checked after decoding.
 //*****************************************
-String key_GET_PUBLIC(String &TXID) { 
+String key_GET_PRIVATE(String &TXID) { 
   //freeMemory();
-if (debugON>0) {Serial.print(F("key_GET_PUBLIC... "));Serial.flush();}
+if (debugON>0) {Serial.print(F("key_GET_PRIVATE... "));Serial.flush();}
   digitalWrite(pinPAIR_LED, HIGH); delay(1000);
   sRET="";
-  sSTR34=key_NEW(); //for return of public key
-  key_TX_ID_SEND(TXID,sSTR34); //expected response = 'sTMP' encoded 'ID:PublicKey'
+  sSTR34=key_NEW(); //for return of private key
+  key_TX_ID_SEND(TXID,sSTR34); //expected response = 'sTMP' encoded 'ID:PrivateKey'
   byte timeout=100;
   while (!rf95.available() && timeout>0) { delay(10); timeout--; }
   if (timeout==0) { digitalWrite(pinPAIR_LED,LOW);  return sRET;}
@@ -32,7 +32,7 @@ if (debugON>0) {Serial.print(F("timeout<50: "));Serial.println(timeout);Serial.f
     }
   }
   digitalWrite(pinPAIR_LED,LOW); 
-  //freeMemory();
+  if (debugON>=2) {freeMemory();}
   return sRET;
 }
 
@@ -59,17 +59,17 @@ void key_TX_ID_SEND(String &TXID, String &key_TEMP) {
   String key((char *)0);key.reserve(20);key+="thisisathingbits";
     if (debugON>0) {Serial.print(len);Serial.print(F(" "));Serial.print(idkey);}
     if (debugON>0) {Serial.print(F(" , key: "));Serial.println(key);Serial.flush();}
-  msg_SEND(idkey,key,10); //highest power - 
+  msg_SEND(idkey,key,1); //highest power - 
 }
   
  //*****************************************
-void key_EE_ERASE() { Serial.println(F("erasing EE_KEY..."));Serial.flush();
+void key_EE_ERASE() { Serial.println(F("...key_EE_ERASE"));Serial.flush();
   for (byte i=0;i<33;i++) { EEPROM.write(EE_KEY-i,255); } //the rest get FF's
 }
 
 //*****************************************
 String key_EE_GET() { 
-    if (debugON>0){Serial.println(F("key_EE_GET..."));Serial.flush();}
+    if (debugON>0){Serial.println(F("...key_EE_GET"));Serial.flush();}
   char cKey[33];  byte i=0;  
  i=0;  cKey[i]=EEPROM.read(EE_KEY); // this way includes the null at end
   //Serial.print(F("cKey[")); Serial.print(i);Serial.print(F("]="));Serial.println(cKey[i],HEX);
@@ -84,7 +84,7 @@ String key_EE_GET() {
 
 //*****************************************
 void key_EE_SET(String &key) {
-    if (debugON>0) {Serial.println(F("key_EE_SET..."));Serial.flush();} // and blinks Blue LED
+    if (debugON>0) {Serial.println(F("...key_EE_SET"));Serial.flush();} // and blinks Blue LED
   byte len=key.length();
   for (byte i=0;i<len;i++) {EEPROM.write(EE_KEY-i,key[i]);}
   EEPROM.write(EE_KEY-len,0);
@@ -93,7 +93,7 @@ void key_EE_SET(String &key) {
 
 //*****************************************
 String key_NEW() {
-    if (debugON>0) {Serial.println(F("key_NEW..."));Serial.flush();}
+    if (debugON>0) {Serial.println(F("...key_NEW"));Serial.flush();}
   char key[18];
   word rs=analogRead(1); rs=rs+analogRead(2); rs=rs+analogRead(3);
   rs=rs+analogRead(4); rs=rs+analogRead(4); randomSeed(rs);
@@ -104,7 +104,7 @@ String key_NEW() {
 
 //*****************************************
 void id_EE_ERASE(byte SBN) {
-    if (debugON>0){Serial.println(F("id_EE_ERASE..."));Serial.flush();}
+    if (debugON>0){Serial.println(F("...id_EE_ERASE"));Serial.flush();}
   word idLoc=(EE_ID-(SBN*6));
   for (byte i=0;i<6;i++) { EEPROM.write(idLoc-i,255); } //the rest get FF's
 }
