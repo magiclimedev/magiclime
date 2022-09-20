@@ -27,7 +27,12 @@
 //
 //    if PC buffer has data...
 //      match possible commands...
-//      p -> format p:ididid:iii:hhh:p:s , data interval, heartbeat (both in watchdog timeouts), power, system byte.
+//      p -> format p:ididid:iii:hhh:p:s , data interval, heartbeat (as measured by watchdog timeouts), power, system byte.
+//  !! OR !!....
+//      pu:idididid:di:xxx (Parameter Update:6chrid:Data Interval: xxx=ascii number 000-255 'ex.002'
+//      pu:idididid:hb:xxx  (HeartBeat: xxx= ascii number 000-255
+//      pu:idididid:pw:x  (tx PoWer setting : ascii 0-9
+//      pu:idididid:sb:xx (System Bits: ascii hex value 00-FF
 //      set pending action bit in pending action byte for that TX ID.
 // oh - system byte... flag bits for ???. usually reset upon completion of whatever task got flagged to run.
 //      d -> change the debugON setting
@@ -80,8 +85,9 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 // 'IDIDID' is the sensor ID,
 // 'iii' is data Interval count (16 sec. per, 255 max), (('0' might make it TX every 8 sec.?))
 // 'hhh' is Heartbeat interval count (64 sec. per, 255 max),
-// 'p' is TX Power ( 1-10)
+// 'p' is TX Power (0-9), (in sensor -> +1=0-10, x2-> 2-20)
 // 's' is the 'System byte' - various flag bits, the exact meanings of which are tbd.
+//  things like 'reset max, reset min, reset avg, calibrate now, erase eeprom' etc.
 
 word WDTcounter=10; //start out flashing
 byte LED_green=16; //'A2'
