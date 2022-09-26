@@ -40,7 +40,8 @@ String get_DATA(byte SBN, byte why ) {  sSTR18="NULL"; //false trigger default
 void init_E931() { //Elmos motion IC
   
   //pin D3 is the usual interrupt pin
-  //pin D4 (pinSWITCH) is the serial programming pin
+  //!! NOT !! pin D4 (pinSWITCH) is the serial programming pin
+  //!!NEW!! for Tiny2040 compatibility - no D4 but A0 is avail, so A0 is used
   //programmable, so, config registers...
   //reg. bits (from:thru) - desc - param.
   //1. 24:17 (8)- Sensitivity - Register value * 6.5uV
@@ -73,31 +74,31 @@ void init_E931() { //Elmos motion IC
   //tL and tH clock 200nS -> 1uS
 
   for (byte b=8;b>0;b--) { //1+98+1=100uS per bit
-      digitalWrite(4, HIGH); delayMicroseconds(1); //init read of bit
-      if (bitRead(reg_H,b-1)==0) {digitalWrite(4, LOW); }
+      digitalWrite(A0, HIGH); delayMicroseconds(1); //init read of bit
+      if (bitRead(reg_H,b-1)==0) {digitalWrite(A0, LOW); }
       delayMicroseconds(98); //give it time to suck it in
-      digitalWrite(4, LOW);
+      digitalWrite(A0, LOW);
       delayMicroseconds(1); //just to be nice
    }   
       
   for (byte b=8;b>0;b--) {
-    digitalWrite(4, HIGH); delayMicroseconds(1); //init read of bit
-    if (bitRead(reg_M,b-1)==0) {digitalWrite(4, LOW); }
+    digitalWrite(A0, HIGH); delayMicroseconds(1); //init read of bit
+    if (bitRead(reg_M,b-1)==0) {digitalWrite(A0, LOW); }
     delayMicroseconds(98); //give it time to suck it in
-    digitalWrite(4, LOW);
+    digitalWrite(A0, LOW);
     delayMicroseconds(1); //just to be nice
   }      
       
   for (byte b=8;b>0;b--) {
-    digitalWrite(4, HIGH); delayMicroseconds(1); //init read of bit
-    if (bitRead(reg_L,b-1)==0) {digitalWrite(4, LOW); }
+    digitalWrite(A0, HIGH); delayMicroseconds(1); //init read of bit
+    if (bitRead(reg_L,b-1)==0) {digitalWrite(A0, LOW); }
     delayMicroseconds(98); //give it time to suck it in
-    digitalWrite(4, LOW);
+    digitalWrite(A0, LOW);
     delayMicroseconds(1); //just to be nice
   }
   //one more 0 makes 25 bits...
-    digitalWrite(4, HIGH); delayMicroseconds(1);
-    digitalWrite(4, LOW); delayMicroseconds(98); //give it time to suck it in
+    digitalWrite(A0, HIGH); delayMicroseconds(1);
+    digitalWrite(A0, LOW); delayMicroseconds(98); //give it time to suck it in
     delay(1); //milliSec - latch it in
 }
 
