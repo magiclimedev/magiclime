@@ -74,6 +74,8 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 #define pinBV   7
 #define pinTrimPot  6
 #define pinSBID  A6
+#define pinSDA  A4
+#define pinSCL  A5
 
 byte sysBYTE; //updated with param_REQ, reset to 0 when done
 //bit#0: erase this ID (make new one)

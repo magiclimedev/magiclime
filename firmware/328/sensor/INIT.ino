@@ -146,7 +146,9 @@ void init_SENSORS(byte sbn) { DATA_TYPE = BEACON; //preset default
     case 1: { DATA_TYPE = EVENT_RISE;                                  //button
       pinMode(pinEVENT, INPUT);  } break;
                 
-    case 2: { DATA_TYPE = EVENT_CHNG; //(int.30K off, ext.pullup =1M  //tilt
+    case 2: { DATA_TYPE = EVENT_RISE;  //tilt
+      //'86 XOR output - change=one-shot high 
+      // followed by reading of SDA pin state for 'up' or 'down'
       pinMode(pinEVENT, INPUT); digitalWrite(pinEVENT, LOW); } break;
       
     case 3: { DATA_TYPE = EVENT_CHNG; //(int.30K off, ext.pullup =1M  //reed

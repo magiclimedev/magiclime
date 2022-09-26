@@ -6,8 +6,8 @@ String get_DATA(byte SBN, byte why ) {  sSTR18="NULL"; //false trigger default
     switch (SBN) { 
       case 0: { sSTR18="BEACON"; } break;//not used as HB fills the bill.
       case 1: { sSTR18="PUSH";  } break;//button
-      case 2: { if (digitalRead(pinEVENT)==0) {if (get_PIN_DB(pinEVENT,500)==0){sSTR18="LOW";}}
-                else {if (get_PIN_DB(pinEVENT,500)==1){ sSTR18="HIGH";}}
+      case 2: { if (get_PIN_DB(pinSDA,50)==0){sSTR18="LOW";}
+                else {if (get_PIN_DB(pinSDA,50)==1){ sSTR18="HIGH";}}
               } break; //tilt
       case 3: { sSTR18="OPEN"; 
         if (digitalRead(pinEVENT)==HIGH){sSTR18= "CLOSE";}  } break; //reed
