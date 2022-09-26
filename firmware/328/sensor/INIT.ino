@@ -20,6 +20,7 @@ void init_SETUP(){
   pinMode(pinRF95_CS, OUTPUT);
   pinMode(pinBOOST, OUTPUT); digitalWrite(pinBOOST, LOW);
   pinMode(pinLED, OUTPUT);   digitalWrite(pinLED, LOW);
+  pinMode(pinPAIR_LED, OUTPUT);   digitalWrite(pinLED, LOW);
   pinMode(pinPAIR_SW, INPUT); digitalWrite(pinPAIR_SW, HIGH); //pull-up on
   
   //key_EE_ERASE(); id_EE_ERASE(SBN);
@@ -156,7 +157,8 @@ void init_SENSORS(byte sbn) { DATA_TYPE = BEACON; //preset default
                   
     case 5: { DATA_TYPE = EVENT_RISE;                                     //motion
       pinMode(pinEVENT, INPUT); digitalWrite(pinEVENT, LOW); //no pullup
-      pinMode(pinSWITCH, OUTPUT);  digitalWrite(pinSWITCH, LOW); //ser.prog.
+      //pinMode(pinSWITCH, OUTPUT);  digitalWrite(pinSWITCH, LOW); //ser.prog.on D4
+      pinMode(A0, OUTPUT);  digitalWrite(A0, LOW); //ser.prog.on A0 for ML/Tiny2040
       init_E931();} break;
        
     case 6: { DATA_TYPE = EVENT_FALL;                                        //knock
@@ -200,7 +202,8 @@ void init_TYPE(TYPE sbt){ if (debugON>0) {Serial.print(F("...init_TYPE"));}
 }
 
 //*****************************************
-bool init_RF95()  { if (debugON>0) {Serial.println(F("...init_RF95"));}
+bool init_RF95()  {
+  if (debugON>0) {Serial.print(F("...init_RF95, RF95_UP=")); Serial.println(RF95_UP);Serial.flush();}
   if (RF95_UP==false) { //not already done before?
     if (digitalRead(pinBOOST) == 0) { boost_ON(); }
     byte timeout=0;
