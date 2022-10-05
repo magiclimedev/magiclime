@@ -113,6 +113,7 @@ void init_E931() { //Elmos motion IC
 String Get_DOT() {//read two pins - one should be 'the one'.
   sSTR18="";
   if ((digitalRead(A4)==1)&& (digitalRead(A5)==1)){sSTR18+="MOT-MUCH";}
+  //crap - one always gets there first and resets the other. :-(
   else if ((digitalRead(A4)==0)&& (digitalRead(A5)==1)){sSTR18+="MOT-LEFT";}
   else if ((digitalRead(A4)==1)&& (digitalRead(A5)==0)){sSTR18+="MOT-RIGHT";}
   return sSTR18;
