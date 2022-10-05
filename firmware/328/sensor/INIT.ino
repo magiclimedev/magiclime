@@ -167,10 +167,20 @@ void init_SENSORS(byte sbn) { DATA_TYPE = BEACON; //preset default
       pinMode(pinEVENT, INPUT); digitalWrite(pinEVENT, HIGH); } break; 
  
     case 10: { DATA_TYPE = ANALOG; CAL_VAL=analogRead(pinTrimPot); }break;   //tmp36 
+    
     case 11: { DATA_TYPE = ANALOG; MAX1=0; MIN1=1023;
                pinMode(4, OUTPUT); digitalWrite(4, LOW); } break;            //photocell              
     // get max,min from EEprom ? 
     case 12: { DATA_TYPE = DIGITAL_I2C; } break;                            //Si7020 Temp-RH sensor
+    
+    case 21: { DATA_TYPE = EVENT_RISE;                                     //motion
+      pinMode(pinEVENT, INPUT); digitalWrite(pinEVENT, LOW); //no pullup
+      //pinMode(pinSWITCH, OUTPUT);  digitalWrite(pinSWITCH, LOW); //ser.prog.on D4
+      pinMode(A0, OUTPUT);  digitalWrite(A0, LOW); //ser.prog.on A0 for ML/Tiny2040
+      pinMode(A4,INPUT);digitalWrite(A4, LOW); //D.O.T. pin#1
+      pinMode(A5,INPUT);digitalWrite(A5, LOW); //D.O.T. pin#2
+      init_E931();} break;
+    
   }
   
   init_TYPE(DATA_TYPE);// enable interrupts, etc.

@@ -77,6 +77,7 @@ if (debugON>1) {Serial.print(F("BV: "));Serial.println(fBV);}
 void trigger_RESET(byte SBN){ //global DATA_TYPE req,
   switch (SBN) { //some sensors need resetting after activation, like E931
     case 5 : {pinMode(pinEVENT, OUTPUT);digitalWrite(pinEVENT,LOW);delay(1);pinMode(pinEVENT, INPUT);} break;
+    case 21 : {pinMode(pinEVENT, OUTPUT);digitalWrite(pinEVENT,LOW);delay(1);pinMode(pinEVENT, INPUT);} break;
   }
   switch (DATA_TYPE) { //={"BEACON", "E_LOW","E_CHANGE","E_RISING","E_FALLING","DATA_ANA", "DATA_SPI", "DATA_I2C"};
     case EVENT_LOW :{ attachInterrupt(digitalPinToInterrupt(pinEVENT), IRPT_D3, LOW); } break;

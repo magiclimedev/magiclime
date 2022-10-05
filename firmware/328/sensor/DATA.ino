@@ -13,23 +13,30 @@ String get_DATA(byte SBN, byte why ) {  sSTR18="NULL"; //false trigger default
         if (digitalRead(pinEVENT)==HIGH){sSTR18= "CLOSE";}  } break; //reed
       case 4: { sSTR18="KNOCK";   } break; //
       case 5: { sSTR18="MOTION"; } break; //
-      case 6: {   } break; //
-      case 7: {   } break; //
-      case 8: {   } break; //
-      case 9: {   } break; //
+      case 6: { sSTR18="S06";   } break; //
+      case 7: { sSTR18="S07";   } break; //
+      case 8: { sSTR18="S08";   } break; //
+      case 9: { sSTR18="S09";   } break; //
       case 10: { sSTR18= Get_TMP36_F(); } break; //TMP36 
       case 11: { sSTR18= Get_Light(); } break; //photocell        
-      case 12: { sSTR18= Get_TRH(); } break; //SI7020
-      case 20: { sSTR18="PUSH0";   } break; //
-      case 21: { sSTR18="PUSH1";   } break; //
-      case 22: { sSTR18="PUSH2";   } break; //
-      case 23: { sSTR18="PUSH3";   } break; //
-      case 24: { sSTR18="PUSH4";   } break; //
-      case 25: { sSTR18="PUSH5";   } break; //
-      case 26: { sSTR18="PUSH6";   } break; //
-      case 27: { sSTR18="PUSH7";   } break; //
-      case 28: { sSTR18="PUSH8";   } break; //
-      case 29: { sSTR18="PUSH9";   } break; //
+      case 12: { sSTR18= Get_TRH(); } break; //SI7020      case 20: { sSTR18="S20";   } break; //
+      case 13: { sSTR18="S13";   } break; //
+      case 14: { sSTR18="S14";   } break; //
+      case 15: { sSTR18="S15";   } break; //
+      case 16: { sSTR18="S16";   } break; //
+      case 17: { sSTR18="S17";   } break; //
+      case 18: { sSTR18="S18";   } break; //
+      case 19: { sSTR18="S19";   } break; //
+      case 20: { sSTR18="S20";   } break; //
+      case 21: { sSTR18=Get_DOT(); } break; //
+      case 22: { sSTR18="S22";   } break; //
+      case 23: { sSTR18="S23";   } break; //
+      case 24: { sSTR18="S24";   } break; //
+      case 25: { sSTR18="S25";   } break; //
+      case 26: { sSTR18="S26";   } break; //
+      case 27: { sSTR18="S27";   } break; //
+      case 28: { sSTR18="S28";   } break; //
+      case 29: { sSTR18="S29";   } break; //
     }
   } //if heartbeat  
   return sSTR18;
@@ -102,6 +109,14 @@ void init_E931() { //Elmos motion IC
     delay(1); //milliSec - latch it in
 }
 
+//************************************************************
+String Get_DOT() {//read two pins - one should be 'the one'.
+  sSTR18="";
+  if (digitalRead(A4)==1) {sSTR18+="THIS";}
+  else if (digitalRead(A5)==1) {sSTR18+="THAT";}
+  return sSTR18;
+ } 
+ 
 //************************************************************
 String Get_TMP36_F() { 
   if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(10);}
