@@ -204,7 +204,7 @@ void loop(){
 
 // *********************************************************
 void ProcessRXbuf() { if (debugON>0) {Serial.println(F("\n...ProcessRXbuf"));} //rxBuf[0-3]
-  byte ptr=rxBufPtr; //should be on last used 
+  byte ptr=rxBufPtr; //should be on last used buffer
   byte bufCntr=0;     //but don't trust it - look for length>0
   while ((rxBufLen[ptr]==0) && (bufCntr<4)) {
     ptr++; if (ptr>3) {ptr=0;}
@@ -253,23 +253,24 @@ void ProcessRXbuf() { if (debugON>0) {Serial.println(F("\n...ProcessRXbuf"));} /
         if ((dBuf[0]>='0') && (dBuf[0]<='9') && (dBuf[1]=='|')) { //protocol # validate
           char protocol=dBuf[0];
           byte pNum; //json Number of Pairs 
-          char jp[6][20]; //Json Pairs, 6 'cause it should be mostly enough.
+          char jp[6][24]={0}; //Json Pairs, 6 'cause it should be mostly enough.
+          
           byte jpx; //json Pair # indeX pointer
           switch (protocol) { 
             case '1': {   pNum=5; // 5 pairs in this protocol
               //compose rss pair and first-half of data pairs, 
-              strcpy(jp[0],"\"rss\":"); //no quotes for numbers
+              strcpy(jp[0],"\"rss\":"); //no first comma,no quotes for numbers
                 char chr[10]; itoa(rxRSS[ptr],chr,10);
-              strcat(jp[0],chr); strcat(jp[0],","); //integer
-              strcpy(jp[1],"\"uid\":\"");     //data is string (6) , 20-5=15 left for data object
-              strcpy(jp[2],"\"sensor\":\"");   //data is string, 20-7, the verbose one 
-              strcpy(jp[3],"\"bat\":");      //data is number (3), 20-6=14
-              strcpy(jp[4],"\"data\":\"");   //data is string, 20-7
+              strcat(jp[0],chr); //integer
+              strcpy(jp[1],",\"uid\":\"");     //data is string (6) , 20-5=15 left for data object
+              strcpy(jp[2],",\"sensor\":\"");   //data is string, 20-7, the verbose one 
+              strcpy(jp[3],",\"bat\":");      //data is number (3), 20-6=14 no pre-quote
+              strcpy(jp[4],",\"data\":\"");   //data is string, 20-7
               
               byte bx=2; //Buf indeX start: [0] is protocol, [1] is first delimiter 
               char ps[20];  //Pair String accumulator
               byte psx=0; //ps's indeX
-              jpx=1; //json Pair # indeX, '0' is rss - already done.                
+              jpx=1; //json Pair # indeX, '0' is rss - already done.  
               while (bx<rxBufLen[ptr]) {
                 if ((dBuf[bx]=='|')||(bx==(rxBufLen[ptr]-1))) { // hit next delim?, got a pair
                   ps[psx]=0; //null term
@@ -284,11 +285,14 @@ void ProcessRXbuf() { if (debugON>0) {Serial.println(F("\n...ProcessRXbuf"));} /
                 else { ps[psx]=dBuf[bx]; psx++; } //build up pair # jpx's data
                 bx++; //next char in dBuf
               }
-              strcat(jp[1],"\","); //data is string
-              strcat(jp[2],"\","); //data is string
-              strcat(jp[3],",");   //data is number
-              strcat(jp[4],"\"}"); //data is string 
+              //and now tack on closing quote (or not)
+              strcat(jp[1],"\""); //value was string, close quote
+              strcat(jp[2],"\""); //value was string, close quote
+              //strcat(jp[3],"");   //value was number - no close quote
+              strcat(jp[4],"\"}"); //value was string - last one get the closing brace
+              
               json_PRINTdata(jp,pNum); //move this down if data validation works well
+              
             } //End of case:'1'
           } //EndOfSwtchProtocol
         }//validate protocol format
@@ -327,7 +331,7 @@ boolean CheckRXbuf() {boolean ret=false; //********* get RF Messages
 }
 
 //*****************************************
-void json_PRINTdata(char jsn[][20], byte pNum) {
+void json_PRINTdata(char jsn[][24], byte pNum) {
   Serial.print(F("{\"source\":\"tx\","));
   for (byte pn=0;pn<pNum;pn++) { //Pair Number
     Serial.print( jsn[pn] ); }
