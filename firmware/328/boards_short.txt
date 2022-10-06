@@ -1,4 +1,3 @@
-# See: http://code.google.com/p/arduino/wiki/Platforms
 
 menu.cpu=Processor
 ##############################################################
@@ -21,9 +20,7 @@ ThingBit328P.bootloader.high_fuses=0xDA
 # null7-3 -  BODLEVEL2 -  BODLEVEL1 -  BODLEVEL0 = 1,1,1 = disabled
 ThingBit328P.bootloader.extended_fuses=0xFE
 
-ThingBit328P.bootloader.file=optiboot/optiboot_atmega328.hex
-#atmega/ATmegaBOOT_168_atmega328.hex
-#optiboot/optiboot_atmega328.hex
+ThingBit328P.bootloader.file=atmega/ATmegaBOOT_168_atmega328_pro_8MHz.hex
 ThingBit328P.bootloader.tool=avrdude
 ThingBit328P.bootloader.unlock_bits=0x3F
 ThingBit328P.bootloader.lock_bits=0x0F
@@ -82,4 +79,3 @@ pro.menu.cpu.8MHzatmega328.build.mcu=atmega328p
 pro.menu.cpu.8MHzatmega328.build.f_cpu=8000000L
 
 ##############################################################
-
