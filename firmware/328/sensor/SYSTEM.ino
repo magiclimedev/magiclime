@@ -6,10 +6,10 @@ if (debugON>0) {Serial.print(F("get_SBNum: "));}
   byte VBS=digitalRead(pinBOOST);
   digitalWrite(pinBOOST, HIGH); delay(10);
   pinMode(pinSBID,OUTPUT);digitalWrite(pinSBID,HIGH);
-  pinMode(pinSBID,INPUT);delay(5);
+  pinMode(pinSBID,INPUT);digitalWrite(pinSBID,LOW);delay(5);
   int WIGval=analogRead(pinSBID);
   pinMode(pinSBID,OUTPUT);digitalWrite(pinSBID,LOW);
-  pinMode(pinSBID,INPUT);delay(5);
+  pinMode(pinSBID,INPUT);digitalWrite(pinSBID,LOW);delay(5);
   int SBval=analogRead(pinSBID);
   WIGval=abs(WIGval-SBval); 
   if (debugON>0) {Serial.print(F("WIGval="));Serial.println(WIGval);}
@@ -27,7 +27,7 @@ void boost_ON() {
     pinMode(pinSCK, OUTPUT);
     digitalWrite(pinRF95_CS,HIGH);
     digitalWrite(pinBOOST, HIGH); delay(10); }
-  digitalWrite(pinLED, HIGH);
+  //digitalWrite(pinLED, HIGH);
   if (debugON>0) {Serial.println(F("\nboost-ON *****"));Serial.flush();}
 }
 

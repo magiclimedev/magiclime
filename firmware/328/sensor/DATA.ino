@@ -6,8 +6,8 @@ String get_DATA(byte SBN, byte why ) {  sSTR18="NULL"; //false trigger default
     switch (SBN) { 
       case 0: { sSTR18="BEACON"; } break;//not used as HB fills the bill.
       case 1: { sSTR18="PUSH";  } break;//button
-      case 2: { if (get_PIN_DB(pinSDA,50)==0){sSTR18="LOW";}
-                else {if (get_PIN_DB(pinSDA,50)==1){ sSTR18="HIGH";}}
+      case 2: { if (get_Tilt()==0){sSTR18="LOW";}
+                else { sSTR18="HIGH";}
               } break; //tilt
       case 3: { sSTR18="OPEN"; 
         if (digitalRead(pinEVENT)==HIGH){sSTR18= "CLOSE";}  } break; //reed
@@ -108,6 +108,21 @@ void init_E931() { //Elmos motion IC
     digitalWrite(A0, LOW); delayMicroseconds(98); //give it time to suck it in
     delay(1); //milliSec - latch it in
 }
+
+
+//************************************************************
+byte get_Tilt() {
+if (debugON>0) {Serial.println(F("get_Tilt()... "));}  
+    word smplCtr=0; byte d1=0; byte d2=0;
+    while (smplCtr<100) {//2 sec of stable
+      d1=digitalRead(A4); delay(10);
+      d2=digitalRead(A4); delay(10);
+      if (debugON>1) {Serial.print(d1);Serial.print(d2);}
+      if (d1==d2) {smplCtr++;}
+      else {smplCtr=0;}
+    }
+    return d1;
+}    
 
 //************************************************************
 String Get_DOT() {//read two pins - one should be 'the one'.

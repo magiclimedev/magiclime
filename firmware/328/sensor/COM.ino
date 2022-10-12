@@ -72,6 +72,7 @@ if (debugON>0) {Serial.print(F("\nmsg_GET2out: "));print_CHR(msg,len-1);}//print
 //*****************************************
 void msg_SEND2(char *msgIN, byte msgLEN, String key, byte txPWR) { //txPWR is 1-10
   byte VBS = digitalRead(pinBOOST); if (VBS == 0) { boost_ON(); }
+  digitalWrite(pinLED, HIGH);
     if (debugON>0) {Serial.print(F("\nmsg_SEND2: ")); print_CHR(msgIN,msgLEN);}
   //Serial.print(F("RF95_UP="));Serial.print(RF95_UP);
   if (RF95_UP==false) { RF95_UP=init_RF95(); 
@@ -95,6 +96,7 @@ void msg_SEND2(char *msgIN, byte msgLEN, String key, byte txPWR) { //txPWR is 1-
 //*****************************************
 void msg_SEND(String &msgIN, String &key, int txPWR) { 
   if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(100);}
+  digitalWrite(pinLED, HIGH);
   if (debugON>0) {Serial.print(F("...msg_SEND: "));Serial.print(msgIN);
     Serial.print(F(" ,key=")); Serial.print(key);
     Serial.print(F(" ,txPWR=")); Serial.println(txPWR); Serial.flush();}
