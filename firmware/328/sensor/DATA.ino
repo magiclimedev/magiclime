@@ -19,7 +19,7 @@ String get_DATA(byte SBN, byte why ) {  sSTR18="NULL"; //false trigger default
       case 9: { sSTR18="S09";   } break; //
       case 10: { sSTR18= Get_TMP36_F(); } break; //TMP36 
       case 11: { sSTR18= Get_Light(); } break; //photocell        
-      case 12: { sSTR18= Get_TRH(); } break; //SI7020      case 20: { sSTR18="S20";   } break; //
+      case 12: { sSTR18= Get_TRH(); } break; //SI7020 
       case 13: { sSTR18="S13";   } break; //
       case 14: { sSTR18="S14";   } break; //
       case 15: { sSTR18="S15";   } break; //
