@@ -1,7 +1,7 @@
 
 //*****************************************
 byte get_SBNum() { //A6 is not able to be digital for yanking
-//if (debugON>0) {Serial.print(F("get_SBNum: "));Serial.flush();}
+//Serial.print(F("get_SBNum: "));Serial.flush();
   byte sbn; //Sensor Board Number
   byte VBS=digitalRead(pinBOOST);
   if (VBS==0) {digitalWrite(pinBOOST, HIGH); delay(10);}
@@ -16,8 +16,8 @@ byte get_SBNum() { //A6 is not able to be digital for yanking
     pinAVG=int((pinAVG+pinRead2)/2);
   }
   
-  //if (debugON>0) {Serial.print(F("pinACC="));Serial.println(pinACC);Serial.flush();}
-  //if (debugON>0) {Serial.print(F("pinAVG="));Serial.println(pinAVG);Serial.flush();}
+  //Serial.print(F("pinACC="));Serial.println(pinACC);Serial.flush();
+  //Serial.print(F("pinAVG="));Serial.println(pinAVG);Serial.flush();
   if (pinACC>10) { sbn=0; }
   else { sbn=byte((int(pinAVG/51)+1) );} //*10); }
   if (VBS==0) {digitalWrite(pinBOOST, LOW); delay(5); }
@@ -72,7 +72,7 @@ void led_PAIR_BLINK(byte count,byte bON,byte bOFF) { //dur,rate is 10mS per
 float get_BatteryVoltage() {
   byte VBS = digitalRead(pinBOOST); if (VBS == 0) { boost_ON(); delay(50); }
   float fBV = get_Average(pinBV, 5); fBV = (fBV * mV_bit) / 1000.0;
-//if (debugON>1) {Serial.print(F("BV: "));Serial.println(fBV);Serial.flush();}
+//Serial.print(F("BV: "));Serial.println(fBV);Serial.flush();
   if (VBS == 0) { boost_OFF(); }
   return fBV;
 }
@@ -112,7 +112,7 @@ void sleepStuff(){boost_OFF(); SPI.end();}
 
 //*****************************************
 void systemSleep() {
-//if (debugON>0) {Serial.print(F("Z"));Serial.flush();} 
+//Serial.print(F("Z"));Serial.flush();
   if (digitalRead(pinBOOST)==1){boost_OFF();}
   cli();   cbi(ADCSRA, ADEN);   sbi(ACSR, ACD);
   sleep_enable();  

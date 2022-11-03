@@ -2,7 +2,7 @@
 //*****************************************
 char *key_REQUEST(char *key, char* TxId, byte rssREF) { char *ret=key;
   key[0]=0; //prep for fail
-  Serial.print(F("...key_REQUEST... "));Serial.flush();
+  //Serial.print(F("...key_REQUEST... "));Serial.flush();
   digitalWrite(pinPAIR_LED, HIGH); delay(1000);
   char keyTEMP[18];
 
@@ -12,7 +12,7 @@ char *key_REQUEST(char *key, char* TxId, byte rssREF) { char *ret=key;
 
   byte timeout=0;
   while (!rf95.available() && timeout<250) { delay(10); timeout++; }
-  Serial.print(F("timeout(<250): "));Serial.println(timeout);Serial.flush();
+  //Serial.print(F("timeout(<250): "));Serial.println(timeout);Serial.flush();
   if (timeout==250) { digitalWrite(pinPAIR_LED,LOW);  return ret;}
   
   uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
@@ -48,7 +48,7 @@ bool key_VALIDATE(char *key2VAL) { //check EEPROM for proper character range
 
 //*****************************************
 void key_TXID_SEND(char *txid, char* keyTEMP) {
-  Serial.println(F("key_TXID_SEND... "));Serial.flush();
+  //Serial.println(F("key_TXID_SEND... "));Serial.flush();
   char key[18]; char idkey[26];
   strcpy(key,"thisisamagiclime");
   strcpy(idkey,"!"); strcat(idkey,txid); strcat(idkey,"!"); strcat(idkey,keyTEMP);
@@ -57,7 +57,7 @@ void key_TXID_SEND(char *txid, char* keyTEMP) {
   
 //*****************************************
 char *key_EE_GET(char *keyOUT) { char *ret=keyOUT;
-  Serial.println(F("...key_EE_GET"));Serial.flush();
+  //Serial.println(F("...key_EE_GET"));Serial.flush();
   byte i=0;  
   for (i=0;i<16;i++){ keyOUT[i]=EEPROM.read(EE_KEY-i); }
   keyOUT[16]=0; //...and terminate
@@ -66,7 +66,7 @@ char *key_EE_GET(char *keyOUT) { char *ret=keyOUT;
 
 //*****************************************
 void key_EE_SET(char *key) {
-  Serial.println(F("...key_EE_SET"));Serial.flush(); // and blinks Blue LED
+  //Serial.println(F("...key_EE_SET"));Serial.flush(); // and blinks Blue LED
   byte lenKEY=strlen(key);
   for (byte i=0;i<lenKEY;i++) {EEPROM.write(EE_KEY-i,key[i]);}
   led_PAIR_BLINK(3,5,5); //5*10mS=50mS
@@ -74,7 +74,7 @@ void key_EE_SET(char *key) {
 
 //*****************************************
 char *key_NEW(char *key) { char *ret=key;
-  Serial.println(F("...key_NEW..."));Serial.flush();
+  //Serial.println(F("...key_NEW..."));Serial.flush();
   word rs=analogRead(1); rs=rs+analogRead(2); rs=rs+analogRead(3);
   rs=rs+analogRead(4); rs=rs+analogRead(4); randomSeed(rs);
   for (byte i=0;i<16;i++) { key[i]=random(34,126); } 
@@ -84,7 +84,7 @@ char *key_NEW(char *key) { char *ret=key;
   
 //*****************************************
 void id_MAKEifBAD(byte sbn) {
-  //if (debugON>0){ Serial.println(F("id_MAKE: ")); Serial.flush();}
+  //Serial.println(F("id_MAKE: ")); Serial.flush();
   byte idbyte; word idLoc=(EE_ID-(sbn*6)); bool badID=false;
   for (byte i=0;i<6;i++) { idbyte=EEPROM.read(idLoc-i);
     if (((idbyte<'2')||(idbyte>'Z'))|| ((idbyte>'9')&&(idbyte<'A'))) {

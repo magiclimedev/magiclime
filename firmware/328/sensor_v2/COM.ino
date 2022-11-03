@@ -1,7 +1,7 @@
 
 //*****************************************
 void packet_SEND(byte sbn, char *id, double bv, char *key, char *data, int pwr, int wait) { 
-Serial.println(F("\n...packet_SEND")); Serial.flush();
+//Serial.println(F("\n...packet_SEND")); Serial.flush();
 char n2a[10]; // for Number TO Ascii things
 char msg[48];
 byte PV=1; //Protocol Version - very first char byte out;
@@ -19,10 +19,10 @@ byte PV=1; //Protocol Version - very first char byte out;
 //*****************************************
 //decoded and checksum-tested 
 char *msg_GET(char *msgOUT, char *rxBUF, byte rxLEN,char *key) { char *ret=msgOUT;
-  Serial.print(F("\n...msg_GET.. ")); print_HEX((char *)rxBUF,rxLEN);
-  Serial.print(F("decoded with: ")); print_CHR((char *)key,strlen(key));Serial.flush();
+  //Serial.print(F("\n...msg_GET.. ")); print_HEX((char *)rxBUF,rxLEN);
+  //Serial.print(F("decoded with: ")); print_CHR((char *)key,strlen(key));Serial.flush();
   decode(msgOUT,rxBUF,rxLEN,key);
-  Serial.print(F("is: ")); print_CHR(msgOUT,strlen(msgOUT));Serial.flush();
+  //Serial.print(F("is: ")); print_CHR(msgOUT,strlen(msgOUT));Serial.flush();
   return ret; //ret;
 }
 
@@ -30,7 +30,7 @@ char *msg_GET(char *msgOUT, char *rxBUF, byte rxLEN,char *key) { char *ret=msgOU
 void msg_SEND(char *msgIN, char *key, int pwr) { 
   if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(100);}
   digitalWrite(pinLED, HIGH);
-  if (debugON>0) {Serial.print(F("...msg_SEND: "));Serial.print(msgIN);Serial.print(F(",key=")); Serial.print(key);Serial.print(F(",pwr=")); Serial.println(pwr); Serial.flush();}
+  //Serial.print(F("...msg_SEND: "));Serial.print(msgIN);Serial.print(F(",key=")); Serial.print(key);Serial.print(F(",pwr=")); Serial.println(pwr); Serial.flush();
   byte txLEN=strlen(msgIN);
   char txBUF[64];
   encode(txBUF,msgIN,txLEN,key);
@@ -43,7 +43,7 @@ void msg_SEND(char *msgIN, char *key, int pwr) {
 //*****************************************
 //encode is just before sending, so is char array for rf95.send
 char *encode(char *txBUF, char *msgIN, byte msgLEN, char *key) { char *ret=txBUF;
-//if (debugON>0) {Serial.println(F("...encode")); Serial.flush();}
+//Serial.println(F("...encode")); Serial.flush();
   randomSeed(analogRead(2)+analogRead(3)+analogRead(4));
   byte sp=random(0,8);
   byte i=0; byte k=sp;
@@ -57,7 +57,7 @@ char *encode(char *txBUF, char *msgIN, byte msgLEN, char *key) { char *ret=txBUF
 
 //*****************************************
 char *decode(char *msgOUT,char *rxBUF, byte rxLEN, char *key) {char *ret=msgOUT; //if (debugON>0) {Serial.println(F("...decode")); Serial.flush();}
-  Serial.println(F("\n...decode...")); Serial.flush();
+  //Serial.println(F("\n...decode...")); Serial.flush();
   byte i=0; byte k=0;
   byte keyLEN=strlen(key); 
   while (i<rxLEN) {if (k==keyLEN) {k=0;}
