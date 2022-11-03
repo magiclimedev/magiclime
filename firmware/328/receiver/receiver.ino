@@ -1,4 +1,12 @@
-
+/* Copyright (C) 2022 Marlyn Anderson - All Rights Reserved
+ * You may use, distribute and modify this code under the
+ * terms of the ...
+ *
+ * You should have received a copy of the ... with
+ * this file. If not, please write to: , or visit :
+ * magiclime.com
+ */
+ 
 const static char VER[] = "receiver";
 
 #include <EEPROM.h>
@@ -38,8 +46,6 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 #define EE_PARAM_POWER    EE_PARAM_HRTBEAT-1  //1-10  (2-20dB in sensor).
 #define EE_PARAM_SYSBYTE  EE_PARAM_POWER-1  // + this one = 10 bytes per ID,
 // PARAM ID things go all the way down to 0
-
-word WDTcounter=10; //start out flashing
 
 boolean flgShowChar;
 boolean flgShowHex;
