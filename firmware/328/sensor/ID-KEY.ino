@@ -1,140 +1,120 @@
 
-// oh, btw... csb is before encoding, csb checked after decoding.
 //*****************************************
-String key_GET_PRIVATE(String &TXID) { 
-  //freeMemory();
-if (debugON>0) {Serial.print(F("key_GET_PRIVATE... "));Serial.flush();}
+char *key_REQUEST(char *rxkey, char* TxId, byte rssREF) { char *ret=rxkey;
+  rxkey[0]=0; //prep for fail
+  Serial.print(F("...key_REQUEST... "));Serial.flush();
   digitalWrite(pinPAIR_LED, HIGH); delay(1000);
-  sRET="";
-  sSTR34=key_NEW(); //for return of private key
-  key_TX_ID_SEND(TXID,sSTR34); //expected response = 'sTMP' encoded 'ID:PrivateKey'
-  byte timeout=100;
-  while (!rf95.available() && timeout>0) { delay(10); timeout--; }
-  if (timeout==0) { digitalWrite(pinPAIR_LED,LOW);  return sRET;}
-if (debugON>0) {Serial.print(F("timeout<50: "));Serial.println(timeout);Serial.flush();}
+  char keyTEMP[18];
 
+  key_NEW(keyTEMP); //returns new key in keyTEMP
+  print_CHR(keyTEMP,16);
+  key_TXID_SEND(TxId,keyTEMP); //expect a response = 'keyTEMP' encoded 'ID:RX-KEY'
+
+  byte timeout=0;
+  while (!rf95.available() && timeout<250) { delay(10); timeout++; }
+  Serial.print(F("timeout(<250): "));Serial.println(timeout);Serial.flush();
+  if (timeout==250) { digitalWrite(pinPAIR_LED,LOW);  return ret;}
+  
   uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
   uint8_t len = sizeof(buf);
-  if (rf95.recv(buf, &len)) {  byte rss=rf95.lastRssi()+140;
-  if (debugON>0) {Serial.print(F("rss: "));Serial.println(rss);}
-    if (rss>=keyRSS) { 
-      sMSG=msg_GET(buf,len,sSTR34); //decodes ,if CSB ok
-      if (sMSG !="") { byte i=0; 
-        while ((sMSG[i]!=0)&&(sMSG[i]!=':')) {i++;}
-        if (sMSG[i]==':') { //not a fail-to-find...
-          sSTR8=sMSG.substring(0,i); //ID
-	        sSTR18=sMSG.substring(i+1); //KEY
-        if (debugON>0) {Serial.print(F("ID: "));Serial.print(sSTR8);}
-			  if (debugON>0) {Serial.print(F(", KEY: "));Serial.println(sSTR18);Serial.flush();}
-          if (sSTR8==TXID) { sRET=sSTR18; } //only if it's for me ?? and if key validate=true?
+  if (rf95.recv(buf, &len)) {
+    if ((rf95.lastRssi()+150)>=rssREF) { 
+      char msg[64]; char id[8];
+      msg_GET(msg,buf,len,keyTEMP); //decode with key sent
+      if (msg[0] !=0) { 
+        if (msg[6]==':') { //not a fail-to-find...
+          mySubStr(id,msg,0,6); //ID
+          if (strcmp(id,TxId)==0) { //does this id match this sensors' ID?
+            mySubStr(rxkey,msg,7,len-7);} 
         }
       }
     }
   }
   digitalWrite(pinPAIR_LED,LOW); 
-  if (debugON>=2) {freeMemory();}
-  return sRET;
+  return rxkey;
 }
 
 //*****************************************
-bool key_VALIDATE(String &key) { //check EEPROM for proper character range
-    if (debugON>0) {Serial.print(F("key_VALIDATE: "));Serial.print(key);}
-  byte len=key.length(); bool ret=true;
-    if (debugON>0) {Serial.print(F(" of length: "));Serial.print(len);}
-  if (len==0) {ret=false;}
-  for (byte i=0;i<len;i++) { //Serial.print(key[i]);Serial.print(F(" ")); 
-    if ((key[i]<34) || (key[i]>126)|| (len<4)) { ret=false; break; }
+bool key_VALIDATE(char *key2VAL) { //check EEPROM for proper character range
+  byte lenKEY=strlen(key2VAL);
+  boolean ret=true;
+  if (lenKEY==0) {ret=false;}
+  for (byte i=0;i<lenKEY;i++) { //Serial.print(key[i]);Serial.print(F(" ")); 
+    if ((key2VAL[i]<34) || (key2VAL[i]>126)|| (lenKEY<4)) { ret=false; break; }
   }
-    if (debugON>0) {if (ret==1) {Serial.println(F(" = TRUE"));} else {Serial.println(F(" = FALSE"));} Serial.flush();}
-  return ret;
+    return ret;
 }
 
 //*****************************************
-void key_TX_ID_SEND(String &TXID, String &key_TEMP) {
-    if (debugON>0) { Serial.print(F("key_TX_ID_SEND-> "));Serial.flush();}
-  String idkey((char *)0); idkey.reserve(48); //1+6+1+32+null plus a few more
-  //idkey="INFO: PRE-KEY FOR RSS"; msg_SEND(idkey, key_TEMP,1);
-  idkey="!";idkey+=TXID;idkey+="!";idkey+=key_TEMP;
-  byte len = idkey.length(); 
-  String key((char *)0);key.reserve(20);key+="thisisathingbits";
-    if (debugON>0) {Serial.print(len);Serial.print(F(" "));Serial.print(idkey);}
-    if (debugON>0) {Serial.print(F(" , key: "));Serial.println(key);Serial.flush();}
-  msg_SEND(idkey,key,1); //highest power - 
+void key_TXID_SEND(char *txid, char* keyTEMP) {
+  //Serial.println(F("key_TXID_SEND... "));Serial.flush();
+  char rxkey[18]; char idkey[26];
+  strcpy(rxkey,"thisisamagiclime");
+  strcpy(idkey,"!"); strcat(idkey,txid); strcat(idkey,"!"); strcat(idkey,keyTEMP);
+  msg_SEND(idkey,rxkey,1); 
 }
   
- //*****************************************
-void key_EE_ERASE() { Serial.println(F("...key_EE_ERASE"));Serial.flush();
-  for (byte i=0;i<33;i++) { EEPROM.write(EE_KEY-i,255); } //the rest get FF's
+//*****************************************
+char *key_EE_GET(char *keyOUT) { char *ret=keyOUT;
+  //Serial.println(F("...key_EE_GET"));Serial.flush();
+  byte i=0;  
+  for (i=0;i<16;i++){ keyOUT[i]=EEPROM.read(EE_KEY-i); }
+  keyOUT[16]=0; //...and terminate
+  return ret; 
 }
 
 //*****************************************
-String key_EE_GET() { 
-    if (debugON>0){Serial.println(F("...key_EE_GET"));Serial.flush();}
-  char cKey[33];  byte i=0;  
- i=0;  cKey[i]=EEPROM.read(EE_KEY); // this way includes the null at end
-  //Serial.print(F("cKey[")); Serial.print(i);Serial.print(F("]="));Serial.println(cKey[i],HEX);
-  while ((cKey[i]!=0) && (i<32)) {
-    i++; //assign first, check later
-    cKey[i]=EEPROM.read(EE_KEY-i); 
-    //Serial.print(F("cKey[")); Serial.print(i);Serial.print(F("]="));Serial.println(cKey[i],HEX);
-  }
-  cKey[i]=0; //term-truncate it again?
-  return String(cKey); 
-}
-
-//*****************************************
-void key_EE_SET(String &key) {
-    if (debugON>0) {Serial.println(F("...key_EE_SET"));Serial.flush();} // and blinks Blue LED
-  byte len=key.length();
-  for (byte i=0;i<len;i++) {EEPROM.write(EE_KEY-i,key[i]);}
-  EEPROM.write(EE_KEY-len,0);
+void key_EE_SET(char *key) {
+  Serial.println(F("...key_EE_SET"));Serial.flush(); // and blinks Blue LED
+  byte lenKEY=strlen(key);
+  for (byte i=0;i<lenKEY;i++) {EEPROM.write(EE_KEY-i,key[i]);}
   led_PAIR_BLINK(3,5,5); //5*10mS=50mS
 }
 
 //*****************************************
-String key_NEW() {
-    if (debugON>0) {Serial.println(F("...key_NEW"));Serial.flush();}
-  char key[18];
+char *key_NEW(char *key) { char *ret=key;
+  //Serial.println(F("...key_NEW..."));Serial.flush();
   word rs=analogRead(1); rs=rs+analogRead(2); rs=rs+analogRead(3);
   rs=rs+analogRead(4); rs=rs+analogRead(4); randomSeed(rs);
   for (byte i=0;i<16;i++) { key[i]=random(34,126); } 
-  key[16]=0;
-  return String(key);  
+  key[16]=0; //?why??
+  return ret;
 } 
-
-//*****************************************
-void id_EE_ERASE(byte SBN) {
-    if (debugON>0){Serial.println(F("...id_EE_ERASE"));Serial.flush();}
-  word idLoc=(EE_ID-(SBN*6));
-  for (byte i=0;i<6;i++) { EEPROM.write(idLoc-i,255); } //the rest get FF's
-}
   
 //*****************************************
-void id_MAKE(byte SBN) {
-  if (debugON>0){ Serial.println(F("id_MAKE: ")); }
-  byte idbyte; word idLoc=(EE_ID-(SBN*6));
+void id_MAKEifBAD(byte sbn) {
+  //Serial.println(F("id_MAKE: ")); Serial.flush();
+  byte idbyte; word idLoc=(EE_ID-(sbn*6)); bool badID=false;
   for (byte i=0;i<6;i++) { idbyte=EEPROM.read(idLoc-i);
     if (((idbyte<'2')||(idbyte>'Z'))|| ((idbyte>'9')&&(idbyte<'A'))) {
-      word rs=analogRead(1); rs=rs*analogRead(2); rs=rs*analogRead(3);
-      rs=rs*analogRead(4);rs=rs*analogRead(5);randomSeed(rs);
-      String idchar="23456789ABCDEFGHJKMNRSTUVWXYZ"; //29, 0-28
-      for (byte i=0;i<6;i++) { byte id=idchar[random(0,29)];
-        EEPROM.write(idLoc-i ,id);
-          if (debugON>0) {Serial.print(char(id));}
-      }
-      if (debugON>0) { Serial.println(""); Serial.flush(); break;}
+      badID=true; break;
     }
+  }
+  if (badID==true) { const char idchar[] ="23456789ABCDEFGHJKMNRSTUVWXYZ"; //29, 0-28
+    word rs=analogRead(1); rs=rs*analogRead(2); rs=rs*analogRead(3);
+    rs=rs*analogRead(4);rs=rs*analogRead(5);randomSeed(rs);
+    for (byte j=0;j<6;j++) { byte id=idchar[random(0,29)];
+      EEPROM.write(idLoc-j ,id);
+      //if (debugON>0) {Serial.print(char(id));Serial.flush();}
+    }
+       //if (debugON>0) { Serial.println(""); Serial.flush();}
   }
 }
 
 //*****************************************
-String id_GET(byte SBN) {
-    if (debugON>0){Serial.print(F("id_GET: ")); }
-  char id[7]; word idLoc=(EE_ID-(SBN*6));
-   for (byte i=0;i<6;i++) { id[i]=EEPROM.read(idLoc-i);
-    if (debugON>0) {Serial.print(char(id[i]));}
-   }
-    if (debugON>0) {Serial.println("");Serial.flush();}
-   id[6]=0; //string term
-   return String(id);
+char *id_GET(char *idOUT, byte sbn) { char *ret=idOUT;
+  //if (debugON>0){Serial.print(F("id_GET: ")); Serial.flush();}
+  word idLoc=(EE_ID-(sbn*6));
+  for (byte i=0;i<6;i++) { idOUT[i]=EEPROM.read(idLoc-i);
+  }
+  idOUT[6]=0; //string term
+  return ret;
+}
+
+//*****************************************
+char *mySubStr(char *out, char* in,byte from,byte len) { char *ret=out;
+  byte p=0; 
+  for (byte i=from;i<(from+len);i++) {out[p]=in[i]; p++;}
+  out[p]=0;
+  return ret;
 }

@@ -1,23 +1,27 @@
 
 //*****************************************
-byte get_SBNum() {
-if (debugON>0) {Serial.print(F("get_SBNum: "));}
-  byte SBN; //Sensor Board Number
+byte get_SBNum() { //A6 is not able to be digital for yanking
+//Serial.print(F("get_SBNum: "));Serial.flush();
+  byte sbn; //Sensor Board Number
   byte VBS=digitalRead(pinBOOST);
-  digitalWrite(pinBOOST, HIGH); delay(10);
-  pinMode(pinSBID,OUTPUT);digitalWrite(pinSBID,HIGH);
-  pinMode(pinSBID,INPUT);digitalWrite(pinSBID,LOW);delay(5);
-  int WIGval=analogRead(pinSBID);
-  pinMode(pinSBID,OUTPUT);digitalWrite(pinSBID,LOW);
-  pinMode(pinSBID,INPUT);digitalWrite(pinSBID,LOW);delay(5);
-  int SBval=analogRead(pinSBID);
-  WIGval=abs(WIGval-SBval); 
-  if (debugON>0) {Serial.print(F("WIGval="));Serial.println(WIGval);}
-  if (WIGval>10) { SBN=0; }
-  else { SBN=byte((int(SBval/51)+1) );} //*10); }
+  if (VBS==0) {digitalWrite(pinBOOST, HIGH); delay(10);}
+  int pinRead1=analogRead(pinSBID);
+  int pinRead2;
+  int pinACC=0;
+  int pinAVG=pinRead1;
+  for (byte i=0;i<10;i++) { delay(10);
+    pinRead2=analogRead(pinSBID);
+    pinACC=pinACC+abs(pinRead1- pinRead2);
+    pinRead1=pinRead2;
+    pinAVG=int((pinAVG+pinRead2)/2);
+  }
+  
+  //Serial.print(F("pinACC="));Serial.println(pinACC);Serial.flush();
+  //Serial.print(F("pinAVG="));Serial.println(pinAVG);Serial.flush();
+  if (pinACC>10) { sbn=0; }
+  else { sbn=byte((int(pinAVG/51)+1) );} //*10); }
   if (VBS==0) {digitalWrite(pinBOOST, LOW); delay(5); }
-    if (debugON>0) {Serial.println(SBN);Serial.flush();}
-  return SBN;
+  return sbn;
 }  
   
 //*****************************************
@@ -26,14 +30,14 @@ void boost_ON() {
     pinMode(pinMOSI, OUTPUT);
     pinMode(pinSCK, OUTPUT);
     digitalWrite(pinRF95_CS,HIGH);
-    digitalWrite(pinBOOST, HIGH); delay(10); }
+    digitalWrite(pinBOOST, HIGH); delay(20); }
   //digitalWrite(pinLED, HIGH);
-  if (debugON>0) {Serial.println(F("\nboost-ON *****"));Serial.flush();}
+  //if (debugON>0) {Serial.println(F("\nboost-ON *****"));Serial.flush();}
 }
 
 //*****************************************
 void boost_OFF() {
-    if (debugON>0) {Serial.println(F("\n ****** boost-OFF"));Serial.flush();}
+    //if (debugON>0) {Serial.println(F("\n ****** boost-OFF"));Serial.flush();}
   digitalWrite(pinBOOST, LOW);
   pinMode(pinMOSI, INPUT);digitalWrite(pinMOSI,LOW);
   pinMode(pinSCK, INPUT);digitalWrite(pinSCK,LOW); 
@@ -68,14 +72,14 @@ void led_PAIR_BLINK(byte count,byte bON,byte bOFF) { //dur,rate is 10mS per
 float get_BatteryVoltage() {
   byte VBS = digitalRead(pinBOOST); if (VBS == 0) { boost_ON(); delay(50); }
   float fBV = get_Average(pinBV, 5); fBV = (fBV * mV_bit) / 1000.0;
-if (debugON>1) {Serial.print(F("BV: "));Serial.println(fBV);}
+//Serial.print(F("BV: "));Serial.println(fBV);Serial.flush();
   if (VBS == 0) { boost_OFF(); }
   return fBV;
 }
 
 //*****************************************
-void trigger_RESET(byte SBN){ //global DATA_TYPE req,
-  switch (SBN) { //some sensors need resetting after activation, like E931
+void trigger_RESET(int sbn){ //global DATA_TYPE req,
+  switch (sbn) { //some sensors need resetting after activation, like E931
     case 5 : {pinMode(pinEVENT, OUTPUT);digitalWrite(pinEVENT,LOW);delay(1);pinMode(pinEVENT, INPUT);} break;
     case 21 : {pinMode(pinEVENT, OUTPUT);digitalWrite(pinEVENT,LOW);delay(1);pinMode(pinEVENT, INPUT);} break;
   }
@@ -88,14 +92,14 @@ void trigger_RESET(byte SBN){ //global DATA_TYPE req,
 }
 
 //*******//Interrupt on D3 (interrupt #1) ******
-void IRPT_D3() {  sendDATA=1; txCOUNTER=txTIMER; 
+void IRPT_D3() {  sendWHY=1; txCOUNTER=txTIMER; 
 } 
 
 //*****************************************
 ISR(WDT_vect) { //in avr library
   txCOUNTER--;  //Serial.print(txCOUNTER);Serial.print(F(" "));Serial.flush();
   if (txCOUNTER<=0) {
-    if (HrtBtON==true) {sendDATA=2;} else {sendDATA=1;};
+    if (HrtBtON==true) {sendWHY=2;} else {sendWHY=1;};
     txCOUNTER=txTIMER;// Serial.print(F("^"));Serial.println(txCOUNTER);Serial.flush();
   }
 }
@@ -108,7 +112,7 @@ void sleepStuff(){boost_OFF(); SPI.end();}
 
 //*****************************************
 void systemSleep() {
-if (debugON>0) {Serial.print(F("Z"));}  
+//Serial.print(F("Z"));Serial.flush();
   if (digitalRead(pinBOOST)==1){boost_OFF();}
   cli();   cbi(ADCSRA, ADEN);   sbi(ACSR, ACD);
   sleep_enable();  
@@ -116,7 +120,7 @@ if (debugON>0) {Serial.print(F("Z"));}
   sei(); sleep_mode();
   //sleep_cpu();
   
-  //Z-Z-Z-Z-Z-Z-Z-Z-Z-Z-Z (until an interrupt) Z-Z-Z-Z-Z-Z-Z-Z-Z-Z-Z-Z-Z
+  //Z-Z-Z-Z-Z-Z-Z-Z-Z-Z-Z until an interrupt, then...
   sleep_disable(); 
   sbi(ADCSRA, ADEN);
 
@@ -132,4 +136,26 @@ void freeMemory() {  char top;  int fm;
   fm= __brkval ? &top - __brkval : &top - __malloc_heap_start;
 #endif  // __arm__
 Serial.print(F("Free Mem: "));Serial.println(fm);Serial.flush();
+}
+
+
+//*****************************************
+void EE_ERASE_all() {
+  Serial.print(F("EE_ERASE_all...#"));Serial.flush();
+  for (word i=0;i<1024;i++) { EEPROM.write(i,255); } //the rest get FF's
+  Serial.println(F(" ...Done#"));Serial.flush();
+}
+
+//*****************************************
+void EE_ERASE_id(byte sbn) {
+  Serial.print(F("EE_ERASE_id...#"));Serial.print(sbn);Serial.flush();
+  word idLoc=(EE_ID-(sbn*6));
+  for (byte i=0;i<6;i++) { EEPROM.write(idLoc-i,255); } //the rest get FF's
+  Serial.println(F(" ...Done#"));Serial.flush();
+}
+
+ //*****************************************
+void EE_ERASE_key() { Serial.print(F("EE_ERASE_key"));Serial.flush();
+  for (byte i=0;i<16;i++) { EEPROM.write(EE_KEY-i,255); } //the rest get FF's
+  Serial.println(F(" ...Done#"));Serial.flush();
 }

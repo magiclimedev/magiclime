@@ -39,6 +39,7 @@ extern char *__brkval;
 RH_RF95 rf95(RF95_CS, RF95_INT);
 
 #define EE_SYSBYTE  1023 //System Bits - misc flag/status/mode bits
+//may be renamed to OPTion bits byte?
 //bit#0: reset max's
 //bit#1: reset min's
 //bit#2: erase this ID (make new one) 
@@ -57,7 +58,7 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 #define EE_RefMAX2  EE_RefMIN1-2  //2 bytes 
 #define EE_RefMIN2  EE_RefMAX2-2  //2-bytes 
 #define EE_KEY      EE_RefMIN2-2  //2-bytes 
-#define EE_ID   EE_KEY-33     //up to 32 (+null) byte KEY
+#define EE_ID   EE_KEY-17     //up to 16 (+null) byte KEY
 //bottomless assignment for EE-ID's as they are 'per sensor' unique persistant ID's
 
 #define pinRF95_INT  2
@@ -94,11 +95,14 @@ byte sysBYTE; //updated with param_REQ, reset to 0 when done
 word MAX1,MIN1,MAX2,MIN2;
 word CAL_VAL; //trimpot set value
 
-byte SBN;
+volatile byte SBN; //the Sensor Board Number byte
  
 int txPWR; //1-10 default - updateable by gateway?
 int txINTERVAL; //wdt counts - 8 sec. per
 int txHRTBEAT;
+char txID[8]; //6 char + null 
+char rxKEY[18]; //16 char + null 
+char txDATA[20]; //should be plenty
 
 bool HrtBtON;
 volatile int txCOUNTER; //counter of 8-sec. Heart Beats
@@ -107,20 +111,13 @@ volatile int txTIMER; //either interval or heartbeat depending on sensor
 bool RF95_UP=false;
 
 const float mV_bit= float(3000.0 / 1024.0); //assuming 3000 mV aRef;
-float dBV; //Battery Voltage  
+float txBV; //Battery Voltage  
 
 enum TYPE {BEACON=0, EVENT_LOW, EVENT_CHNG, EVENT_RISE, EVENT_FALL, ANALOG, DIGITAL_SPI, DIGITAL_I2C} DATA_TYPE;
 
-byte sendDATA=0;
-  
-String TX_ID((char *)0); 
-String TX_KEY((char *)0); 
-String sSTR8((char *)0);
-String sSTR18((char *)0);
-String sSTR34((char *)0);
-String sMSG((char *)0);
-String sRET((char *)0);
+byte sendWHY;
 
+char dataOLD[12]; //for discriminating against redundent TX's
 byte debugON;
 
 const byte keyRSS=80;  

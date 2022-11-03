@@ -1,47 +1,191 @@
 //*****************************************
-String get_DATA(byte SBN, byte why ) {  sSTR18="NULL"; //false trigger default
+char *get_DATA(char *data, byte sbn, byte why ) { char *ret=data;
   detachInterrupt(digitalPinToInterrupt(pinEVENT));
-  if (why==2) {sSTR18="HEARTBEAT";}
+  if (why==2) {strcpy(data,"HEARTBEAT");}
   else {
-    switch (SBN) { 
-      case 0: { sSTR18="BEACON"; } break;//not used as HB fills the bill.
-      case 1: { sSTR18="PUSH";  } break;//button
-      case 2: { if (get_Tilt()==0){sSTR18="LOW";}
-                else { sSTR18="HIGH";}
-              } break; //tilt
-      case 3: { sSTR18="OPEN"; 
-        if (digitalRead(pinEVENT)==HIGH){sSTR18= "CLOSE";}  } break; //reed
-      case 4: { sSTR18="KNOCK";   } break; //
-      case 5: { sSTR18="MOTION"; } break; //
-      case 6: { sSTR18="S06";   } break; //
-      case 7: { sSTR18="S07";   } break; //
-      case 8: { sSTR18="S08";   } break; //
-      case 9: { sSTR18="S09";   } break; //
-      case 10: { sSTR18= Get_TMP36_F(); } break; //TMP36 
-      case 11: { sSTR18= Get_Light(); } break; //photocell        
-      case 12: { sSTR18= Get_TRH(); } break; //SI7020 
-      case 13: { sSTR18="S13";   } break; //
-      case 14: { sSTR18="S14";   } break; //
-      case 15: { sSTR18="S15";   } break; //
-      case 16: { sSTR18="S16";   } break; //
-      case 17: { sSTR18="S17";   } break; //
-      case 18: { sSTR18="S18";   } break; //
-      case 19: { sSTR18="S19";   } break; //
-      case 20: { sSTR18="S20";   } break; //
-      case 21: { sSTR18=Get_DOT(); } break; //
-      case 22: { sSTR18="S22";   } break; //
-      case 23: { sSTR18="S23";   } break; //
-      case 24: { sSTR18="S24";   } break; //
-      case 25: { sSTR18="S25";   } break; //
-      case 26: { sSTR18="S26";   } break; //
-      case 27: { sSTR18="S27";   } break; //
-      case 28: { sSTR18="S28";   } break; //
-      case 29: { sSTR18="S29";   } break; //
+    //Serial.print(F("get_DATA.sbn="));Serial.println(sbn);Serial.flush();
+    switch (sbn) { 
+      case 0: { strcpy(data,"BEACON");  } break;//not used as HB fills the bill.
+      case 1: { strcpy(data,"PUSH");    } break;//button
+      case 2: { get_TILT(data);         } break; //tilt
+      case 3: { get_REED(data);         } break; //reed
+      case 4: { strcpy(data,"SHAKE");   } break; //
+      case 5: { strcpy(data,"MOTION");  } break; //
+      case 6: { strcpy(data,"KNOCK");   } break; //
+      case 7: { get_2BTN(data);         } break; //2BUTTON
+      case 8: { strcpy(data,"S08");     } break; //
+      case 9: { strcpy(data,"S09");     } break; //
+      case 10: { get_TMP36_F(data);     } break; //TMP36 
+      case 11: { get_LIGHT(data);       } break; //photocell        
+      case 12: { get_TRH(data);         } break; //SI7020 
+      case 13: { strcpy(data,"S13");    } break; //
+      case 14: { strcpy(data,"S14");    } break; //
+      case 15: { strcpy(data,"S15");    } break; //
+      case 16: { strcpy(data,"S16");    } break; //
+      case 17: { strcpy(data,"S17");    } break; //
+      case 18: { strcpy(data,"S18");    } break; //
+      case 19: { strcpy(data,"S19");    } break; //
+      case 20: { strcpy(data,"S20");    } break; //
+      case 21: { get_DOT(data);         } break; //
+      case 22: { strcpy(data,"S22");    } break; //
+      case 23: { strcpy(data,"S23");    } break; //
+      case 24: { strcpy(data,"S24");    } break; //
+      case 25: { strcpy(data,"S25");    } break; //
+      case 26: { strcpy(data,"S26");    } break; //
+      case 27: { strcpy(data,"S27");    } break; //
+      case 28: { strcpy(data,"S28");    } break; //
+      case 29: { strcpy(data,"S29");    } break; //
     }
-  } //if heartbeat  
-  return sSTR18;
+  }  
+  return ret;;
 }
 
+
+//************************************************************
+char *get_2BTN(char *data) { char *ret=data; 
+//Serial.println(F("  get_2BTN... "));Serial.flush(); 
+    delay(100); //not a spike?
+    if ((digitalRead(A5)==1) && (digitalRead(A4)==1)) { strcpy(data,"PUSH-3");}
+    else if (digitalRead(A5)==1) { strcpy(data,"PUSH-1");}
+    else if (digitalRead(A4)==1) { strcpy(data,"PUSH-2");}
+    else {strcpy(data,"NULL");}
+  return ret;
+}    
+
+//************************************************************
+char *get_TILT(char *data) { char *ret=data; //uses global dataOLD
+//Serial.println(F("  get_TILT()... ")); 
+  byte smplCtr=0; byte d1=0; byte d2=0;
+  while (smplCtr<200) {//2 sec of stable
+    d1=digitalRead(A4);
+    if (d1==d2) {smplCtr++;}
+    else {smplCtr=0;}
+    d2=d1;
+    delay(10); //10 * 200 = 2 sec.
+  }
+  if ( (d1==0) && (strcmp(dataOLD,"LOW")!=0) ){ strcpy(data,"LOW"); strcpy(dataOLD,data); }
+  else if ( (d1==1) && (strcmp(dataOLD,"HIGH")!=0) ) { strcpy(data,"HIGH"); strcpy(dataOLD,data); }
+  else {strcpy(data,"NULL");}
+  return ret;
+}
+
+//************************************************************
+char *get_REED(char *data) { char *ret=data;
+//Serial.println(F("  get_REED()... ")); 
+  if (digitalRead(pinEVENT)==HIGH){strcpy(data, "CLOSE");}
+  else {strcpy(data,"OPEN");}
+  return ret;
+}
+
+//************************************************************
+char *get_DOT(char *data) { char *ret=data; //read two pins - one should be 'the one'.
+//Serial.println(F("  get_2BTN... "));Serial.flush();
+  if ((digitalRead(A4)==0)&& (digitalRead(A5)==1)){strcpy(data,"MOT-LEFT");}
+  else if ((digitalRead(A4)==1)&& (digitalRead(A5)==0)){strcpy(data,"MOT-RIGHT");}
+  else if ((digitalRead(A4)==1)&& (digitalRead(A5)==1)){strcpy(data,"MOT-BOTH");}
+  return ret;
+ } 
+ 
+//************************************************************
+char *get_TMP36_F(char *data) { char *ret=data;
+  if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(10);}
+  float TC=get_MilliVolts(0);
+  TC=(TC-500.0)/10.0; //Celcius
+  float TF=((TC * 9.0) / 5.0) + 32.0;  //Fahrenheit
+  float TP=get_Average(pinTrimPot,10);
+  float CalAdj=TF*( ((512.0-TP)/128.0 )/100.0); //+-4%
+  char n2a[10]; dtoa((TF+CalAdj),n2a,1); 
+  strcpy(data,n2a);
+  return ret;
+} 
+
+//*****************************************
+char *get_TRH(char *data) { char *ret=data;
+  if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(100);}
+  init_Si7020(); delay(10);
+  char data1[10]; char data2[10];
+  get_Si7020_F(data1);
+  get_Si7020_RH(data2);
+  strcpy(data,data1); strcat(data,","); strcat(data,data2); 
+  return ret;
+} 
+
+//***********************  
+void init_Si7020() { 
+  //Serial.println(F("init_Si7020()... "));Serial.flush();
+  if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(500);} 
+  Wire.begin();
+  byte ureg=Si7020_UREG_get();
+  ureg=(ureg & 0x7E)| 0x01;
+  Si7020_UREG_set(ureg);
+  digitalWrite(A4,LOW); digitalWrite(A5,LOW);delay(10);
+}
+
+//***********************
+byte Si7020_UREG_get(){  byte ureg;
+  Wire.beginTransmission(0x40);  Wire.write(0xE7);  Wire.endTransmission();
+  Wire.requestFrom(0x40, 1);  ureg=Wire.read();  return ureg;
+} 
+  
+//***********************
+void Si7020_UREG_set(byte val){ Wire.beginTransmission(0x40);
+  Wire.write(0xE6); Wire.write(val); Wire.endTransmission();
+}
+  
+//***********************  
+char *get_Si7020_F(char *data) { char *ret=data;
+  //Serial.println(F("get_Si7020_F()... "));Serial.flush();
+  byte msb; byte lsb; word wTMP; float fTMP; char cTMP[6];
+  Wire.beginTransmission(0x40);  Wire.write(0xF3); 
+  Wire.endTransmission();  delay(20);
+  Wire.requestFrom(0x40, 2);
+  if(Wire.available() >= 2) {    
+    msb=Wire.read(); lsb=Wire.read(); 
+    wTMP=(msb*256)+lsb; 
+    fTMP=((175.72 * float(wTMP))/ 65536.0)-46.85; //celcius
+    fTMP=((fTMP*9.0)/5.0)+32.0; //Fahrenheit
+    char n2a[10]; dtoa(int(fTMP),n2a,1); 
+    strcpy(data,n2a);
+  }
+  else {strcat(data,"---"); }
+  return ret;
+}
+
+//***********************
+char *get_Si7020_RH(char *data) { char *ret=data;
+  //Serial.print(F("get_Si7020_RH()... "));Serial.flush();
+  byte msb; byte lsb; word RH; float fRH; char cRH[4];
+  Wire.beginTransmission(0x40);  Wire.write(0xF5);
+  Wire.endTransmission();   delay(20);
+  Wire.requestFrom(0x40, 2); 
+  if(Wire.available() >= 2) {
+    msb=Wire.read(); lsb=Wire.read(); RH=(msb*256)+lsb; 
+    fRH=int(((125.0 * float(RH))/ 65536.0)-6); //RH
+    if (fRH>100) { fRH=100; } else if (fRH<0) { fRH=0; }
+    char n2a[10]; itoa(int(fRH),n2a,10); 
+    strcat(data,n2a);
+  }
+  else {strcpy(data,"---"); }
+  return ret;
+} 
+
+//***********************
+char *get_LIGHT(char *data) { char *ret=data;
+  //Serial.print(F("get_Light()... ")); Serial.flush();
+  if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(10);}
+  digitalWrite(4,HIGH); delay(1);
+  int LVL=analogRead(0); 
+  digitalWrite(4, LOW);
+  if (LVL>MAX1) {MAX1=LVL;} 
+  if (LVL<MIN1) {MIN1=LVL;}
+  int PCT;
+  if (MAX1==MIN1) { PCT=0; }
+  else { PCT= int(((long(LVL)-long(MIN1))*100)/(MAX1-MIN1));
+    if (PCT>100) {PCT=100;} else if (PCT<0) {PCT=0;} }
+  char n2a[10]; itoa(PCT,n2a,10); 
+  strcpy(data,n2a);
+  return ret;
+}
 
 //***************************************** 
 void init_E931() { //Elmos motion IC
@@ -109,124 +253,6 @@ void init_E931() { //Elmos motion IC
     delay(1); //milliSec - latch it in
 }
 
-
-//************************************************************
-byte get_Tilt() {
-if (debugON>0) {Serial.println(F("get_Tilt()... "));}  
-    word smplCtr=0; byte d1=0; byte d2=0;
-    while (smplCtr<100) {//2 sec of stable
-      d1=digitalRead(A4); delay(10);
-      d2=digitalRead(A4); delay(10);
-      if (debugON>1) {Serial.print(d1);Serial.print(d2);}
-      if (d1==d2) {smplCtr++;}
-      else {smplCtr=0;}
-    }
-    return d1;
-}    
-
-//************************************************************
-String Get_DOT() {//read two pins - one should be 'the one'.
-  sSTR18="";
-  if ((digitalRead(A4)==1)&& (digitalRead(A5)==1)){sSTR18+="MOT-MUCH";}
-  //crap - one always gets there first and resets the other. :-(
-  else if ((digitalRead(A4)==0)&& (digitalRead(A5)==1)){sSTR18+="MOT-LEFT";}
-  else if ((digitalRead(A4)==1)&& (digitalRead(A5)==0)){sSTR18+="MOT-RIGHT";}
-  return sSTR18;
- } 
- 
-//************************************************************
-String Get_TMP36_F() { 
-  if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(10);}
-  float TC=get_MilliVolts(0);
-  TC=(TC-500.0)/10.0; //Celcius
-  float TF=((TC * 9.0) / 5.0) + 32.0;  //Fahrenheit
-  float TP=get_Average(pinTrimPot,10);
-  float CalAdj=TF*( ((512.0-TP)/128.0 )/100.0); //+-4%
-  return String(TF+CalAdj,1);
-} 
-
-//*****************************************
-String Get_TRH(){ 
-  if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(100);}
-  init_Si7020(); delay(10);
-  sSTR18=Get_Si7020_F(); sSTR18+=",";
-  sSTR18+=Get_Si7020_RH();
-  return sSTR18;
-} 
-
-//***********************  
-void init_Si7020() {
-    if (debugON>0) {Serial.println(F("init_Si7020()... "));}
-  if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(500);} 
-  Wire.begin();
-  byte ureg=Get_Si7020_UREG();
-  ureg=(ureg & 0x7E)| 0x01;
-  Set_Si7020_UREG(ureg);
-  digitalWrite(A4,LOW); digitalWrite(A5,LOW);delay(10);
-}
-
-//***********************
-byte Get_Si7020_UREG(){  byte ureg;
-  Wire.beginTransmission(0x40);  Wire.write(0xE7);  Wire.endTransmission();
-  Wire.requestFrom(0x40, 1);  ureg=Wire.read();  return ureg;
-} 
-  
-//***********************
-void Set_Si7020_UREG(byte val){ Wire.beginTransmission(0x40);
-  Wire.write(0xE6); Wire.write(val); Wire.endTransmission();
-}
-  
-//***********************  
-String Get_Si7020_F(){  
-    if (debugON>0) {Serial.println(F("Get_Si7020_F()... ")); }
-  byte msb; byte lsb; word wTMP; float fTMP; char cTMP[6];
-  sSTR8="999";
-  Wire.beginTransmission(0x40);  Wire.write(0xF3); 
-  Wire.endTransmission();  delay(20);
-  Wire.requestFrom(0x40, 2);
-  if(Wire.available() >= 2) {    
-    msb=Wire.read(); lsb=Wire.read(); 
-    wTMP=(msb*256)+lsb; 
-    fTMP=((175.72 * float(wTMP))/ 65536.0)-46.85; //celcius
-    fTMP=((fTMP*9.0)/5.0)+32.0; //Fahrenheit
-    sSTR8=String(fTMP,1);
-  }
-  return sSTR8;
-}
-
-//***********************
-String Get_Si7020_RH(){
-    if (debugON>0) {Serial.print(F("Get_Si7020_RH()... "));}
-  byte msb; byte lsb; word RH; float fRH; char cRH[4];
-  sSTR8="999";
-  Wire.beginTransmission(0x40);  Wire.write(0xF5);
-  Wire.endTransmission();   delay(20);
-  Wire.requestFrom(0x40, 2); 
-  if(Wire.available() >= 2) {
-    msb=Wire.read(); lsb=Wire.read(); RH=(msb*256)+lsb; 
-    fRH=int(((125.0 * float(RH))/ 65536.0)-6); //RH
-    if (fRH>100) { fRH=100; } else if (fRH<0) { fRH=0; }
-    sSTR8=String(int(fRH));
-  }
-  return sSTR8;
-} 
-
-//***********************
-String Get_Light() {
-    if (debugON>0) {Serial.print(F("Get_Light()... ")); }
-  if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(10);}
-  digitalWrite(4,HIGH); delay(1);
-  int LVL=analogRead(0); 
-  digitalWrite(4, LOW);
-  if (LVL>MAX1) {MAX1=LVL;} 
-  if (LVL<MIN1) {MIN1=LVL;}
-  int PCT;
-  if (MAX1==MIN1) { PCT=0; }
-  else { PCT= int(((long(LVL)-long(MIN1))*100)/(MAX1-MIN1));
-    if (PCT>100) {PCT=100;} else if (PCT<0) {PCT=0;} }
-  return String(PCT); 
-}
-
 //*****************************************
 byte get_PIN(byte pn,int sn) {  //pin number, sample number
   byte acc=0; byte mid=sn/2; 
@@ -260,3 +286,20 @@ float get_Average (byte pinANA, unsigned int SampNum) {
   float fAvg = float(float(Accum) / float(SampNum));
   return fAvg;
 }
+
+//*****************************************
+char* dtoa(double dN, char *cMJA, int iP) {
+  //arguments... 
+  // float-double value, char array to fill, precision (4 is .xxxx)
+  //and... it rounds last digit up/down!
+  char *ret = cMJA; long lP=1; byte bW=iP;
+  while (bW>0) { lP=lP*10;  bW--;  }
+  long lL = long(dN); double dD=(dN-double(lL))* double(lP); 
+  if (dN>=0) { dD=(dD + 0.5);  } else { dD=(dD-0.5); }
+  long lR=abs(long(dD));  lL=abs(lL);  
+  if (lR==lP) { lL=lL+1;  lR=0;  }
+  if ((dN<0) & ((lR+lL)>0)) { *cMJA++ = '-';  } 
+  ltoa(lL, cMJA, 10);
+  if (iP>0) { while (*cMJA != '\0') { cMJA++; } *cMJA++ = '.'; lP=10; 
+  while (iP>1) { if (lR< lP) { *cMJA='0'; cMJA++; } lP=lP*10;  iP--; }
+  ltoa(lR, cMJA, 10); }  return ret; }
