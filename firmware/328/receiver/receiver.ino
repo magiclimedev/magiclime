@@ -1,41 +1,3 @@
-// 
-// the psuedo code...
-// assign fixed-length static variables for STRING stuff to avoid heap-conflicts
-// assign sensor names to sensor number as constant char arrays
-// setup: spit out program version in json format... {\"source\":\"rx\",\"info\":\"ver=receiver\"}
-//        initialize the RF95 module
-//        get key from eeprom or make one if not there
-// loop:  look at RX buffer
-//        look at PC buffer
-// then...
-//  if RX and RSS > 100?: possible pairing situation
-//    decode using key = 'thisisamagiclime' (yes, 16 chrs.)
-//      yes? then you also received a temporary key.
-//      use it to send this receivers' private key back.
-//        (the sensor then stashes it in eeprom to use henceforth - and 'pairing' is now done.)
-//      save the sensor ID in eeprom at top of a block-O-bytes (pending action byte and parameter settings)
-//        (update with new parameters? or fulfill a request for parameters from the sensor, or forced update) 
-//  otherwise...    
-//   decode using key:
-//     is it a data packet - recognizable by delimiters in expected places?
-//        then 'jsonize' the data, send to PC.
-//        and then... see if there is a pending action for that ID - do it.
-//     is it a request for parameters? ( first characters == "PUR:" Parameter Update Request)
-//        get them from sensor ID's block in eeprom - send back.
-//     is it a general 'INFO' message? (info, not sure exactly what, but want to have it be possible)
-//        send json string to PC \"source\":\"tx\",\"info\":\"whatever...\"}"
-//
-//    if PC buffer has data...
-//      match possible commands...
-//      p -> format p:ididid:iii:hhh:p:s , data interval, heartbeat (as measured by watchdog timeouts), power, system byte.
-//  !! OR !!....
-//      pu:ididid:di:xxx (Parameter Update:6chrid:Data Interval: xxx=ascii number 000-255 'ex.002'
-//      pu:ididid:hb:xxx  (HeartBeat: xxx= ascii number 000-255
-//      pu:ididid:pw:x  (tx PoWer setting : ascii 0-9
-//      pu:ididid:sb:xx (System Bits: ascii hex value 00-FF
-//      set pending action bit in pending action byte for that TX ID.
-// oh - system byte... flag bits for ???. usually reset upon completion of whatever task got flagged to run.
-//      d -> change the debugON setting
 
 const static char VER[] = "receiver";
 
@@ -76,18 +38,6 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 #define EE_PARAM_POWER    EE_PARAM_HRTBEAT-1  //1-10  (2-20dB in sensor).
 #define EE_PARAM_SYSBYTE  EE_PARAM_POWER-1  // + this one = 10 bytes per ID,
 // PARAM ID things go all the way down to 0
- 
-//the sending of parameters is an 'upon request' thing.
-//'request from sensor' format, 'IDIDID:param0' (where IDIDID is sensor ID).
-
-//To set parameter values in EEPROM (so they are ready-to-go upon request),
-// send this program a 'p:IDIDID:iii:hhh:p:s', where...
-// 'IDIDID' is the sensor ID,
-// 'iii' is data Interval count (16 sec. per, 255 max), (('0' might make it TX every 8 sec.?))
-// 'hhh' is Heartbeat interval count (64 sec. per, 255 max),
-// 'p' is TX Power (0-9), (in sensor -> +1=0-10, x2-> 2-20)
-// 's' is the 'System byte' - various flag bits, the exact meanings of which are tbd.
-//  things like 'reset max, reset min, reset avg, calibrate now, erase eeprom' etc.
 
 word WDTcounter=10; //start out flashing
 
@@ -130,19 +80,11 @@ char rxBUF[64]; //for the rx buf
 byte rxLEN; //for the length
 char rxKEY[18]; //16 char + null 
 
-byte debugON;
 byte keyRSS=80;
 byte RSSnow;
  
 //**********************************************************************
-void setup() {  debugON=0;//3;//0;//1;
-  //pinMode(LED_red,OUTPUT);
- // digitalWrite(LED_red,LOW); //on
- // pinMode(LED_green,OUTPUT);
- // digitalWrite(LED_green,HIGH); //off
-  //EE_ERASE_all();
-  
-  
+void setup() { 
   while (!Serial);
   Serial.begin(57600);
   showVER();
@@ -172,29 +114,17 @@ void setup() {  debugON=0;//3;//0;//1;
   }
   //showINFO(rxKEY);
   
-  /*/watchdog timer - 1 sec
-  cli(); wdt_reset();
-  WDTCSR |= B00 011000; //bits 3,4 set up for clocking in timer
-  WDTCSR =  B01 1--001; //9=8sec
-  WDTCSR =  B01 0--110; //6=1sec
-  sei(); //watchdog timer - 1 sec
-  /*/
-  
-} // *************************************End Of SETUP *****
-// *********************************************************
+} // End Of SETUP ******************
 
-// *********************************************************
 void loop(){ 
   RSSnow=rxBUF_CHECK();
   if (RSSnow>0) { rxBUF_PROCESS(RSSnow); }
   pcBUF_CHECK();
-} // ************************************* End Of LOOP *****
-// *********************************************************
+} //  End Of LOOP 
 
-//*********  get RF95 buffer - return rss>0 if message  ****************************
+
+// get RF95 buffer - return rss>0 if message  ***********
 byte rxBUF_CHECK() { //********* get RF Messages - return RSS=0 for no rx
-   //max of 4 in a row, then bail out and process them
-  //otherwise, bail out when NOT rf95.available
   byte rss=0;
   if (rf95.available()) { // Should be a message for us now 
     uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
@@ -202,7 +132,7 @@ byte rxBUF_CHECK() { //********* get RF Messages - return RSS=0 for no rx
     if (rf95.recv(buf, &len)) {
       memcpy(rxBUF,buf,len);
       rxLEN=len;
-      rss=rf95.lastRssi()+150;
+      rss=rf95.lastRssi()+150; // Yeah, a little high, but I saw -1 at 140 once. 
     }
   }
   return rss;
@@ -210,35 +140,26 @@ byte rxBUF_CHECK() { //********* get RF Messages - return RSS=0 for no rx
 
 // *********************************************************
 void rxBUF_PROCESS(byte rss) { bool flgDONE=false;
-  //Serial.print(F("\n...rxBUF_PROCESS: rss="));  Serial.println(rss); Serial.flush();
   char msg[64]; 
   if (rss>=keyRSS) { //first requirement for pairing
     char pairKEY[18]; strcpy(pairKEY,"thisisamagiclime");
     pair_VALIDATE(msg,rxBUF,rxLEN,pairKEY); //!ididid!txkey.. --> ididid:keykeykey
-    //Serial.print(F("msg: ")); Serial.println(msg); Serial.flush();
     if ((msg[0]!=0) && (msg[6]==':')) {
-      //Serial.println(F("pairing with txKEY"));  Serial.flush(); 
       char txid[8]; char txkey[18];
       mySubStr(txid,msg,0,6);
-      //Serial.print(F("txid="));Serial.println(txid);Serial.flush();
       mySubStr(txkey,msg,7,strlen(msg)-7);
-      //Serial.print(F("txkey="));Serial.println(txkey);Serial.flush();
       key_SEND(txid,txkey,rxKEY);
-      flgDONE=true; //exit (0); //****** no need to go further if it was a pairing
+      flgDONE=true;
     }
   } 
     //**************************************************************
   if (flgDONE==false) { //for pur, data, info
-    //Serial.println(F("doing msg with rxKEY")); Serial.flush();
-    //Serial.println("--"); print_HEX(rxBUF,rxLEN); 
-    msg_GET(msg,rxBUF,rxLEN,rxKEY); //decode using rx KEY
+    rx_DECODE_0(msg,rxBUF,rxLEN,rxKEY); //decode using rx KEY
     if (msg[0]!=0) { //is it 'PUR'? Or DATA? or INFO?
       byte msgLEN=strlen(msg);
-      //Serial.print(F("msgGET: ")); Serial.println(msg);Serial.flush();
       char pur[32];
       purFIND(pur,msg); //strips off the 'PUR:', is "" if not 'PUR'. // RX expects PUR:IDxxxx:PRM0
       if (pur[0]!=0) { //is this a request for parameters?
-        //Serial.print(F("purFOUND: ")); Serial.println(pur);Serial.flush(); 
         flgDONE=pur_REQ_CHECK(pur); //true is 'params passed - all done'
       }
       
@@ -252,7 +173,7 @@ void rxBUF_PROCESS(byte rss) { bool flgDONE=false;
           byte jpx; //json Pair # indeX pointer
           switch (protocol) { 
             case '1': {   pNum=5; // 5 pairs in this protocol
-              //compose rss pair and first-half of data pairs, 
+              //compose rss and first-half of data pairs, 
               strcpy(jp[0],"\"rss\":"); //no first comma,no quotes for numbers
                 char chr[5]; itoa(rss,chr,10);
               strcat(jp[0],chr); //integer
@@ -266,7 +187,7 @@ void rxBUF_PROCESS(byte rss) { bool flgDONE=false;
               byte psx=0; //ps's indeX
               jpx=1; //json Pair # indeX, '0' is rss - already done.  
               while (bx<=msgLEN) {
-                if ((msg[bx]=='|')||(bx==(msgLEN))) { // hit next delim?, got a pair
+                if ((msg[bx]=='|')||(bx==(msgLEN))) { // hit next delim? - got a pair
                   ps[psx]=0; //null term
                   switch (jpx) {
                     case 1: {strcat(jp[1],ps); } break; 
@@ -294,10 +215,7 @@ void rxBUF_PROCESS(byte rss) { bool flgDONE=false;
       } //flgDONE=false (data,info)
       
       if (flgDONE==false) { //Serial.println(F("looking for INFO")); 
-        //byte lenInfo = sPUR.length;
-        //json_PRINTinfo(sInfo,lenInfo); 
       } //flgDONE=false (INFO)
-      
     } //end of rxDECODED OK msg[0]!=0
   }//flgDONE=false (pur,data,info)
 } //end of rxBUF_PROCESS() 
@@ -319,18 +237,13 @@ void json_PRINTinfo(char info[32], byte iNum) {
 
 //*****************************************pair_VALIDATE(msg,rxBUF,rxLEN,pairKEY);
 char *pair_VALIDATE(char *idkey, char *rxbuf, byte rxlen, char *pkey) { char *ret=idkey; 
-  //Serial.println(F("...pair_VALIDATE..."));Serial.flush();
   idkey[0]=0; //fail flag
   char msg[64]; char txid[8]; char txkey[18];
-  //print_CHR(pkey,strlen(pkey));
   rx_DECODE_0(msg,rxbuf,rxlen,pkey);
   byte msgLEN=strlen(msg);
-  //print_CHR(msg,msgLEN);
   if ((msg[0]=='!') && (msg[7]=='!')) {
     mySubStr(txid,msg,1,6);
-    //Serial.print(F("txid="));Serial.println(txid);Serial.flush();
     mySubStr(txkey,msg,8,msgLEN-8);
-    //Serial.print(F("txkey="));Serial.println(txkey);Serial.flush();
     strcpy(idkey,txid); strcat(idkey,":"); strcat(idkey,txkey);
   }
   return ret;
@@ -338,7 +251,6 @@ char *pair_VALIDATE(char *idkey, char *rxbuf, byte rxlen, char *pkey) { char *re
   
 //*****************************************
 char *purFIND(char *purOUT, char *purIN) {char *ret=purOUT; // RX expects PUR:IDxxxx:PRM0
-  //Serial.println(F("...purFIND..."));Serial.flush();
   purOUT[0]=0; //default failflag
   char pfx[32];
   mySubStr(pfx,purIN,0,4);
@@ -355,7 +267,6 @@ char *purFIND(char *purOUT, char *purIN) {char *ret=purOUT; // RX expects PUR:ID
 // no-send params using eeprom address provided
 
 boolean pur_REQ_CHECK(char *purTXID) { bool ret=false; //looking for txidxx:PRM0
-  //Serial.println(F("...pur_REQ_CHECK..."));Serial.flush();
   char pur[8];
   mySubStr(pur,purTXID,6,strlen(purTXID));
  
@@ -372,8 +283,7 @@ boolean pur_REQ_CHECK(char *purTXID) { bool ret=false; //looking for txidxx:PRM0
 //char parse out ID, look for match in eeprom,
 
 //*****************************************
-void param0_SEND(word eePrmID) { //get TXpower and interval from EEPROM per this ID
-  //Serial.print(F("param0_SEND from: "));Serial.println(eePrmID);Serial.flush(); 
+void param0_SEND(word eePrmID) { 
   char param[15]; byte pp=0;  //Param Pointer  //got 6 matches
   for (word eeID=eePrmID;eeID>(eePrmID-6);eeID--) { 
     param[eePrmID-eeID]=EEPROM.read(eeID); 
@@ -387,13 +297,11 @@ void param0_SEND(word eePrmID) { //get TXpower and interval from EEPROM per this
   param[12]=':';
   param[13]=EEPROM.read(eePrmID-9); //13th, System byte? might be zero
   //ididid:i:h:p:s
-  //print_HEX((char*)param,14);
   msg_SEND(param,14,rxKEY,2);   //
 }
 
 //*****************************************
 word param_FIND_ID(char *pID) { word eeLoc=EE_PARAM_ID;
-  //Serial.print(F("...param_FIND_ID: ")); Serial.println(pID);Serial.flush();
   byte eeByte=EEPROM.read(eeLoc); byte eep;
 
   while ((eeByte!=255)&&(eeLoc>20)) {
@@ -411,7 +319,6 @@ word param_FIND_ID(char *pID) { word eeLoc=EE_PARAM_ID;
 
 //*****************************************
 void param_SET_DEFAULT(char *id,word eeLoc) {//ID,Interval,Power
-  //Serial.println(F("param_SET_DEFAULT... "));Serial.flush(); 
   byte bp;  
   for(bp=0;bp<6;bp++) { EEPROM.write(eeLoc-bp,id[bp]); } //0-5
     EEPROM.write(eeLoc-bp,4); bp++; //interval sec/16         //6
@@ -423,7 +330,6 @@ void param_SET_DEFAULT(char *id,word eeLoc) {//ID,Interval,Power
 //*****************************************
 //uses key in idkey to encode response containing rxKEY
 void key_SEND(char *txid, char *txkey, char *rxkey) {
-  //Serial.println(F("...key_SEND... "));Serial.flush(); 
   char txBUF[48]; 
   strcpy(txBUF,txid); strcat(txBUF,":"); strcat(txBUF,rxkey); //ididid:rxkeyrxkeyrxkeyr
   byte txLEN=strlen(txBUF);
@@ -434,28 +340,16 @@ void key_SEND(char *txid, char *txkey, char *rxkey) {
 
 //*****************************************
 void msg_SEND(char* msgIN, byte msgLEN, char *msgKEY, byte txPWR) { //txPWR is 1-10
-  //Serial.print(F("...msg_SENDing... "));Serial.println(msgIN);Serial.flush();
-  //Serial.print(F("with key: "));Serial.println(msgKEY);Serial.flush();
   char txBUF[64];
-  tx_ENCODE(txBUF,msgIN,msgLEN,msgKEY);
+  tx_ENCODE_0(txBUF,msgIN,msgLEN,msgKEY);
   rf95.setTxPower((txPWR*2), false); // from 1-10 to 2-20dB
   rf95.send(txBUF,msgLEN);//+1); //rf95 need msgLen to be one more ???
   rf95.waitPacketSent();
-  //Serial.print(F("msg_SENT: ")); print_HEX(txBUF,msgLEN);
-}
-
-//***********************
-//decoded and checksum-tested 
-char *msg_GET(char *msgOUT,char *bufIN, byte bufLEN,char *key) { char *ret=msgOUT;
-  //Serial.println(F("...msg_GET... "));Serial.flush();
-  rx_DECODE_0(msgOUT,bufIN,bufLEN,key);
-  //rx_DECODE_SP(msgOUT,bufIN,bufLEN,key);
-  return ret; //ret;
 }
 
 //*****************************************
 //encode is just before sending, so is non-string char array for rf95.send
-char *tx_ENCODE(char *msgOUT, char *msgIN, byte lenMSG, char *key) { char *ret=msgOUT;
+char *tx_ENCODE_0(char *msgOUT, char *msgIN, byte lenMSG, char *key) { char *ret=msgOUT;
   //Serial.print(F("...encode with key: "));Serial.println(key); Serial.flush();
   byte i; byte k=0;
   byte keyLEN=strlen(key);
@@ -477,82 +371,6 @@ char* rx_DECODE_0(char *msgOUT, char *rxBUF, byte rxLEN, char *key) { char *ret=
     k++;
   }
   msgOUT[i]=0;
-  return ret;
-}
-
-//*** agh-gh-gh! so many lines! **********
-//** but bailing out fast is important - not sure how compiler does - if ("xxxx" != "yyyy" ) 
-char* rx_DECODE_SP(char *msgOUT, char *rxBUF, byte rxLEN, char *key) { char *ret=msgOUT;
-  //Serial.print(F("...decode with key: "));Serial.println(key); Serial.flush();
-  msgOUT[0]=0; //fail flag
-  bool flgDONE=false;
-  static char cOUT[64]; cOUT[0]=0;  //prep for fail
-  byte keyLEN=strlen(key); 
-  byte sp;  //Starting Point  
-  //is it a data packet?
-  for (sp=0;sp<8;sp++) { //8 possible starting points - find it
-    // validate first 9 bytes, '1|ididid|'
-    //yes - could do'&' of all elements but I don't know that the compiler doesn't take the
-    //time to do them all before returning 'false' - this way does bail asap.
-    byte tst=byte((byte(rxBUF[1])^byte(key[sp+1])));         // looking for first delim '|' at 1
-    if (tst=='|') {                                   // (fast first test)
-      tst=byte((byte(rxBUF[8])^byte(key[sp+8])));       // looking for last delim '|'
-      if (tst=='|') {                                 // (another fast test)    
-        tst=byte((byte(rxBUF[0])^byte(key[sp+0])));     // protocol byte within range?
-        if ( (tst>='0') || tst<='9') {                // a little longer test
-          byte ix;                                    // 3 passings - maybe skip the next?
-          for (ix=2;ix<8;ix++) {                      // id chars 2,3,4,5,6,7 in range?
-            tst=byte((byte(rxBUF[ix])^byte(key[sp+ix])));
-            if ( !((tst>='2') && (tst<='9')) && !((tst>='A') && (tst<='Z')) ) { break;} }
-          if (ix==8) { flgDONE=true; }
-    } } }
-  } //for sp
-  
-  //not Data? Is it PUR - Parameter Update Request?...
-  if (flgDONE==false) {
-    for (sp=0;sp<8;sp++) { //8 possible starting points - find it
-      byte tst=byte((byte(rxBUF[0])^byte(key[sp])));
-      if (tst=='P') {
-        tst=byte((byte(rxBUF[1])^byte(key[sp+1])));
-        if (tst=='U') {
-          tst=byte((byte(rxBUF[2])^byte(key[sp+2])));
-          if (tst=='R') {
-            tst=byte((byte(rxBUF[3])^byte(key[sp+3])));
-              if (tst==':') { flgDONE=true; }
-    } } } } 
-  }
-//not data and not PRM? Maybe it's INFO?
-  if (flgDONE==false) {
-    for (sp=0;sp<8;sp++) { //8 possible starting points - find it
-      byte tst=byte((byte(rxBUF[0])^byte(key[sp])));
-      if (tst=='I') {
-        tst=byte((byte(rxBUF[1])^byte(key[sp+1])));
-        if (tst=='N') {
-          tst=byte((byte(rxBUF[2])^byte(key[sp+2])));
-          if (tst=='F') {
-            tst=byte((byte(rxBUF[3])^byte(key[sp+3])));
-            if (tst=='O') {
-              tst=byte((byte(rxBUF[4])^byte(key[sp+4])));
-              if (tst==':') { flgDONE=true; }
-     } } } } }
-  }  
-//not data? not PRM? not INFO? is this the key exchange?
-  if (flgDONE==false) {
-    for (sp=0;sp<8;sp++) { //8 possible starting points - find it
-      byte tst1=byte((byte(rxBUF[0])^byte(key[sp+0])));
-      byte tst2=byte((byte(rxBUF[7])^byte(key[sp+7])));
-      if((tst1=='!') && (tst2=='!')) { flgDONE=true; }
-    }
-  }
-  if (flgDONE==true) {
-    byte kx=sp;  //this 'sp' is it!
-    byte i;
-    for (i=0;i<rxLEN;i++) {
-      if (kx==keyLEN) {kx=0;}
-      msgOUT[i]=byte((byte(rxBUF[i])^byte(key[kx]))); 
-      kx++; }
-    msgOUT[i]=0; //null term
-  }    
   return ret;
 }
 
@@ -617,8 +435,6 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
     PCbuf[c_pos] = 0; // mark end-of-string ...
     //String PCmsg=String(PCbuf);
     if ( PCbuf[0] == '?') { showVER(); }
-    if ( PCbuf[0] == 'd') { debugON=PCbuf[1]-'0';
-                            Serial.print(F("debugON=")); Serial.println(debugON); }
     if (( PCbuf[0]=='k')&&(PCbuf[1]=='s')&&(PCbuf[2]=='s')) { //Key Signal Strength
       byte i=3; char kss[4];  //get kss value at PCbuf[3,4 and maybe 5]
       while ((PCbuf[i]!=0) && (i<6)) {kss[i-3]=PCbuf[i]; i++;}
@@ -631,41 +447,38 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
     
     if (( PCbuf[0] == 'p')&&(PCbuf[1] == ':')) { //Parameter stuff to follow
       //Serial.print(F("p:")); print_CHR(PCbuf,c_pos);}
-      byte bp=0; byte cp[4]; byte cpp=0; //next colon positions for substr
+      byte bp=0; byte cp[4]; byte len[4]; byte cpp=0; //Colon Positions
       while (PCbuf[bp]!=0) {//format p:ididid:iii:hhh:p:s c[0],c[1],c[2],c[3],c[4]
         if (PCbuf[bp]==':') {cp[cpp]=bp; cpp++;} // log postion of all ':'s
-        bp++; //and leave with length
+        bp++; //and leave with cpp=length?
       } //cp[0,1,2,3] = postions of delimiters between the four things, bp=length of PCbuf
-      byte len1=(cp[1]-cp[0])-1;  //ID, 6 char
-      byte len2=(cp[2]-cp[1])-1;  //data interval, 1 byte
-      byte len3=(cp[3]-cp[2])-1;  //heartbeat, 1 byte
-      byte len4=(cp[4]-cp[3])-1;  //power level, 0-9, 1 byte   
-      byte len5=(bp-cp[4])-1;     //system byte flag bits, ascii hex text 00-FF
-      if (cp[1]==8) {//validation of format p:ididid:iii:hhh:p:ss       //strncpy(char* dest, char* src, int n)
-//char p_pwr[3]; p_pwr=PCbuf.substr(9,(bpp+1));
-        char p_id[8];memcpy(p_id,&PCbuf[cp[0]+1],len1); p_id[len1]=0; //ID, 6 char
-        char p_int[5];memcpy(p_int,&PCbuf[cp[1]+1],len2); p_int[len2]=0; //data interval, 1 byte
-        char p_hb[5];memcpy(p_hb,&PCbuf[cp[2]+1],len3); p_hb[len3]=0; //heartbeat, 1 byte        
-        char p_pwr[3];memcpy(p_pwr,&PCbuf[cp[3]+1],len4);  p_pwr[len4]=0;   //power level, 0-9, 1 byte
-        char p_sys[3];memcpy(p_sys,&PCbuf[cp[4]+1],len5);  p_sys[len5]=0;   //system byte flag bits, ascii hex text 00-FF
-        byte bINT=byte(atoi(p_int));
-        byte bHB=byte(atoi(p_hb));
-        byte bPWR=byte(atoi(p_pwr)); 
-        byte bSYS=byte(strtol(p_sys,NULL,16)); //2 char hex string to long
-        //Serial.print(F("p_id:"));Serial.print(p_id); //0-5
-        //Serial.print(F(", bINT:"));Serial.print(bINT); //6,
-        //Serial.print(F(", bHB:"));Serial.print(bHB); //7,
-        //Serial.print(F(", bPWR:"));Serial.print(bPWR); //8
-        //Serial.print(F(", bSYS:"));Serial.println(bSYS); //9
-        //put it eeprom...
-        word eeADR=param_FIND_ID(p_id); //find existing or next avail location
-        byte eePtr;
-        for (eePtr=0;eePtr<6;eePtr++) {EEPROM.write(eeADR-eePtr,p_id[eePtr]);}
-        EEPROM.write(eeADR-eePtr,bINT); eePtr++;
-        EEPROM.write(eeADR-eePtr,bHB); eePtr++;        
-        EEPROM.write(eeADR-eePtr,bPWR); eePtr++;
-        EEPROM.write(eeADR-eePtr,bSYS);
-      }
+      len[1]=(cp[1]-cp[0])-1;  //ID, 6 char
+      len[2]=(cp[2]-cp[1])-1;  //data interval, 1 byte
+      len[3]=(cp[3]-cp[2])-1;  //heartbeat, 1 byte
+      len[4]=(cp[4]-cp[3])-1;  //power level, 0-9, 1 byte   
+      len[5]=(bp-cp[4])-1;     //system byte flag bits, ascii hex text 00-FF
+      char p_id[8];memcpy(p_id,&PCbuf[cp[0]+1],len[1]); p_id[len[1]]=0; //ID, 6 char
+      char p_int[5];memcpy(p_int,&PCbuf[cp[1]+1],len[2]); p_int[len[2]]=0; //data interval, 1 byte
+      char p_hb[5];memcpy(p_hb,&PCbuf[cp[2]+1],len[3]); p_hb[len[3]]=0; //heartbeat, 1 byte        
+      char p_pwr[3];memcpy(p_pwr,&PCbuf[cp[3]+1],len[4]);  p_pwr[len[4]]=0;   //power level, 0-9, 1 byte
+      char p_sys[3];memcpy(p_sys,&PCbuf[cp[4]+1],len[5]);  p_sys[len[5]]=0;   //system byte flag bits, ascii hex text 00-FF
+      byte bINT=byte(atoi(p_int));
+      byte bHB=byte(atoi(p_hb));
+      byte bPWR=byte(atoi(p_pwr)); 
+      byte bSYS=byte(strtol(p_sys,NULL,16)); //2 char hex string -> long
+      //Serial.print(F("p_id:"));Serial.print(p_id); //0-5
+      //Serial.print(F(", bINT:"));Serial.print(bINT); //6,
+      //Serial.print(F(", bHB:"));Serial.print(bHB); //7,
+      //Serial.print(F(", bPWR:"));Serial.print(bPWR); //8
+      //Serial.print(F(", bSYS:"));Serial.println(bSYS); //9
+      //put it eeprom...
+      word eeADR=param_FIND_ID(p_id); //find existing or next avail location
+      byte eePtr;
+      for (eePtr=0;eePtr<6;eePtr++) {EEPROM.write(eeADR-eePtr,p_id[eePtr]);}
+      EEPROM.write(eeADR-eePtr,bINT); eePtr++;
+      EEPROM.write(eeADR-eePtr,bHB); eePtr++;        
+      EEPROM.write(eeADR-eePtr,bPWR); eePtr++;
+      EEPROM.write(eeADR-eePtr,bSYS);
     } //if 'p'      
   } //if Serial.aval
 } //End Of CheckPCbuf
@@ -701,11 +514,7 @@ void showVER() {
 
 //*****************************************
 ISR(WDT_vect) { //in avr library
-  WDTcounter++; 
-  //if (WDTcounter>10) {
-  //  if (digitalRead(LED_green)==1) {digitalWrite(LED_green,LOW);} //ON
-  //  else {digitalWrite(LED_green,HIGH);} //OFF
-  //}
+
 }
 
 //*****************************************
@@ -715,16 +524,3 @@ void EE_ERASE_all() {
   Serial.println(F(" ...Done#"));Serial.flush();
 }
   
-//*****************************************
-void print_HEX(char *buf,byte len) { byte i;
-  Serial.print(len);Serial.print(F(", "));
-  for (i=0;i<(len-1);i++) {Serial.print(byte(buf[i]),HEX);Serial.print(F(" "));}
-  Serial.println(byte(buf[i]),HEX); Serial.flush();
-}
-
-//*****************************************
-void print_CHR(char *buf,byte len) { byte i;
-  Serial.print(len);Serial.print(F(": "));
-  for (i=0;i<(len-1);i++) {Serial.print( buf[i]);}
-  Serial.println(buf[i]); Serial.flush();
-}
