@@ -38,7 +38,6 @@
 //      d -> change the debugON setting
 //      ! -> I don't remember why, but it turns the LED on for a watchdog period.
 
-
 const static char VER[] = "receiver";
 
 #include <EEPROM.h>
@@ -70,12 +69,14 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 //bit#5: 
 //bit#6: 
 //bit#7:
-#define EE_KEY            EE_SYSBYTE-1   //1 byte SEQNUM
-#define EE_PARAM_ID       EE_KEY-33     //KEY up to 32 (+null)
+#define EE_KEY_RSS        EE_SYSBYTE-1 // rss for key exchange
+#define EE_KEY            EE_KEY_RSS-1   
+#define EE_PARAM_ID       EE_KEY-18     //KEY up to 16 (+null+1 more)
 #define EE_PARAM_INTERVAL EE_PARAM_ID-6 //'seconds/16' 255=68 min.
 #define EE_PARAM_HRTBEAT  EE_INTERVAL-1 //'seconds/64' 255=272 min.
 #define EE_PARAM_POWER    EE_PARAM_HRTBEAT-1  //1-10  (2-20dB in sensor).
 #define EE_PARAM_SYSBYTE  EE_PARAM_POWER-1  // + this one = 10 bytes per ID,
+
  
 //the sending of parameters is an 'upon request' thing.
 //'request from sensor' format, 'IDIDID:param0' (where IDIDID is sensor ID).
@@ -90,8 +91,8 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 //  things like 'reset max, reset min, reset avg, calibrate now, erase eeprom' etc.
 
 word WDTcounter=10; //start out flashing
-byte LED_green=16; //'A2'
-byte LED_red=17; //'A3'
+//byte LED_green=16; //'A2' ?? what is this??
+//byte LED_red=17; //'A3' ?? and this??
 
 boolean flgShowChar;
 boolean flgShowHex;
@@ -104,7 +105,7 @@ const char T3[] PROGMEM = "Reed";
 const char T4[] PROGMEM = "Shake";
 const char T5[] PROGMEM = "Motion";
 const char T6[] PROGMEM = "Knock";
-const char T7[] PROGMEM = "Sensor7";
+const char T7[] PROGMEM = "2Button";
 const char T8[] PROGMEM = "Sensor8"; 
 const char T9[] PROGMEM = "Sensor9"; 
 const char T10[] PROGMEM = "Temp"; 
@@ -141,18 +142,19 @@ String sRET((char *)0);
 String sPUR((char *)0); 
 
 byte debugON;
-const byte keyRSS=100;
+byte keyRSS=80;
  
 //**********************************************************************
-void setup() {  debugON=0;//1;
-  pinMode(LED_red,OUTPUT);
-  digitalWrite(LED_red,LOW); //on
-  pinMode(LED_green,OUTPUT);
-  digitalWrite(LED_green,HIGH); //off
+void setup() {  debugON=0;//3;//0;//1;
+  //pinMode(LED_red,OUTPUT);
+ // digitalWrite(LED_red,LOW); //on
+ // pinMode(LED_green,OUTPUT);
+ // digitalWrite(LED_green,HIGH); //off
+  //EE_ERASE_all();
   
-  keyPRIVATE.reserve(34);
+  keyPRIVATE.reserve(18);
   sID.reserve(8);
-  sKEY.reserve(34);
+  sKEY.reserve(18);
   sMSG.reserve(64);
   sRET.reserve(64);
   sPUR.reserve(64);
@@ -160,6 +162,7 @@ void setup() {  debugON=0;//1;
   while (!Serial);
   Serial.begin(57600);
   showVER();
+  showKSS();
   if (debugON>0) {Serial.print(F("INFO:debugON="));Serial.println(debugON);Serial.flush(); }
   if (rf95.init()) { rf95.setFrequency(RF95_FREQ); 
     if (debugON>0) { Serial.println(F("INFO:rf95.init OK")); Serial.flush(); }
@@ -172,14 +175,16 @@ void setup() {  debugON=0;//1;
   flgShowChar=false;
   flgShowHex=false;
   
-  //key_EE_ERASE();
-  //param_EE_ERASE();
+  //key_EE_ERASE();  param_EE_ERASE();
   keyPRIVATE=key_EE_GET();
   
   if (key_VALIDATE(keyPRIVATE)==false) { //bad key? - make a new one?
-    key_EE_MAKE(16); keyPRIVATE=key_EE_GET(); }
+    key_EE_MAKE(); keyPRIVATE=key_EE_GET(); }
   if (debugON>0) {Serial.print(F("key="));Serial.println(keyPRIVATE); Serial.flush();}
-   
+  
+  if (EEPROM.read(EE_KEY_RSS)<200) {keyRSS=EEPROM.read(EE_KEY_RSS);} 
+  if (debugON>0) {Serial.print(F("keyRSS="));Serial.println(keyRSS); Serial.flush();}
+  
   rxBufLen[0]=0;
   
   //watchdog timer - 1 sec
@@ -188,7 +193,7 @@ void setup() {  debugON=0;//1;
   //WDTCSR = B01100001; //9=8sec
   WDTCSR = B01000110; //6=1sec
   sei(); //watchdog timer - 1 sec
-  digitalWrite(LED_red,HIGH); //off
+  //digitalWrite(LED_red,HIGH); //off
   
 } // *************************************End Of SETUP *****
 // *********************************************************
@@ -238,7 +243,7 @@ void ProcessRXbuf() { if (debugON>0) {Serial.println(F("\n...ProcessRXbuf"));} /
       sPUR=isPUR(sMSG); //strips off the 'PUR:', is "" if not 'PUR'. // RX expects PUR:IDxxxx:PRM0
       if (sPUR!="") { //is this a request for parameters?
         if (param_ReqChk(sPUR)==false) { //not a param request? Just pass on the INFO
-          Serial.print(F("INFO:"));Serial.println(sPUR); Serial.flush();
+          if (debugON>0) {Serial.print(F("INFO:"));Serial.println(sPUR); Serial.flush();}
         } //INFO: ':param0' in 'ididid:param0'  ?
       }
           //byte lenInfo = sPUR.length;
@@ -268,7 +273,7 @@ void ProcessRXbuf() { if (debugON>0) {Serial.println(F("\n...ProcessRXbuf"));} /
               strcpy(jp[4],",\"data\":\"");   //data is string, 20-7
               
               byte bx=2; //Buf indeX start: [0] is protocol, [1] is first delimiter 
-              char ps[20];  //Pair String accumulator
+              char ps[24];  //Pair String accumulator
               byte psx=0; //ps's indeX
               jpx=1; //json Pair # indeX, '0' is rss - already done.  
               while (bx<rxBufLen[ptr]) {
@@ -339,7 +344,7 @@ void json_PRINTdata(char jsn[][24], byte pNum) {
 }
 
 //*****************************************
-void json_PRINTinfo(char info[20], byte iNum) {
+void json_PRINTinfo(char info[32], byte iNum) {
   Serial.print(F("{\"source\":\"tx\",\"info\":\""));
   for (byte i=0;i<iNum;i++) {Serial.print( info[i] ); }
   Serial.println(""); Serial.flush();  
@@ -387,6 +392,7 @@ String parse_TXID(String &idkey){ sRET="";
 
 //*****************************************
 String parse_TXKEY(String &idkey){ sRET="";
+if (debugON>0) { Serial.print(F(" parse_TXKEY: "));Serial.print(idkey); Serial.flush();}
   byte eos=idkey.length();
   byte i=0;
   while ((i<eos)&&(idkey[i]!=':')) {i++;}
@@ -475,8 +481,7 @@ void param_SET_DEFAULT(String &id,word eeLoc) {//ID,Interval,Power
 void key_SEND(String &idTx,String &keyTx,String &keyPublic) {
   //randomize the send time in hopes of avoiding a simultaneous response
   //conflict from another receiver(s) that might be in rss range.
-  randomSeed(analogRead(5));
-  delay(byte(random()));
+  delay(50);
   sMSG=idTx; sMSG+=":"; sMSG+=keyPublic; //compose the public key with ID
   byte idkeyLEN=sMSG.length(); 
   char msg[64]; sMSG.toCharArray(msg,idkeyLEN+1);
@@ -537,6 +542,7 @@ const uint8_t* encode(char* msg, byte len, String &key) {
 } 
 
 //************************* agh-gh-gh! so many lines of code! **********
+//** but it is how to bail out as fast as possible?
 char* decode(char *msg, byte lenMSG, String &key) {
   static char cOUT[64]; cOUT[0]=0;  //prep for fail
   if (key=="") {key[0]=0; } //XOR of zero is 'no change', 'no key' mode
@@ -547,26 +553,26 @@ char* decode(char *msg, byte lenMSG, String &key) {
     // validate first 9 bytes, '1|ididid|'
     //yes - could do'&' of all elements but I don't know that the compiler doesn't take the
     //time to do them all before returning 'false' - this way does bail asap.
-    byte tst=byte((byte(msg[1])^byte(key[sp+1]))); 				// looking for first delim '|' at 1
-    if (tst=='|') { 																	// (fast first test)
-      tst=byte((byte(msg[8])^byte(key[sp+8]))); 			// looking for last delim '|'
-      if (tst=='|') {																	// (another fast test)		
-        tst=byte((byte(msg[0])^byte(key[sp+0])));			// protocol byte within range?
-        if ( (tst>='0') || tst<='9') { 								// a little longer test
-          byte ix;																		// 3 passings - maybe skip the next?
-          for (ix=2;ix<8;ix++) { 											// id chars 2,3,4,5,6,7 in range?
+    byte tst=byte((byte(msg[1])^byte(key[sp+1])));         // looking for first delim '|' at 1
+    if (tst=='|') {                                   // (fast first test)
+      tst=byte((byte(msg[8])^byte(key[sp+8])));       // looking for last delim '|'
+      if (tst=='|') {                                 // (another fast test)    
+        tst=byte((byte(msg[0])^byte(key[sp+0])));     // protocol byte within range?
+        if ( (tst>='0') || tst<='9') {                // a little longer test
+          byte ix;                                    // 3 passings - maybe skip the next?
+          for (ix=2;ix<8;ix++) {                      // id chars 2,3,4,5,6,7 in range?
             tst=byte((byte(msg[ix])^byte(key[sp+ix])));
             if ( !((tst>='2') && (tst<='9')) && !((tst>='A') && (tst<='Z')) ) { break;}
           }
-          if (ix==8) {																// all good?
-            byte mx=0; byte kx=sp;	//this 'sp' is it!
+          if (ix==8) {                                // all good?
+            byte mx=0; byte kx=sp;  //this 'sp' is it!
             while (mx<lenMSG) { if (kx>(lenKEY-1)) {kx=0;}
               cOUT[mx]=byte((byte(msg[mx])^byte(key[kx]))); 
               mx++; kx++; 
             }
           break; //out of sp - all done
           }
-    } }	}
+    } } }
   } //for sp
   
   //not Data? Is it PUR - Parameter Update Request?...
@@ -602,7 +608,7 @@ char* decode(char *msg, byte lenMSG, String &key) {
             if (tst=='O') {
               tst=byte((byte(msg[4])^byte(key[sp+4])));
               if (tst==':') { 
-                byte mx=0; byte kx=sp;	//this 'sp' is it!
+                byte mx=0; byte kx=sp;  //this 'sp' is it!
                 while (mx<lenMSG) { if (kx>(lenKEY-1)) {kx=0;}
                   cOUT[mx]=byte((byte(msg[mx])^byte(key[kx]))); 
                   mx++; kx++; 
@@ -616,7 +622,7 @@ char* decode(char *msg, byte lenMSG, String &key) {
         byte tst1=byte((byte(msg[0])^byte(key[sp+0])));
         byte tst2=byte((byte(msg[7])^byte(key[sp+7])));
         if((tst1=='!') && (tst2=='!')) {
-          byte mx=0; byte kx=sp;	//this 'sp' is it!
+          byte mx=0; byte kx=sp;  //this 'sp' is it!
           while (mx<lenMSG) { if (kx>(lenKEY-1)) {kx=0;}
             cOUT[mx]=byte((byte(msg[mx])^byte(key[kx]))); 
             mx++; kx++; 
@@ -633,7 +639,7 @@ char* decode(char *msg, byte lenMSG, String &key) {
 
 //*****************************************
 void key_EE_ERASE() {
-  for (byte i=0;i<33;i++) { EEPROM.write(EE_KEY-i,255); } //the rest get FF's
+  for (byte i=0;i<16;i++) { EEPROM.write(EE_KEY-i,255); } //the rest get FF's
 }
 
 //*****************************************
@@ -642,16 +648,16 @@ void param_EE_ERASE() {
 }
 
 //*****************************************
-void key_EE_MAKE(byte kSize) { 
+void key_EE_MAKE() { 
     if (debugON>1) {Serial.println(F("...key_EE_MAKE"));Serial.flush();}
   byte key;
-  for(byte i=0;i<kSize;i++) { key= EEPROM.read(EE_KEY-i);
+  for(byte i=0;i<16;i++) { key= EEPROM.read(EE_KEY-i);
     if ((key<34) || (key>126)) {
       long rs=analogRead(2);  rs=rs+analogRead(3); rs=rs+analogRead(4);
       rs=rs+analogRead(5); 
       randomSeed(rs); byte i=0;
-      while ((i<32) && (i<kSize)) { EEPROM.write(EE_KEY-i,random(34,126)); i++; }
-      EEPROM.write(EE_KEY-i,0); //string null term.
+      while (i<16) { EEPROM.write(EE_KEY-i,random(34,126)); i++; }
+      EEPROM.write(EE_KEY-i,0);
       break;
     }
   }
@@ -660,19 +666,19 @@ void key_EE_MAKE(byte kSize) {
 //*****************************************
 String key_EE_GET() { 
     if (debugON>1) {Serial.println(F("...key_EE_GET"));Serial.flush();}
-  char cKey[33];  byte i=0;  
-  i=0;  cKey[i]=EEPROM.read(EE_KEY); // this way includes the null at end
-  while ((cKey[i]!=0) && (i<32)) {
+  char cKey[18];  byte i=0;  
+  i=0; 
+  while (i<16) {   
+    cKey[i]=EEPROM.read(EE_KEY-i);
     i++; //assign first, check later
-    cKey[i]=EEPROM.read(EE_KEY-i); 
   }
-  cKey[i]=0; //term-truncate it again?
+   cKey[i]=0; //null term
   return String(cKey); 
 }
 
 //*****************************************
 bool key_VALIDATE(String &key) { //check EEPROM for proper character range
-  //Serial.print(F("key_VAL key=")); Serial.println(key);
+   if (debugON>1) {Serial.print(F("...key_VALIDATE : "));Serial.println(key);Serial.flush();}
   byte len=key.length(); 
   for (byte i=0;i<len;i++) {
     if ((key[i]<34) || (key[i]>126) || (len<4)) { return false; }
@@ -708,13 +714,22 @@ void CheckPCbuf() { // Look for Commands from the Host PC
     
     PCbuf[c_pos] = 0; // mark end-of-string ...
     //String PCmsg=String(PCbuf);
-    if ( PCbuf[0] == '!') { WDTcounter=0; digitalWrite(LED_green,LOW); } //? what's this for again?
+    //if ( PCbuf[0] == '!') { WDTcounter=0; digitalWrite(LED_green,LOW); } //? what's this for again?
     if ( PCbuf[0] == '?') { showVER(); }
     if ( PCbuf[0] == 'd') { debugON=PCbuf[1]-'0';
                             Serial.print(F("debugON=")); Serial.println(debugON); }
+    if (( PCbuf[0]=='k')&&(PCbuf[1]=='s')&&(PCbuf[2]=='s')) { //Key Signal Strength
+      byte i=3; char kss[4];  //get kss value at PCbuf[3,4 and maybe 5]
+      while ((PCbuf[i]!=0) && (i<6)) {kss[i-3]=PCbuf[i]; i++;}
+      if ((i>3)&&(i<7)) { //not bad data? term ascii value
+        kss[i-3]=0;  keyRSS=byte(atoi(kss));
+        EEPROM.write(EE_KEY_RSS,keyRSS);
+      }
+      showKSS();
+    }
     
     if (( PCbuf[0] == 'p')&&(PCbuf[1] == ':')) { //Parameter stuff to follow
-      if (debugON>1) {Serial.print(F("p:"));print_CHR(PCbuf,c_pos);}
+      if (debugON>1) {Serial.print(F("p:")); print_CHR(PCbuf,c_pos);}
       byte bp=0; byte cp[4]; byte cpp=0; //next colon positions for substr
       while (PCbuf[bp]!=0) {//format p:ididid:iii:hhh:p:s c[0],c[1],c[2],c[3],c[4]
         if (PCbuf[bp]==':') {cp[cpp]=bp; cpp++;} // log postion of all ':'s
@@ -763,6 +778,13 @@ String mySubChar(char* in,byte from,byte len) {
 }
 
 //**********************************************************************
+void showKSS() { 
+  Serial.print(F("{\"source\":\"rx\",\"info\":\"kss="));
+  Serial.print(String(keyRSS));
+  Serial.println(F("\"}")); Serial.flush();
+}
+
+//**********************************************************************
 void showVER() { 
   Serial.print(F("{\"source\":\"rx\",\"info\":\"ver="));
   Serial.print(VER);
@@ -772,12 +794,19 @@ void showVER() {
 //*****************************************
 ISR(WDT_vect) { //in avr library
   WDTcounter++; 
-  if (WDTcounter>10) {
-    if (digitalRead(LED_green)==1) {digitalWrite(LED_green,LOW);} //ON
-    else {digitalWrite(LED_green,HIGH);} //OFF
-  }
+  //if (WDTcounter>10) {
+  //  if (digitalRead(LED_green)==1) {digitalWrite(LED_green,LOW);} //ON
+  //  else {digitalWrite(LED_green,HIGH);} //OFF
+  //}
 }
 
+//*****************************************
+void EE_ERASE_all() {
+  Serial.print(F("EE_ERASE_all...#"));Serial.flush();
+  for (word i=0;i<1024;i++) { EEPROM.write(i,255); } //the rest get FF's
+  Serial.println(F(" ...Done#"));Serial.flush();
+}
+  
 //*****************************************
 void print_HEX(char *buf,byte len) { byte i;
   Serial.print(len);Serial.print(F(", "));
