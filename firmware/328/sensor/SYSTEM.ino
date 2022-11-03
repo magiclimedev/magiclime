@@ -1,7 +1,6 @@
 
 //*****************************************
 byte get_SBNum() { //A6 is not able to be digital for yanking
-//Serial.print(F("get_SBNum: "));Serial.flush();
   byte sbn; //Sensor Board Number
   byte VBS=digitalRead(pinBOOST);
   if (VBS==0) {digitalWrite(pinBOOST, HIGH); delay(10);}
@@ -15,9 +14,6 @@ byte get_SBNum() { //A6 is not able to be digital for yanking
     pinRead1=pinRead2;
     pinAVG=int((pinAVG+pinRead2)/2);
   }
-  
-  //Serial.print(F("pinACC="));Serial.println(pinACC);Serial.flush();
-  //Serial.print(F("pinAVG="));Serial.println(pinAVG);Serial.flush();
   if (pinACC>10) { sbn=0; }
   else { sbn=byte((int(pinAVG/51)+1) );} //*10); }
   if (VBS==0) {digitalWrite(pinBOOST, LOW); delay(5); }
@@ -31,13 +27,10 @@ void boost_ON() {
     pinMode(pinSCK, OUTPUT);
     digitalWrite(pinRF95_CS,HIGH);
     digitalWrite(pinBOOST, HIGH); delay(20); }
-  //digitalWrite(pinLED, HIGH);
-  //if (debugON>0) {Serial.println(F("\nboost-ON *****"));Serial.flush();}
 }
 
 //*****************************************
 void boost_OFF() {
-    //if (debugON>0) {Serial.println(F("\n ****** boost-OFF"));Serial.flush();}
   digitalWrite(pinBOOST, LOW);
   pinMode(pinMOSI, INPUT);digitalWrite(pinMOSI,LOW);
   pinMode(pinSCK, INPUT);digitalWrite(pinSCK,LOW); 
@@ -72,7 +65,6 @@ void led_PAIR_BLINK(byte count,byte bON,byte bOFF) { //dur,rate is 10mS per
 float get_BatteryVoltage() {
   byte VBS = digitalRead(pinBOOST); if (VBS == 0) { boost_ON(); delay(50); }
   float fBV = get_Average(pinBV, 5); fBV = (fBV * mV_bit) / 1000.0;
-//Serial.print(F("BV: "));Serial.println(fBV);Serial.flush();
   if (VBS == 0) { boost_OFF(); }
   return fBV;
 }
@@ -97,10 +89,10 @@ void IRPT_D3() {  sendWHY=1; txCOUNTER=txTIMER;
 
 //*****************************************
 ISR(WDT_vect) { //in avr library
-  txCOUNTER--;  //Serial.print(txCOUNTER);Serial.print(F(" "));Serial.flush();
+  txCOUNTER--;  
   if (txCOUNTER<=0) {
     if (HrtBtON==true) {sendWHY=2;} else {sendWHY=1;};
-    txCOUNTER=txTIMER;// Serial.print(F("^"));Serial.println(txCOUNTER);Serial.flush();
+    txCOUNTER=txTIMER;
   }
 }
 

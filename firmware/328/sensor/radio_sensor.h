@@ -118,6 +118,5 @@ enum TYPE {BEACON=0, EVENT_LOW, EVENT_CHNG, EVENT_RISE, EVENT_FALL, ANALOG, DIGI
 byte sendWHY;
 
 char dataOLD[12]; //for discriminating against redundent TX's
-byte debugON;
 
 const byte keyRSS=80;  
