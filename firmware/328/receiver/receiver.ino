@@ -84,8 +84,9 @@ PGM_P const table_T[] PROGMEM ={T0,T1,T2,T3,T4,T5,
 
 char rxBUF[64]; //for the rx buf
 byte rxLEN; //for the length
-char rxKEY[18]; //16 char + null 
-
+char rxKEY[18]; //16 char + null
+ 
+const byte rssOFFSET=130;
 byte keyRSS=80;
 byte RSSnow;
  
@@ -138,7 +139,7 @@ byte rxBUF_CHECK() { //********* get RF Messages - return RSS=0 for no rx
     if (rf95.recv(buf, &len)) {
       memcpy(rxBUF,buf,len);
       rxLEN=len;
-      rss=rf95.lastRssi()+150; // Yeah, a little high, but I saw -1 at 140 once. 
+      rss=rf95.lastRssi()+rssOFFSET;  
     }
   }
   return rss;
