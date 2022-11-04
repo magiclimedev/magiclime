@@ -71,7 +71,7 @@ void init_SETUP(){
         rx_DECODE_0(msg,buf,len,rxKEY);
         param0_SET(msg,txID);  
         param0_GET(); //from eeprom
-        //param0_SEND(); //ack? update the receiver's cache for this ID?
+        param0_SEND(); //ack? just info = PAK:ididid:int,hb,pwr,sysbyte
       }
     }
 //***********************************************
@@ -104,13 +104,18 @@ void param0_SET(byte *buf, char *sID) {//ididid:d:h:p:s
 //*****************************************
 void param0_SEND() { //if (debugON>0) {Serial.println(F("...param0_SEND"));Serial.flu
   char n2a[10]; // for Number TO Ascii things
-  char msg[]="PRM0:\0"; strcat(msg,txID); 
+  char msg[32];
+  strcpy(msg,"PAK:");
+  strcat(msg,txID); 
   strcat(msg,":"); dtoa(((float(txINTERVAL)*8.0)/60.0),n2a,1); strcat(msg,n2a);
   strcat(msg,":"); dtoa(((float(txHRTBEAT)*8.0)/60.0),n2a,1);  strcat(msg,n2a);
   strcat(msg,":"); itoa(txPWR,n2a,10); strcat(msg,n2a);
-  msg_SEND(msg, rxKEY,1);
-  char data[20];
-  packet_SEND(SBN,txID,txBV,rxKEY,get_DATA(data,SBN,1),1); // does boost_OFF();
+  static const char hex[] = "0123456789ABCDEF";
+  byte msnb = byte((sysBYTE>>4)& 0x0F); byte lsnb=byte(sysBYTE & 0x0F);
+  char msn[2]; msn[0]=hex[msnb]; msn[1]=0;
+  char lsn[2]; lsn[0]=hex[lsnb]; lsn[1]=0;
+  strcat(msg,":"); strcat(msg,msn); strcat(msg,lsn);
+  msg_SEND(msg,rxKEY,1);
 }
 
 //*****************************************

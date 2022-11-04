@@ -164,10 +164,10 @@ void rxBUF_PROCESS(byte rss) { bool flgDONE=false;
     rx_DECODE_0(msg,rxBUF,rxLEN,rxKEY); //decode using rx KEY
     if (msg[0]!=0) { //is it 'PUR'? Or DATA? or INFO?
       byte msgLEN=strlen(msg);
-      char pur[32];
-      purFIND(pur,msg); //strips off the 'PUR:', is "" if not 'PUR'. // RX expects PUR:IDxxxx:PRM0
-      if (pur[0]!=0) { //is this a request for parameters?
-        flgDONE=pur_REQ_CHECK(pur); //true is 'params passed - all done'
+      char prm[32];
+      purFIND(prm,msg); //strips off the 'PUR:', is "" if not 'PUR'. // RX expects PUR:IDxxxx:PRM0
+      if (prm[0]!=0) { //is this a request for parameters?
+        flgDONE=pur_REQ_CHECK(prm); //true is 'params passed - all done'
       }
       
       if (flgDONE==false) { //data, info
@@ -221,8 +221,13 @@ void rxBUF_PROCESS(byte rss) { bool flgDONE=false;
         }//validate protocol format
       } //flgDONE=false (data,info)
       
-      if (flgDONE==false) { //Serial.println(F("looking for INFO")); 
-      } //flgDONE=false (INFO)
+      if (flgDONE==false) { 
+        pakFIND(prm,msg); //PAK:IDxxxx:10:30:2,7 -ish , strips off the 'PAK:', is "" if not 'PAK'.
+        if (prm[0]!=0) { 
+          json_PRINTinfo(prm, strlen(prm)); 
+          flgDONE=true; }
+        }
+        
     } //end of rxDECODED OK msg[0]!=0
   }//flgDONE=false (pur,data,info)
 } //end of rxBUF_PROCESS() 
@@ -262,6 +267,16 @@ char *purFIND(char *purOUT, char *purIN) {char *ret=purOUT; // RX expects PUR:ID
   char pfx[32];
   mySubStr(pfx,purIN,0,4);
   if (strcmp(pfx,"PUR:")==0) { mySubStr(purOUT,purIN,4,strlen(purIN)); }//strip off the 'PUR:'
+  return ret;
+}
+
+//***************************************** Paramter AcK - spit it back to rcvr as info
+char *pakFIND(char *pakOUT, char *pakIN) {char *ret=pakOUT; // RX expects PAK:IDxxxx:10,30,2,7 stuff
+  //Serial.println(F("...pakFIND..."));Serial.flush();
+  pakOUT[0]=0; //default failflag
+  char pfx[32];
+  mySubStr(pfx,pakIN,0,4);
+  if (strcmp(pfx,"PAK:")==0) {strcpy(pakOUT,pakIN); }//send it back as is
   return ret;
 }
 
@@ -453,7 +468,6 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
     }
     
     if (( PCbuf[0] == 'p')&&(PCbuf[1] == ':')) { //Parameter stuff to follow
-      //Serial.print(F("p:")); print_CHR(PCbuf,c_pos);}
       byte bp=0; byte cp[4]; byte len[4]; byte cpp=0; //Colon Positions
       while (PCbuf[bp]!=0) {//format p:ididid:iii:hhh:p:s c[0],c[1],c[2],c[3],c[4]
         if (PCbuf[bp]==':') {cp[cpp]=bp; cpp++;} // log postion of all ':'s
@@ -464,29 +478,27 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
       len[3]=(cp[3]-cp[2])-1;  //heartbeat, 1 byte
       len[4]=(cp[4]-cp[3])-1;  //power level, 0-9, 1 byte   
       len[5]=(bp-cp[4])-1;     //system byte flag bits, ascii hex text 00-FF
-      char p_id[8];memcpy(p_id,&PCbuf[cp[0]+1],len[1]); p_id[len[1]]=0; //ID, 6 char
-      char p_int[5];memcpy(p_int,&PCbuf[cp[1]+1],len[2]); p_int[len[2]]=0; //data interval, 1 byte
-      char p_hb[5];memcpy(p_hb,&PCbuf[cp[2]+1],len[3]); p_hb[len[3]]=0; //heartbeat, 1 byte        
-      char p_pwr[3];memcpy(p_pwr,&PCbuf[cp[3]+1],len[4]);  p_pwr[len[4]]=0;   //power level, 0-9, 1 byte
-      char p_sys[3];memcpy(p_sys,&PCbuf[cp[4]+1],len[5]);  p_sys[len[5]]=0;   //system byte flag bits, ascii hex text 00-FF
-      byte bINT=byte(atoi(p_int));
-      byte bHB=byte(atoi(p_hb));
-      byte bPWR=byte(atoi(p_pwr)); 
-      byte bSYS=byte(strtol(p_sys,NULL,16)); //2 char hex string -> long
-      //Serial.print(F("p_id:"));Serial.print(p_id); //0-5
-      //Serial.print(F(", bINT:"));Serial.print(bINT); //6,
-      //Serial.print(F(", bHB:"));Serial.print(bHB); //7,
-      //Serial.print(F(", bPWR:"));Serial.print(bPWR); //8
-      //Serial.print(F(", bSYS:"));Serial.println(bSYS); //9
-      //put it eeprom...
-      word eeADR=param_FIND_ID(p_id); //find existing or next avail location
-      byte eePtr;
-      for (eePtr=0;eePtr<6;eePtr++) {EEPROM.write(eeADR-eePtr,p_id[eePtr]);}
-      EEPROM.write(eeADR-eePtr,bINT); eePtr++;
-      EEPROM.write(eeADR-eePtr,bHB); eePtr++;        
-      EEPROM.write(eeADR-eePtr,bPWR); eePtr++;
-      EEPROM.write(eeADR-eePtr,bSYS);
-    } //if 'p'      
+      if (len[1]==6) {//validation of format p:ididid:iii:hhh:p:ss       
+        char p_id[8];memcpy(p_id,&PCbuf[cp[0]+1],len[1]); p_id[len[1]]=0; //ID, 6 char
+        char p_int[5];memcpy(p_int,&PCbuf[cp[1]+1],len[2]); p_int[len[2]]=0; //data interval, 1 byte
+        char p_hb[5];memcpy(p_hb,&PCbuf[cp[2]+1],len[3]); p_hb[len[3]]=0; //heartbeat, 1 byte        
+        char p_pwr[3];memcpy(p_pwr,&PCbuf[cp[3]+1],len[4]);  p_pwr[len[4]]=0;   //power level, 0-9, 1 byte
+        char p_sys[3];memcpy(p_sys,&PCbuf[cp[4]+1],len[5]);  p_sys[len[5]]=0;   //system byte flag bits, ascii hex text 00-FF
+        byte bINT=byte(atoi(p_int));
+        byte bHB=byte(atoi(p_hb));
+        byte bPWR=byte(atoi(p_pwr)); 
+        byte bSYS=byte(strtol(p_sys,NULL,16)); //2 char hex string -> long
+
+        //put it eeprom...
+        word eeADR=param_FIND_ID(p_id); //find existing or next avail location
+        byte eePtr;
+        for (eePtr=0;eePtr<6;eePtr++) { EEPROM.write(eeADR-eePtr,p_id[eePtr]); }
+        EEPROM.write(eeADR-eePtr,bINT); eePtr++;
+        EEPROM.write(eeADR-eePtr,bHB); eePtr++;        
+        EEPROM.write(eeADR-eePtr,bPWR); eePtr++;
+        EEPROM.write(eeADR-eePtr,bSYS);
+      }//(len[1]==6)
+    } // if PCbuf[0] == 'p')      
   } //if Serial.aval
 } //End Of CheckPCbuf
 
