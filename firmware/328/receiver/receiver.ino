@@ -179,7 +179,7 @@ void rxBUF_PROCESS(byte rss) { bool flgDONE=false;
           byte jpx; //json Pair # indeX pointer
           switch (protocol) { 
             case '1': {   pNum=5; // 5 pairs in this protocol
-              //compose rss and first-half of data pairs, 
+              //compose rss pair and first-half of data pairs, 
               strcpy(jp[0],"\"rss\":"); //no first comma,no quotes for numbers
                 char chr[5]; itoa(rss,chr,10);
               strcat(jp[0],chr); //integer

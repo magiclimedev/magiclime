@@ -60,25 +60,23 @@ void init_SETUP(){
   // RX responds with  ididid:ml:p:s 
     char msg[32]; strcpy(msg,"PUR:"); strcat(msg,txID); strcat(msg,":PRM0");
     msg_SEND(msg, rxKEY,1); //String &msgIN, String &key, int txPWR)
-    byte tryCtr=0; 
-    while (tryCtr<50) { delay(10); tryCtr++;
-      if (rf95.available()==true) {
-        uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-        uint8_t len = sizeof(buf);
-        if (rf95.recv(buf, &len)) {// print_HEX(buf,len);
-          rx_DECODE_0(msg,buf,len,rxKEY);
-          param0_SET(msg,txID); 
-          param0_GET();
-          tryCtr=0;
-        }
+    // and now look for ... 500mSec?
+    byte timeout=0;
+    while (!rf95.available() && timeout<250) { delay(10); timeout++; }
+    //Serial.print(F("timeout<250): "));Serial.println(timeout);Serial.flush();
+    if (timeout<250) {
+      uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+      uint8_t len = sizeof(buf);
+      if (rf95.recv(buf, &len)) {// print_HEX(buf,len);
+        rx_DECODE_0(msg,buf,len,rxKEY);
+        param0_SET(msg,txID);  
+        param0_GET(); //from eeprom
+        //param0_SEND(); //ack? update the receiver's cache for this ID?
       }
     }
-    
 //***********************************************
-  //param0_SEND(); //update the receiver's cache for this ID?
-  //delay(20); //wait a bit for RX to stash in EEPROM?
-  char data[20];
-  packet_SEND(SBN,txID,txBV,rxKEY,get_DATA(data,SBN,1),1); // does boost_OFF();
+  get_DATA(txDATA,SBN,1);
+  packet_SEND(SBN,txID,txBV,rxKEY,txDATA,1); // does boost_OFF();
   //watchdog timer - 8 sec
   cli(); wdt_reset(); WDTCSR |= B00011000; WDTCSR = B01100001; sei(); //watchdog timer - 8 sec
   //sleep and 'power down' mode bits
