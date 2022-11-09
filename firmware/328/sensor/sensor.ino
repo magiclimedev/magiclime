@@ -36,6 +36,8 @@ void loop () {
   }
   //sleepStuff();
   systemSleep(); 
-  
+  //if (txCOUNTER % 32 ==0) {Serial.println("");}
+  //Serial.print(F(":"));Serial.print(sendWHY);Serial.flush();
+
 } //End Of Loop ****************************
 //*****************************************

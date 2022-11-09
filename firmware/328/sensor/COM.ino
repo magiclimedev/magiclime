@@ -18,6 +18,7 @@ byte PV=1; //Protocol Version - very first char byte out;
 void msg_SEND(char *msgIN, char *key, int pwr) { 
   if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(100);}
   digitalWrite(pinLED, HIGH);
+  //Serial.print(F("msgSEND: ")); print_CHR(msgIN,strlen(msgIN));
   byte txLEN=strlen(msgIN);
   char txBUF[64];
   tx_ENCODE_0(txBUF,msgIN,txLEN,key);
@@ -40,7 +41,7 @@ char *tx_ENCODE_0(char *txBUF, char *msgIN, byte msgLEN, char *key) { char *ret=
 }  
 
 //*****************************************
-char *rx_DECODE_0(char *msgOUT,char *rxBUF, byte rxLEN, char *key) {char *ret=msgOUT; //if (debugON>0) {Serial.println(F("...decode")); Serial.flush();}
+char *rx_DECODE_0(char *msgOUT,char *rxBUF, byte rxLEN, char *key) {char *ret=msgOUT; 
   byte i; byte k=0;
   byte keyLEN=strlen(key); 
   for (i=0;i<rxLEN;i++) {

@@ -6,12 +6,13 @@ char *key_REQUEST(char *rxkey, char* TxId, byte rssREF) { char *ret=rxkey;
   char keyTEMP[18];
 
   key_NEW(keyTEMP); //returns new key in keyTEMP
-  print_CHR(keyTEMP,16);
+  //print_CHR(keyTEMP,16);
   key_TXID_SEND(TxId,keyTEMP); //expect a response = 'keyTEMP' encoded 'ID:RX-KEY'
 
   byte timeout=0;
   while (!rf95.available() && timeout<250) { delay(10); timeout++; }
   if (timeout==250) { digitalWrite(pinPAIR_LED,LOW);  return ret;}
+  Serial.print(F("KEY timeout<250): "));Serial.println(timeout);Serial.flush();
   
   uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
   uint8_t len = sizeof(buf);
