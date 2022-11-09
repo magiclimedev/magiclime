@@ -15,7 +15,7 @@ void init_SETUP(){
 
   //EE_ERASE_all();
   //EE_ERASE_key();
-  //EE_ERASE_id(SBN); //assuming you set SBN to something 'less than 20'.
+  //EE_ERASE_id(SBN); //assuming you set SBN to something '22 or less'.
 
   boost_ON();
   digitalWrite(pinLED, HIGH);
@@ -38,7 +38,7 @@ void init_SETUP(){
   }
  
   else {
-    if (init_RF95()==true) {
+    if (init_RF95(txPWR)==true) {
       key_REQUEST(rxKEY,txID,keyRSS); //ask for RX's KEY
       if (rxKEY[0]!=0) { //good key returned
         Serial.print(F("rxKEY=")); Serial.println(rxKEY);
@@ -60,7 +60,7 @@ void init_SETUP(){
   // RX responds with  ididid:i:h:p:s 
   param0_GET(); //in case the following fails...
   char msg[32]; strcpy(msg,"PUR:"); strcat(msg,txID); strcat(msg,":PRM0");
-  msg_SEND(msg, rxKEY,1); //String &msgIN, String &key, int txPWR)
+  msg_SEND(msg, rxKEY,txPWR); //String &msgIN, String &key, int txPWR)
   // and now look for ... 500mSec?
   byte timeout=0;
   while (!rf95.available() && timeout<250) { delay(10); timeout++; }
@@ -123,8 +123,8 @@ void param0_SEND() { //if (debugON>0) {Serial.println(F("...param0_SEND"));Seria
   strcpy(msg,"PAK:");
   strcat(msg,txID); 
   strcat(msg,":"); dtoa(((float(txINTERVAL)*8.0)/60.0),n2a,1); strcat(msg,n2a);
-  strcat(msg,":"); dtoa(((float(txHRTBEAT)*8.0)/60.0),n2a,1);  strcat(msg,n2a);
-  strcat(msg,":"); itoa((txPWR*2),n2a,10); strcat(msg,n2a);
+  strcat(msg,":"); dtoa(((float(txHRTBEAT)*64.0)/60.0),n2a,1);  strcat(msg,n2a);
+  strcat(msg,":"); itoa((txPWR),n2a,10); strcat(msg,n2a);
   static const char hex[] = "0123456789ABCDEF";
   byte msnb = byte((optBYTE>>4)& 0x0F); byte lsnb=byte(optBYTE & 0x0F);
   char msn[2]; msn[0]=hex[msnb]; msn[1]=0;
@@ -164,8 +164,10 @@ word eeREAD2(word eeloc) {
 }
 
 //*****************************************
-void param0_OPTIONS(int sbn, byte optbyte) {
+void param0_OPTIONS(int sbn, byte optbyte) { sbn++; //to make -1 = 0
   switch (sbn) { //init sensors as needed
+    case -1: {  EEPROM.write(EE_OPTBYTE,optBYTE);  } break; //beacon
+    case 0: {  EEPROM.write(EE_OPTBYTE,optBYTE);  } break; //my_sbn0
     case 1: {  EEPROM.write(EE_OPTBYTE,optBYTE);  } break; //button
     case 2: {  EEPROM.write(EE_OPTBYTE,optBYTE); } break; //tilt
     case 3: {  EEPROM.write(EE_OPTBYTE,optBYTE); } break;//reed
@@ -189,6 +191,8 @@ void param0_OPTIONS(int sbn, byte optbyte) {
 //*****************************************
 void init_SENSORS(int sbn) { DATA_TYPE = BEACON; //preset default
   switch (sbn) {  //init sensors as needed
+    case -1: { DATA_TYPE = BEACON; } break;        //no sensor board detected
+    case 0: { DATA_TYPE = BEACON; } break;        //your pick - sbn pin grounded
     case 1: { DATA_TYPE = EVENT_RISE;                                  //button
       pinMode(pinEVENT, INPUT);  } break;
     case 2: { DATA_TYPE = EVENT_RISE;  strcpy(dataOLD,"NULL");//tilt
@@ -219,6 +223,7 @@ void init_SENSORS(int sbn) { DATA_TYPE = BEACON; //preset default
       pinMode(A4,INPUT);digitalWrite(A4, LOW); //D.O.T. pin#1
       pinMode(A5,INPUT);digitalWrite(A5, LOW); //D.O.T. pin#2
       init_E931();} break;
+    case 22: { DATA_TYPE = BEACON;  } break;   ////your pick - sbn pin tied to Aref
   }
 
   init_TYPE(DATA_TYPE);// enable interrupts, etc.
@@ -250,15 +255,16 @@ void init_TYPE(TYPE sbt){ //Serial.print(F("...init_TYPE"));
 }
 
 //*****************************************
-bool init_RF95()  {
+bool init_RF95(int txpwr)  {
   if (RF95_UP==false) { //not already done before?
     if (digitalRead(pinBOOST) == 0) { boost_ON(); }
     byte timeout=0;
     while (!rf95.init() && (timeout<20)) { delay(10); timeout++; }
     if (timeout!=20) {
       rf95.setFrequency(RF95_FREQ); delay(10);
-      if (txPWR==0) {txPWR=1;}
-      rf95.setTxPower(txPWR*2, false);  delay(10); //2-20 valid range
+      if (txpwr<2) {txpwr=2;}
+      if (txpwr>20) {txpwr=20;} 
+      rf95.setTxPower(txpwr, false);  delay(10); //2-20 valid range
       RF95_UP=true;
     }
   }

@@ -1,13 +1,13 @@
 
 //*****************************************
-void packet_SEND(byte sbn, char *id, double bv, char *key, char *data, int pwr) { 
+void packet_SEND(int sbn, char *id, double bv, char *key, char *data, int pwr) { 
 char n2a[10]; // for Number TO Ascii things
 char msg[48];
 byte PV=1; //Protocol Version - very first char byte out;
   if (data!="NULL") {
     itoa(int(PV),n2a,10); strcpy(msg,n2a); //Prot-Ver always very first char out
     strcat(msg,"|");strcat(msg,id);     
-    strcat(msg,"|"); itoa(int(sbn),n2a,10); strcat(msg,n2a); 
+    strcat(msg,"|"); itoa(sbn,n2a,10); strcat(msg,n2a); 
     strcat(msg,"|"); dtoa(bv,n2a,1); strcat(msg,n2a);    
     strcat(msg,"|"); strcat(msg,data);                   
     msg_SEND(msg,key,pwr); 
@@ -22,8 +22,8 @@ void msg_SEND(char *msgIN, char *key, int pwr) {
   byte txLEN=strlen(msgIN);
   char txBUF[64];
   tx_ENCODE_0(txBUF,msgIN,txLEN,key);
-  if (RF95_UP==false) { RF95_UP=init_RF95(); }
-  rf95.setTxPower(pwr*2, false); //from 1-10 to 2-20dB
+  if (RF95_UP==false) { RF95_UP=init_RF95(pwr); }
+  else {rf95.setTxPower(pwr, false); }//from 1-10 to 2-20dB
   rf95.send(txBUF,txLEN); rf95.waitPacketSent();
   txBV = get_BatteryVoltage();
 }

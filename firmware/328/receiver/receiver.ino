@@ -58,7 +58,8 @@ boolean flgShowChar;
 boolean flgShowHex;
 
 //here's the type look-up table...
-const char T0[] PROGMEM = "Beacon"; 
+const char TM1[] PROGMEM = "Beacon"; 
+const char T0[] PROGMEM = "MY_SBN0"; 
 const char T1[] PROGMEM = "Button";  
 const char T2[] PROGMEM = "Tilt"; 
 const char T3[] PROGMEM = "Reed";
@@ -79,15 +80,13 @@ const char T17[] PROGMEM = "SBN17";
 const char T18[] PROGMEM = "SBN18";
 const char T19[] PROGMEM = "SBN19";
 const char T20[] PROGMEM = "SBN20";
-const char T21[] PROGMEM = "SBN21";
-const char T22[] PROGMEM = "SBN22";
-const char T23[] PROGMEM = "SBN23";
-const char T24[] PROGMEM = "SBN24";
-const char T25[] PROGMEM = "SBN25";
+const char T21[] PROGMEM = "MTN_DOT";
+const char T22[] PROGMEM = "MY_SBN22";
 
-PGM_P const table_T[] PROGMEM ={T0,T1,T2,T3,T4,T5,
-  T6,T7,T8,T9,T10,T11,T12,T13,T14,T15,T16,
-  T17,T18,T19,T20,T21,T22,T23,T24,T25};
+
+PGM_P const table_T[] PROGMEM ={TM1,T0,T1,T2,
+  T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13,T14,T15,
+  T16,T17,T18,T19,T20,T21,T22};
 
 static char rxBUF[64]; //for the rx buf
 static byte rxLEN; //for the length
@@ -195,7 +194,7 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
           strcpy(jp[2],",\"sensor\":\"");   //data is string, 20-7, the verbose one 
           strcpy(jp[3],",\"bat\":");      //data is number (3), 20-6=14 no pre-quote
           strcpy(jp[4],",\"data\":\"");   //data is string, 20-7
-          
+ //*************************         
           byte bx=2; //Buf indeX start: [0] is protocol, [1] is first delimiter 
           char ps[24];  //Pair String accumulator
           byte psx=0; //ps's indeX
@@ -205,7 +204,8 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
               ps[psx]=0; //null term
               switch (jpx) {
                 case 1: {strcat(jp[1],ps); } break; 
-                case 2: {strcat_P(jp[2], (char*)pgm_read_word(&(table_T[atoi(ps)]))); } break; 
+                case 2: {strcat_P(jp[2], (char*)pgm_read_word(&(table_T[atoi(ps+1)]))); } break; 
+                // about that (ps+1)... sensor -1 is beacon, but lookup table starts with 0.
                 case 3: {strcat(jp[3],ps); } break; 
                 case 4: {strcat(jp[4],ps); } break; 
               }
@@ -226,7 +226,7 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
       } //EndOfSwtchProtocol
       return;
     }//validate protocol format
-    
+//*************************    
     char prm[24];
     purFIND(prm,msg); //strips off the 'PUR:', is "" if not 'PUR'. // RX expects PUR:IDxxxx:PRM0
     if (prm[0]!=0) { //is this a request for parameters?
@@ -234,7 +234,7 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
      // Serial.println(F("pur_REQ_CHECK-done"));  Serial.flush();
       return;
     }
-    
+//*************************    
     pakFIND(prm,msg); //PAK:IDxxxx:10:30:2,7 -ish , strips off the 'PAK:', is "" if not 'PAK'.
     if (prm[0]!=0) { 
       json_PRINTinfo(prm, strlen(prm)); 
@@ -266,8 +266,8 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
     
     PCbuf[c_pos] = 0; // mark end-of-string ...
     byte bufLEN=strlen(PCbuf);
-   // Serial.print(F("pcbuf("));Serial.print(bufLEN);Serial.print(F(") "));
-   // Serial.println(PCbuf);Serial.flush();
+    //Serial.print(F("pcbuf("));Serial.print(bufLEN);Serial.print(F(") "));
+    //Serial.println(PCbuf);Serial.flush();
 
     if ( PCbuf[0] == '?') { showVER(); return;}
     if (( PCbuf[0]=='k')&&(PCbuf[1]=='s')&&(PCbuf[2]=='s')) { //Key Signal Strength
@@ -289,15 +289,15 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
       len[1]=(cp[1]-cp[0])-1;  //ID, 6 char
       len[2]=(cp[2]-cp[1])-1;  //data interval, 1 byte
       len[3]=(cp[3]-cp[2])-1;  //heartbeat, 1 byte
-      len[4]=(cp[4]-cp[3])-1;  //power level, 0-9, 1 byte   
+      len[4]=(cp[4]-cp[3])-1;  //power level, 2-20, 1 byte   
       len[5]=(bufLEN-cp[4])-1;     //system byte flag bits, ascii hex text 00-FF
-      Serial.print(F("len[1]="));Serial.println(len[1]);Serial.flush();
+      //Serial.print(F("len[1]="));Serial.println(len[1]);Serial.flush();
       if (len[1]==6) { //validation of format p:ididid:iii:hhh:p:ss 
         len[1]=(cp[1]-cp[0])-1;  //ID, 6 char      
         char p_id[8]; memcpy(p_id,&PCbuf[cp[0]+1],len[1]); p_id[len[1]]=0; //ID, 6 char
         char p_int[5];memcpy(p_int,&PCbuf[cp[1]+1],len[2]); p_int[len[2]]=0; //data interval, 1 byte
         char p_hb[5];memcpy(p_hb,&PCbuf[cp[2]+1],len[3]); p_hb[len[3]]=0; //heartbeat, 1 byte        
-        char p_pwr[3];memcpy(p_pwr,&PCbuf[cp[3]+1],len[4]);  p_pwr[len[4]]=0;   //power level, 0-9, 1 byte
+        char p_pwr[3];memcpy(p_pwr,&PCbuf[cp[3]+1],len[4]);  p_pwr[len[4]]=0;   //power level, 2-20, 1 byte
         char p_opt[3];memcpy(p_opt,&PCbuf[cp[4]+1],len[5]);  p_opt[len[5]]=0;   //system byte flag bits, ascii hex text 00-FF
         byte bINT=byte(atoi(p_int));
         byte bHB=byte(atoi(p_hb));
@@ -387,7 +387,7 @@ void param0_SEND(word eePrmID) {
   param[13]=EEPROM.read(eePrmID-9);
   //ididid:i:h:p:o
   //print_HEX(param,14);
-  msg_SEND_HEX(param,14,rxKEY,1); //
+  msg_SEND_HEX(param,14,rxKEY,2); //
  // Serial.println(F(" done"));Serial.flush();
 }
 
@@ -428,7 +428,7 @@ void param_SET_DEFAULT(char *id,word eeLoc) {//ID,Interval,Power
   for(bp=0;bp<6;bp++) { EEPROM.write(eeLoc-bp,id[bp]); } //0-5
     EEPROM.write(eeLoc-bp,4); bp++; //interval sec/16         //6
     EEPROM.write(eeLoc-bp,64); bp++; //heartbeat sec./64      //7
-    EEPROM.write(eeLoc-bp,1); bp++;//1-10 default power        //8
+    EEPROM.write(eeLoc-bp,2); bp++;//2-20 default power        //8
     EEPROM.write(eeLoc-bp,0); //Sysbyte bits all 0            //9
 }
 
@@ -452,11 +452,11 @@ void param_2EEPROM(char *id, byte intrvl, byte hb, byte pwr, byte opt) {
 //*****************************************
 char *prm_pkt(char *pktOUT, char *id, byte intrvl, byte hb, byte pwr, byte opt) { char *ret=pktOUT;
   char n2a[10]; // for Number TO Ascii things
-  strcpy(pktOUT,"PAK:");
+  strcpy(pktOUT,"PRM:");
   strcat(pktOUT,id); 
   strcat(pktOUT,":"); dtoa(((float(intrvl)*8.0)/60.0),n2a,1); strcat(pktOUT,n2a);
-  strcat(pktOUT,":"); dtoa(((float(hb)*8.0)/60.0),n2a,1);  strcat(pktOUT,n2a);
-  strcat(pktOUT,":"); itoa((pwr*2),n2a,10); strcat(pktOUT,n2a);
+  strcat(pktOUT,":"); dtoa(((float(hb)*64.0)/60.0),n2a,1);  strcat(pktOUT,n2a);
+  strcat(pktOUT,":"); itoa((pwr),n2a,10); strcat(pktOUT,n2a);
   static const char hex[] = "0123456789ABCDEF";
   byte msnb = byte((opt>>4)& 0x0F); byte lsnb=byte(opt & 0x0F);
   char msn[2]; msn[0]=hex[msnb]; msn[1]=0;
@@ -480,7 +480,7 @@ void msg_SEND(char *msgIN, char *key, int pwr) {
   //Serial.print(F("msg_SEND: ")); print_CHR(msgIN,strlen(msgIN));
   char txBUF[64]; byte txLEN=strlen(msgIN);
   tx_ENCODE_0(txBUF,msgIN,txLEN,key);
-  rf95.setTxPower(pwr*2, false); //from 1-10 to 2-20dB
+  rf95.setTxPower(pwr, false); // 2-20
   rf95.send(txBUF,txLEN); rf95.waitPacketSent();
 }
 
@@ -489,7 +489,7 @@ void msg_SEND_HEX(char *hexIN, byte len, char *key, int pwr) {
   //Serial.print(F("msg_SEND_HEX: ")); print_HEX(hexIN,len);
   char hexBUF[64]; // memcpy(hexBUF,&hexIN,len);
   tx_ENCODE_0(hexBUF,hexIN,len,key);
-  rf95.setTxPower(pwr*2, false); //from 1-10 to 2-20dB
+  rf95.setTxPower(pwr, false); //from 1-10 to 2-20dB
   rf95.send(hexBUF,len); rf95.waitPacketSent();
 }
 
