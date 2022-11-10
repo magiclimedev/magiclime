@@ -176,7 +176,7 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
   rx_DECODE_0(msg,rxBUF,rxLEN,rxKEY); //decode using rx KEY
   if (msg[0]!=0) { //is it 'PUR'? Or DATA? or INFO?
     byte msgLEN=strlen(msg);
-    //Serial.print(F("msg: ")); Serial.print(msgLEN);Serial.print(F(" : "));Serial.println(msg);Serial.flush();
+    Serial.print(F("msg: ")); Serial.print(msgLEN);Serial.print(F(" : "));Serial.println(msg);Serial.flush();
 //Quick - get the DATA! (then look for other stuff)
     if ((msg[0]>='0') && (msg[0]<='9') && (msg[1]=='|')) { //protocol # validate
       char protocol=msg[0];
@@ -204,7 +204,8 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
               ps[psx]=0; //null term
               switch (jpx) {
                 case 1: {strcat(jp[1],ps); } break; 
-                case 2: {strcat_P(jp[2], (char*)pgm_read_word(&(table_T[atoi(ps+1)]))); } break; 
+                case 2: { //Serial.print(F("sbn=")); Serial.println(atoi(ps+1)); Serial.flush();
+                  strcat_P(jp[2], (char*)pgm_read_word(&(table_T[atoi(ps)+1]))); } break; 
                 // about that (ps+1)... sensor -1 is beacon, but lookup table starts with 0.
                 case 3: {strcat(jp[3],ps); } break; 
                 case 4: {strcat(jp[4],ps); } break; 
