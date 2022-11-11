@@ -282,18 +282,18 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
       return;
     }
     
-    if (( PCbuf[0] == 'p')&&(PCbuf[1] == ':')) { //Parameter stuff to follow
-      byte cp[5]; byte len[5]; byte cpp=0; //Colon Positions
-      for (byte i=0;i<bufLEN;i++) {//format p:ididid:iii:hhh:p:s c[0],c[1],c[2],c[3],c[4]
+    if (( PCbuf[0] == 'p')&&( PCbuf[1] == 'r')&&( PCbuf[2] == 'm')&&(PCbuf[3] == ':')) { //Parameter stuff to follow
+      byte cp[6]; byte len[6]; byte cpp=0; //Colon Positions
+      for (byte i=0;i<bufLEN;i++) {//format prm:ididid:iii:hhh:p:o c[0],c[1],c[2],c[3],c[4]
         if (PCbuf[i]==':') {cp[cpp]=i; cpp++;} // log postion of all ':'s
-      } //cp[0,1,2,3] = postions of delimiters between the four things, bp=length of PCbuf
+      } 
       len[1]=(cp[1]-cp[0])-1;  //ID, 6 char
       len[2]=(cp[2]-cp[1])-1;  //data interval, 1 byte
       len[3]=(cp[3]-cp[2])-1;  //heartbeat, 1 byte
       len[4]=(cp[4]-cp[3])-1;  //power level, 2-20, 1 byte   
       len[5]=(bufLEN-cp[4])-1;     //system byte flag bits, ascii hex text 00-FF
       //Serial.print(F("len[1]="));Serial.println(len[1]);Serial.flush();
-      if (len[1]==6) { //validation of format p:ididid:iii:hhh:p:ss 
+      if (len[1]==6) { //validation of format prm:ididid:iii:hhh:p:o 
         len[1]=(cp[1]-cp[0])-1;  //ID, 6 char      
         char p_id[8]; memcpy(p_id,&PCbuf[cp[0]+1],len[1]); p_id[len[1]]=0; //ID, 6 char
         char p_int[5];memcpy(p_int,&PCbuf[cp[1]+1],len[2]); p_int[len[2]]=0; //data interval, 1 byte
