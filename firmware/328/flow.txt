@@ -1,0 +1,93 @@
+List of talking points - product features.
+In order of thought - not importance.
+
+	915Mhz lora-like chirp modulation transceiver.
+	
+		Modular sensor board scheme with simple resistor-ratio identification.
+	Using standard value, non-precision resistors can reliably assign 20 boards.
+	PLUS... 	no board installed ( S ensor B oard N umber =  -1 )
+				ID pin shorted to ground (SBN# 0), assigned by receiver as 'MY_SBN0'
+				ID pin shorted to Aref (SBN# 22), assigned by receiver as 'MY_SBN22'
+				Those two are intended for use with user-designed experimental boards.
+				No need for ID resistors on your board - just jumper A6 to gnd or Aref. pins.
+				
+		Battery boost-to-3.3V circuit - delivers upon demand  3.3V at 300mA to RF module
+	and sensor board as well as supporting Vcc to microcontroller.
+		This means... the battery can drop to 1.8V and if the atmega328p (barely able to run)
+	turns on boost first thing - it works fine for the duration. Even if battery drops to 1V 
+	under load, the boost circuit will strive to maintain 3.3V and Vcc stays above 1.8V.
+		Also, the 3.3V powers a 3.0V voltage reference for Aref.  Very accurate analog
+	readings are possible.
+	
+	USB Transceiver - extended and notched USB connector that does fairly well at
+	not imposing upon personal space of adjacent USB devices.
+	
+	Sensor Program...
+	Boot:
+		Find/assign sensor board ID.
+		Ask for a key from the receiver.
+			If strong signal - receiver sends its key, stores in EEPROM.
+			No reply, get stored key from EEPROM.
+			
+		Initialize sensor board parameters according to SBN#.
+			Assign it a 'type' ... "BEACON", "EVENT_LOW", "EVENT_CHNG",
+			"EVENT_RISE", "EVENT_FALL", "ANALOG", "DIGITAL_SPI", "DIGITAL_I2C". 
+			
+		Send out a Parameter Update Request (PUR) to the receiver.
+			(receiver stores each sensor's parameters in EEPROM)
+			
+		Receiver finds/sends stored (or default) values back.
+			Values returned are...
+			Interval - period as # of 8 sec. units. I.e., '8' is about 64 sec.
+				This is for periodic 'non-event' sensors like temperature, where data is 
+				collected and sent at regular 'interval's.
+			Heartbeat - as # of 64 sec. units. - for keeping receiver reassured that an
+				'event' sensor is still alive.
+			Transmist power - TX modules valid range is 2-20. 
+			Option Byte - flag bits for 'whatever'. I.e., light sensor data is % of max/min.
+				Option bits can be used to reset max/min values.
+
+			Sensor then 'ACKs' with values converted to minutes (easier to understand).
+			Receiver composes that into a json 'info' packet - sends to host.
+			
+		Enable 8 sec. watchdog timer.	
+		
+##############################################	
+	
+		Enter the 'LOOP'...
+			Enable EVENT interrupts if needed.
+			Go to sleep. Z-z-z-z-z-z-z-z
+			then...
+			If wake up due to WatchDog Timer (WDT)
+				up-count the Interval or Heartbeat timer
+				if it's time...
+					disable event interrupts.
+					compose data packet.
+					send it out via RH95CW module.
+			If wake-up due to event pin yanking...
+					compose data packet.
+					send it out via RH95CW module.
+					
+##############################################
+					
+	Receiver program loop...
+		Look for incoming RF data...
+			return its key upon request (pairing).
+			return stored sensor parameters upon request.
+			(and if new ID, create new entry with default values)
+			compose sensor data messages into 'json' format.
+			(using look-up table to turn a sensor board number into words)
+			send out .
+		Look for commands from PC serial port - i.e., sensor parameter updates.
+			parameter update format... prm:ididid:ii:hh:p:o 
+			where...
+			'prm:' is the clue that this is a parameter thing.
+			'ididid' is the 6-char sensor ID to be updated.
+			'ii' is the interval in 16 sec. units. 
+			'hh' is the heartbeat interval in 64 sec. units.
+			'p' is tx power (2-20) to use. May be able to do an adaptive power thing with this.
+			'o' is the Option byte - meaning of bits are unique to sensor needs.
+			
+##############################################	
+			
+			
