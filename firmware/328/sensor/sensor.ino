@@ -9,8 +9,12 @@
  
 #include "radio_sensor.h"
 
-const int defaultINTERVAL = 8;       // periodic TX interval 8  X 16 sec = 124 sec.
-const int defaultHEARTBEAT = 113; //'I'm still alive' period 113 x 64 sec = 2 hour (approx) 
+const int wdmTXI = 1; //WatchDogMultiplier for TX data Interval
+//wdmTXI=1 means (1*8) sec. per 'unit' of txINTERVAL.
+const int wdmHBP = 16; //WatchDogMultiplier for Heartbeat period 
+//wdmHBP=16 means (16*8) sec. per 'unit' of txHEARTBEAT.
+const int defaultINTERVAL = 16;       // periodic TX interval 8  X 16 sec = 128 sec.
+const int defaultHEARTBEAT = 113; //'I'm still alive' period 113 x 128 sec = 4 hour (approx)
 
 //*****************************************
 void setup () { 
@@ -25,19 +29,19 @@ void setup () {
 //*****************************************
 void loop () {
 
-  if (sendWHY!=0) {//1 is Data, 2 is Heartbeat
+  if (wakeWHY!=0) {//1 is Data, 2 is Heartbeat
     if (digitalRead(pinBOOST)==0){boost_ON();}
-     get_DATA(txDATA,SBN,sendWHY);
+     get_DATA(txDATA,SBN,wakeWHY);
      
     //(byte sbn, char *id, double bv, char *key, char *data, int pwr, int wait) 
     packet_SEND(SBN,txID,txBV,rxKEY,txDATA,txPWR);
     trigger_RESET(SBN); //mostly because Motion chip E931 needs this.
-    sendWHY=0; 
+    wakeWHY=0; 
   }
   //sleepStuff();
   systemSleep(); 
   //if (txCOUNTER % 32 ==0) {Serial.println("");}
-  //Serial.print(F(":"));Serial.print(sendWHY);Serial.flush();
+  //Serial.print(F(":"));Serial.print(wakeWHY);Serial.flush();
 
 } //End Of Loop ****************************
 //*****************************************

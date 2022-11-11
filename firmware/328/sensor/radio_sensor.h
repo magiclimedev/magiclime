@@ -86,7 +86,7 @@ byte optBYTE;
 word MAX1,MIN1,MAX2,MIN2; //for adaptive sensor reference
 word CAL_VAL; //trimpot set value
 
-volatile byte SBN; //the Sensor Board Number byte
+volatile int SBN; //the Sensor Board Number, -1 is 'no board', 0 is grounded, 22 is tied high
  
 int txPWR; //1-10 default - updateable by gateway?
 int txINTERVAL; //wdt counts - 8 sec. per
@@ -105,7 +105,7 @@ float txBV; //Battery Voltage
 
 enum TYPE {BEACON=0, EVENT_LOW, EVENT_CHNG, EVENT_RISE, EVENT_FALL, ANALOG, DIGITAL_SPI, DIGITAL_I2C} DATA_TYPE;
 bool HrtBtON;
-volatile byte sendWHY;
+volatile byte wakeWHY;
 
 char dataOLD[12]; //for discriminating against redundent TX's
 

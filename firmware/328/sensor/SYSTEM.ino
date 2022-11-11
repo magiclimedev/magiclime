@@ -89,14 +89,16 @@ void trigger_RESET(int sbn){ //global DATA_TYPE req,
 }
 
 //*******//Interrupt on D3 (interrupt #1) ******
-void IRPT_D3() {  sendWHY=1; txCOUNTER=txTIMER; 
+void IRPT_D3() {  
+  wakeWHY=1; //do the data for this sensor
+  txCOUNTER=txTIMER; //reset heartbeat timer 
 } 
 
 //*****************************************
 ISR(WDT_vect) { //in avr library
   txCOUNTER--;  
-  if (txCOUNTER<=0) {
-    if (HrtBtON==true) {sendWHY=2;} else {sendWHY=1;};
+  if (txCOUNTER==0) {
+    if (HrtBtON==true) {wakeWHY=2;} else {wakeWHY=1;};
     txCOUNTER=txTIMER;
   }
 }

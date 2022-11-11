@@ -58,7 +58,7 @@ void init_SETUP(){
   //and now the TX parameters? just look/expect or, yes...  ask for them.
   // RX expects PUR:IDxxxx:PRM0 - that's Parameter Update Request, the TXID and PaRaMeter set #0. 
   // RX responds with  ididid:i:h:p:s 
-  param0_GET(); //in case the following fails...
+  param0_GET(); //first, in case the following fails...
   char msg[32]; strcpy(msg,"PUR:"); strcat(msg,txID); strcat(msg,":PRM0");
   msg_SEND(msg, rxKEY,txPWR); //String &msgIN, String &key, int txPWR)
   // and now look for ... 500mSec?
@@ -72,7 +72,7 @@ void init_SETUP(){
       rx_DECODE_0(msg,buf,len,rxKEY);
       if (param0_SET(msg,txID)) {  
         param0_GET(); //from eeprom
-        param0_SEND(); //ack? just info = PAK:ididid:int,hb,pwr,sysbyte
+        param0_PAK(); //ack? just info = PAK:ididid:int,hb,pwr,sysbyte
         param0_OPTIONS(SBN,optBYTE); //something to do in that option byte?
       }
     }
@@ -87,7 +87,7 @@ void init_SETUP(){
   cli(); wdt_reset();
   WDTCSR |= B00011000; WDTCSR = B01100001;
   sei(); //watchdog timer - 8 sec   
-  sendWHY=0;
+  wakeWHY=0;
   //freeMemory();
 
  Serial.print(F("rxKEY: "));Serial.println(rxKEY);Serial.flush();
@@ -117,13 +117,15 @@ bool param0_SET(char *buf, char *id) { //ididid:d:h:p:s
 }
 
 //*****************************************
-void param0_SEND() { //if (debugON>0) {Serial.println(F("...param0_SEND"));Serial.flu
+void param0_PAK() {
+  //Serial.print(F("...param0_PAK, txi="));Serial.print(txINTERVAL);
+  //Serial.print(F("  txhb="));Serial.println(txHRTBEAT);
   char n2a[10]; // for Number TO Ascii things
   char msg[32];
   strcpy(msg,"PAK:");
   strcat(msg,txID); 
-  strcat(msg,":"); dtoa(((float(txINTERVAL)*8.0)/60.0),n2a,1); strcat(msg,n2a);
-  strcat(msg,":"); dtoa(((float(txHRTBEAT)*64.0)/60.0),n2a,1);  strcat(msg,n2a);
+  strcat(msg,":"); dtoa(float((float(txINTERVAL)*8.0)/60.0),n2a,1); strcat(msg,n2a);
+  strcat(msg,":"); dtoa(float((float(txHRTBEAT)*8.0)/60.0),n2a,1); strcat(msg,n2a);
   strcat(msg,":"); itoa((txPWR),n2a,10); strcat(msg,n2a);
   static const char hex[] = "0123456789ABCDEF";
   byte msnb = byte((optBYTE>>4)& 0x0F); byte lsnb=byte(optBYTE & 0x0F);
@@ -137,14 +139,15 @@ void param0_SEND() { //if (debugON>0) {Serial.println(F("...param0_SEND"));Seria
 
 //*****************************************
 void param0_GET() { //and set to defaults if EEPROM erased.
-  if (EEPROM.read(EE_POWER)>10){ //the one that should be 1-10
-    EEPROM.write(EE_INTERVAL,defaultINTERVAL); //*16=64 sec. (might be 255)
-    EEPROM.write(EE_HRTBEAT,defaultHEARTBEAT); //*64 about an hour. (might be 255)
+  if (EEPROM.read(EE_POWER)>20){ //the one that should be 2-20
+    EEPROM.write(EE_INTERVAL,defaultINTERVAL); //  
+    EEPROM.write(EE_HRTBEAT,defaultHEARTBEAT); //  
     EEPROM.write(EE_POWER,2); //low power default value
+    EEPROM.write(EE_OPTBYTE,0);
   }
-  txINTERVAL=EEPROM.read(EE_INTERVAL);    // 8 sec per wdt.
-  txHRTBEAT=EEPROM.read(EE_HRTBEAT)*8;    //from 64 sec to 8 sec per wdt.
-  txPWR=EEPROM.read(EE_POWER);            //1-10
+  txINTERVAL=EEPROM.read(EE_INTERVAL)*wdmTXI;    //255*(8*1)sec. * 255 = 2,040/60= 34 min.
+  txHRTBEAT=EEPROM.read(EE_HRTBEAT)*wdmHBP;    //255*(8*16)sec = 32,640 sec./60 = 544 min
+  txPWR=EEPROM.read(EE_POWER);            //2-20
   optBYTE=EEPROM.read(EE_OPTBYTE);        //
 }
 
@@ -239,14 +242,14 @@ void init_TYPE(TYPE sbt){ //Serial.print(F("...init_TYPE"));
    //="EVENT_FALL","ANALOG", "DIGITAL_SPI", "DIGITAL_I2C"
   switch (sbt) {
     case BEACON :{ HrtBtON=true; } break;
-    case EVENT_LOW :{ attachInterrupt(digitalPinToInterrupt(pinEVENT), IRPT_D3, LOW);
-      HrtBtON=true;  } break;
-    case EVENT_CHNG :{ attachInterrupt(digitalPinToInterrupt(pinEVENT), IRPT_D3, CHANGE);
-      HrtBtON=true;  } break;
-    case EVENT_RISE :{ attachInterrupt(digitalPinToInterrupt(pinEVENT), IRPT_D3, RISING);
-      HrtBtON=true;  } break;
-    case EVENT_FALL :{ attachInterrupt(digitalPinToInterrupt(pinEVENT), IRPT_D3, FALLING);
-      HrtBtON=true;  } break; 
+    case EVENT_LOW :{ HrtBtON=true;
+      attachInterrupt(digitalPinToInterrupt(pinEVENT), IRPT_D3, LOW); } break;
+    case EVENT_CHNG :{HrtBtON=true;  
+      attachInterrupt(digitalPinToInterrupt(pinEVENT), IRPT_D3, CHANGE); } break;
+    case EVENT_RISE :{ HrtBtON=true;  
+      attachInterrupt(digitalPinToInterrupt(pinEVENT), IRPT_D3, RISING); } break;
+    case EVENT_FALL :{ HrtBtON=true;  
+      attachInterrupt(digitalPinToInterrupt(pinEVENT), IRPT_D3, FALLING); } break; 
     
     case ANALOG :{ HrtBtON=false; } break;
     case DIGITAL_SPI :{ HrtBtON=false; } break;
