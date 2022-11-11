@@ -283,7 +283,7 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
     }
     
     if (( PCbuf[0] == 'p')&&( PCbuf[1] == 'r')&&( PCbuf[2] == 'm')&&(PCbuf[3] == ':')) { //Parameter stuff to follow
-      byte cp[6]; byte len[6]; byte cpp=0; //Colon Positions
+      byte cp[6]; byte len[6]; byte cpp=0; //Colon Positions/Pointer
       for (byte i=0;i<bufLEN;i++) {//format prm:ididid:iii:hhh:p:o c[0],c[1],c[2],c[3],c[4]
         if (PCbuf[i]==':') {cp[cpp]=i; cpp++;} // log postion of all ':'s
       } 
@@ -378,9 +378,9 @@ void param0_SEND(word eePrmID) {
   //Serial.print(F("param0_SEND...")); Serial.println(eePrmID); Serial.flush();
   byte param[16]; word eeID;  //Param Pointer  //got 6 matches
   for (byte i=0;i<6;i++) { param[i]=EEPROM.read(eePrmID-i); } //ID to param
-  param[6]=':';  //interval , sec./16
+  param[6]=':';  //interval in wdt timeouts * multiplier in sensor (wdmTXI)
   param[7]=EEPROM.read(eePrmID-6);
-  param[8]=':'; //heartbeat, sec./64
+  param[8]=':'; //heartbeat, in wdt timeouts * multiplier in sensor (wdmHBP)
   param[9]=EEPROM.read(eePrmID-7); 
   param[10]=':';//power
   param[11]=EEPROM.read(eePrmID-8); 
@@ -428,7 +428,7 @@ void param_SET_DEFAULT(char *id,word eeLoc) {//ID,Interval,Power
   byte bp;  
   for(bp=0;bp<6;bp++) { EEPROM.write(eeLoc-bp,id[bp]); } //0-5
     EEPROM.write(eeLoc-bp,4); bp++; //interval sec/16         //6
-    EEPROM.write(eeLoc-bp,64); bp++; //heartbeat sec./64      //7
+    EEPROM.write(eeLoc-bp,16); bp++; //heartbeat sec./64      //7
     EEPROM.write(eeLoc-bp,2); bp++;//2-20 default power        //8
     EEPROM.write(eeLoc-bp,0); //Sysbyte bits all 0            //9
 }
@@ -455,8 +455,8 @@ char *prm_pkt(char *pktOUT, char *id, byte intrvl, byte hb, byte pwr, byte opt) 
   char n2a[10]; // for Number TO Ascii things
   strcpy(pktOUT,"PRM:");
   strcat(pktOUT,id); 
-  strcat(pktOUT,":"); dtoa(((float(intrvl)*8.0)/60.0),n2a,1); strcat(pktOUT,n2a);
-  strcat(pktOUT,":"); dtoa(((float(hb)*64.0)/60.0),n2a,1);  strcat(pktOUT,n2a);
+  strcat(pktOUT,":"); itoa((intrvl),n2a,10); strcat(pktOUT,n2a); n2a[0]=0;
+  strcat(pktOUT,":"); itoa((hb),n2a,10);  strcat(pktOUT,n2a); n2a[0]=0;
   strcat(pktOUT,":"); itoa((pwr),n2a,10); strcat(pktOUT,n2a);
   static const char hex[] = "0123456789ABCDEF";
   byte msnb = byte((opt>>4)& 0x0F); byte lsnb=byte(opt & 0x0F);
