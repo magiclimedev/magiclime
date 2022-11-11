@@ -1,10 +1,11 @@
 //*****************************************
-char *get_DATA(char *data, byte sbn, byte why ) { char *ret=data;
+char *get_DATA(char *data, int sbn, byte why ) { char *ret=data;
   detachInterrupt(digitalPinToInterrupt(pinEVENT));
   if (why==2) {strcpy(data,"HEARTBEAT");}
   else {
     switch (sbn) { 
-      case 0: { strcpy(data,"BEACON");  } break;//not used as HB fills the bill.
+      case -1: { strcpy(data,"BEACON");  } break;//not used as HB fills the bill.
+      case 0: { strcpy(data,"MY_SBN0");  } break;//SBN pin grounded
       case 1: { strcpy(data,"PUSH");    } break;//button
       case 2: { get_TILT(data);         } break; //tilt
       case 3: { get_REED(data);         } break; //reed
@@ -26,14 +27,7 @@ char *get_DATA(char *data, byte sbn, byte why ) { char *ret=data;
       case 19: { strcpy(data,"S19");    } break; //
       case 20: { strcpy(data,"S20");    } break; //
       case 21: { get_DOT(data);         } break; //
-      case 22: { strcpy(data,"S22");    } break; //
-      case 23: { strcpy(data,"S23");    } break; //
-      case 24: { strcpy(data,"S24");    } break; //
-      case 25: { strcpy(data,"S25");    } break; //
-      case 26: { strcpy(data,"S26");    } break; //
-      case 27: { strcpy(data,"S27");    } break; //
-      case 28: { strcpy(data,"S28");    } break; //
-      case 29: { strcpy(data,"S29");    } break; //
+      case 22: { strcpy(data,"MY_SBN22");    } break; // SBN pin tied to Aref
     }
   }  
   return ret;;
@@ -156,7 +150,7 @@ char *get_Si7020_RH(char *data) { char *ret=data;
     fRH=int(((125.0 * float(RH))/ 65536.0)-6); //RH
     if (fRH>100) { fRH=100; } else if (fRH<0) { fRH=0; }
     char n2a[10]; itoa(int(fRH),n2a,10); 
-    strcat(data,n2a);
+    strcpy(data,n2a);
   }
   else {strcpy(data,"---"); }
   return ret;

@@ -138,9 +138,9 @@ void param0_SEND() { //if (debugON>0) {Serial.println(F("...param0_SEND"));Seria
 //*****************************************
 void param0_GET() { //and set to defaults if EEPROM erased.
   if (EEPROM.read(EE_POWER)>10){ //the one that should be 1-10
-    EEPROM.write(EE_INTERVAL,INTERVAL_DATA); //*16=64 sec. (might be 255)
-    EEPROM.write(EE_HRTBEAT,INTERVAL_HEARTBEAT); //*64 about an hour. (might be 255)
-    EEPROM.write(EE_POWER,1); //low power default value
+    EEPROM.write(EE_INTERVAL,defaultINTERVAL); //*16=64 sec. (might be 255)
+    EEPROM.write(EE_HRTBEAT,defaultHEARTBEAT); //*64 about an hour. (might be 255)
+    EEPROM.write(EE_POWER,2); //low power default value
   }
   txINTERVAL=EEPROM.read(EE_INTERVAL);    // 8 sec per wdt.
   txHRTBEAT=EEPROM.read(EE_HRTBEAT)*8;    //from 64 sec to 8 sec per wdt.

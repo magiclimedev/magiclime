@@ -1,10 +1,10 @@
 
 //*****************************************
-byte get_SBNum() { //A6 is not able to be digital for yanking
-  byte sbn; //Sensor Board Number
+int get_SBNum() {// -1 is 'no board', 0 is grounded, 22 is tied high
+  int sbn; //Sensor Board Number
   byte VBS=digitalRead(pinBOOST);
   if (VBS==0) {digitalWrite(pinBOOST, HIGH); delay(10);}
-  int pinRead1=analogRead(pinSBID);
+  int pinRead1=analogRead(pinSBID);//A6 is ADC only - can't yank it.
   int pinRead2;
   int pinACC=0;
   int pinAVG=pinRead1;
@@ -14,8 +14,13 @@ byte get_SBNum() { //A6 is not able to be digital for yanking
     pinRead1=pinRead2;
     pinAVG=int((pinAVG+pinRead2)/2);
   }
-  if (pinACC>10) { sbn=0; }
-  else { sbn=byte((int(pinAVG/51)+1) );} //*10); }
+//Serial.print(F("pinACC: "));Serial.println(pinACC);Serial.flush();
+//Serial.print(F("pinAVG: "));Serial.println(pinAVG);Serial.flush();
+
+  if (pinACC>10) { sbn=-1; } //too much wiggling, no-board/beacon mode
+  else if (pinAVG<3) { sbn=0; } //grounded
+  else if (pinAVG>1020) { sbn=22; } //tied high
+  else { sbn=byte((int(pinAVG/51)+1) );} //about 20 sensors #1 to 21 and 0 and 22
   if (VBS==0) {digitalWrite(pinBOOST, LOW); delay(5); }
   return sbn;
 }  
@@ -139,9 +144,9 @@ void EE_ERASE_all() {
 }
 
 //*****************************************
-void EE_ERASE_id(byte sbn) {
+void EE_ERASE_id(int sbn) { sbn++; //beacon is -1, so all bump up
   Serial.print(F("EE_ERASE_id...#"));Serial.print(sbn);Serial.flush();
-  word idLoc=(EE_ID-(sbn*6));
+  word idLoc=(EE_ID-((sbn)*6)); //sbn can be -1 for beacon, so bump all up
   for (byte i=0;i<6;i++) { EEPROM.write(idLoc-i,255); } //the rest get FF's
   Serial.println(F(" ...Done#"));Serial.flush();
 }

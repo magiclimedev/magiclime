@@ -18,7 +18,7 @@ byte PV=1; //Protocol Version - very first char byte out;
 void msg_SEND(char *msgIN, char *key, int pwr) { 
   if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(100);}
   digitalWrite(pinLED, HIGH);
-  //Serial.print(F("msgSEND: ")); print_CHR(msgIN,strlen(msgIN));
+  Serial.print(F("msgSEND: ")); print_CHR(msgIN,strlen(msgIN));
   byte txLEN=strlen(msgIN);
   char txBUF[64];
   tx_ENCODE_0(txBUF,msgIN,txLEN,key);

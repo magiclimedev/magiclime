@@ -9,12 +9,12 @@
  
 #include "radio_sensor.h"
 
-const int INTERVAL_DATA = 8;       // 8  X 16 sec = 124 sec.
-const int INTERVAL_HEARTBEAT = 113; // 113 x 64 sec = 2 hour (approx) 
+const int defaultINTERVAL = 8;       // periodic TX interval 8  X 16 sec = 124 sec.
+const int defaultHEARTBEAT = 113; //'I'm still alive' period 113 x 64 sec = 2 hour (approx) 
 
 //*****************************************
 void setup () { 
-//SBN -> Sensor Board Number...
+//SBN -> Sensor Board Number 1-21..-1 is 'no board', 0 is A6 pin grounded, 22 is A6 tied to Aref.
   SBN=255; //3;//255; //set to '255' to get SBN via resistors.
 // otherwise, SBN will be the one you specify here
   init_SETUP();
