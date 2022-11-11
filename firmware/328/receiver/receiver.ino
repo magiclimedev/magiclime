@@ -92,8 +92,8 @@ static char rxBUF[64]; //for the rx buf
 static byte rxLEN; //for the length
 static char rxKEY[18]; //16 char + null
  
-const byte rssOFFSET=130;
-byte keyRSS=80;
+const byte rssOFFSET=140;
+byte keyRSS=90;
 bool flgDONE;
 //**********************************************************************
 void setup() { 
