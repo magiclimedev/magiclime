@@ -39,18 +39,19 @@ In order of thought - not importance.
 		Receiver finds/sends stored (or default) values back.
 			Values returned are...
 			Interval - period as # of 8 sec. units. I.e., '8' is about 64 sec.
-				This is for periodic 'non-event' sensors like temperature, where data is 
-				collected and sent at regular 'interval's.
+				This is for periodic 'non-event' sensors like temperature,
+				where data is collected and sent at regular 'interval's.
 			Heartbeat - as # of 64 sec. units. - for keeping receiver reassured that an
 				'event' sensor is still alive.
 			Transmist power - TX modules valid range is 2-20. 
-			Option Byte - flag bits for 'whatever'. I.e., light sensor data is % of max/min.
+			Option Byte - flag bits for 'whatever'.
+				I.e., light sensor data is % of max/min.
 				Option bits can be used to reset max/min values.
 
-			Sensor then 'ACKs' with values converted to minutes (easier to understand).
-			Receiver composes that into a json 'info' packet - sends to host.
+		Sensor then 'ACKs' with values converted to minutes (easier to understand).
+		Receiver composes that into a json 'info' packet - sends to host.
 			
-		Enable 8 sec. watchdog timer.	
+		Enable 8 sec. WatchDog Timer (WDT).	
 		
 ##############################################	
 	
@@ -58,15 +59,22 @@ In order of thought - not importance.
 			Enable EVENT interrupts if needed.
 			Go to sleep. Z-z-z-z-z-z-z-z
 			then...
-			If wake up due to WatchDog Timer (WDT)
-				up-count the Interval or Heartbeat timer
+			If wake up due to WDT...
+				up-count the Interval or Heartbeat counter
 				if it's time...
 					disable event interrupts.
+					turn on the battery boost
 					compose data packet.
 					send it out via RH95CW module.
+					reset TX interval counter
+					turn off the battery boost
+					
 			If wake-up due to event pin yanking...
+					turn on the battery boost
 					compose data packet.
 					send it out via RH95CW module.
+					reset TX interval counter (Heartbeat)
+					turn off the battery boost
 					
 ##############################################
 					
@@ -83,11 +91,28 @@ In order of thought - not importance.
 			where...
 			'prm:' is the clue that this is a parameter thing.
 			'ididid' is the 6-char sensor ID to be updated.
-			'ii' is the interval in 16 sec. units. 
+			'ii' is the interval in 8 sec. units. 
 			'hh' is the heartbeat interval in 64 sec. units.
-			'p' is tx power (2-20) to use. May be able to do an adaptive power thing with this.
+			'p' is tx power (2-20) to use. May be able to do an 
+			adaptive power thing with this.
 			'o' is the Option byte - meaning of bits are unique to sensor needs.
 			
 ##############################################	
+
+About that data packet...
+	It begins with '1', followed by a '|' delimiter.
+	That '1' means, 'the following bytes are organized according to
+	MagicLime data packet scheme #1'.
+	This means that YOU, a person with their own ideas about how data should
+	be composed, can do that.  YOU use a '2'(or whatever) and route the rest of
+	the data to YOUR data-parsing routine in the receiver.
+	In OUR packet, what follows is...
+		6-char. sensor ID	(to be connected to a meaningful alias)
+		sensor board number (to become a descriptive word)
+		battery voltage (important to know!)
+		the data - words like 'MOTION' or number(s).
+		
+	Number of bytes? Typical message might be...
+	1|AEWLIF|5|2.7|MOTION   so, 1+7+2+4+6 = 20.
 			
 			
