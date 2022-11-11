@@ -7,7 +7,7 @@
  * magiclime.com
  */
  
-const static char VER[] = "receiver";
+const static char VER[] = "RX221111";
 
 #include <EEPROM.h>
 #include <avr/interrupt.h>
