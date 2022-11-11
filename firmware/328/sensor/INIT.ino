@@ -88,6 +88,7 @@ void init_SETUP(){
   WDTCSR |= B00011000; WDTCSR = B01100001;
   sei(); //watchdog timer - 8 sec   
   wakeWHY=0;
+  txCOUNTER=txTIMER-1;
   //freeMemory();
 
  Serial.print(F("rxKEY: "));Serial.println(rxKEY);Serial.flush();

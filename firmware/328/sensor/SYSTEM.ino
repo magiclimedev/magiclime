@@ -96,10 +96,10 @@ void IRPT_D3() {
 
 //*****************************************
 ISR(WDT_vect) { //in avr library
-  txCOUNTER--;  
-  if (txCOUNTER==0) {
+  txCOUNTER++;  
+  if (txCOUNTER==txTIMER) {
     if (HrtBtON==true) {wakeWHY=2;} else {wakeWHY=1;};
-    txCOUNTER=txTIMER;
+    txCOUNTER=0;
   }
 }
 
