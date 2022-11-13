@@ -224,7 +224,7 @@ char * init_SENSOR(char *snm, int sbn) { char* ret=snm; DATA_TYPE = BEACON; //pr
     case 11: { DATA_TYPE = ANALOG; strcpy(snm,"LIGHT%");
                 MAX1=eeREAD2(EE_MAX1); MIN1=eeREAD2(EE_MIN1); // get max,min from EEprom ?
                 pinMode(4, OUTPUT); digitalWrite(4, LOW); } break;                        
-    case 12: { DATA_TYPE = DIGITAL_I2C; } break; strcpy(snm,"T-RH");
+    case 12: { DATA_TYPE = DIGITAL_I2C; strcpy(snm,"T-RH"); } break; 
     case 21: { DATA_TYPE = EVENT_RISE; strcpy(snm,"MOT-DOT");
       pinMode(pinEVENT, INPUT); digitalWrite(pinEVENT, LOW); //no pullup
       //pinMode(pinSWITCH, OUTPUT);  digitalWrite(pinSWITCH, LOW); //ser.prog.on D4
