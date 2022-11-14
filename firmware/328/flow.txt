@@ -113,6 +113,7 @@ About that data packet...
 		the data - words like 'MOTION' or number(s).
 		
 	Number of bytes? Typical message might be...
+<<<<<<< Updated upstream
 	1|JVUE4U|5|2.7|MOTION   so, 1+7+2+4+6 = 20.
 			
 Here's how it comes out as a json packet, after receiver adds its RSS ...
@@ -121,3 +122,8 @@ Here's how it comes out as a json packet, after receiver adds its RSS ...
 	{"source":"tx","rss":83,"uid":"4R6TJR","sensor":"T,RH","bat":1.9,"data":"68.0,43"} 
 
 				
+=======
+	1|AEWLIF|5|2.7|MOTION   so, 1+7+2+4+6 = 20.
+			
+			
+>>>>>>> Stashed changes
