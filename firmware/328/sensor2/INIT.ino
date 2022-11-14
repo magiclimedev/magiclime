@@ -20,7 +20,7 @@ void init_SETUP(){
   boost_ON();
   digitalWrite(pinLED, HIGH);
   delay(200);
-  prm0_EE_GET(); //from eeprom
+  prm0_EE_GET(SBN); //from eeprom
   digitalWrite(pinLED, LOW);
   
   if (SBN==255) {SBN=get_SBNum();}
@@ -42,15 +42,16 @@ void init_SETUP(){
       key_REQUEST(rxKEY,txID,keyRSS); //ask for RX's KEY
       if (rxKEY[0]!=0) { //good key returned
         Serial.print(F("rxKEY=")); Serial.println(rxKEY);
-        if (key_VALIDATE(rxKEY)==false){strcpy(rxKEY,"thisisamagiclime"); }
+        if (key_VALIDATE(rxKEY)==false){ strcpy(rxKEY,"thisisamagiclime"); }
         key_EE_SET(rxKEY);
       }
     }
     key_EE_GET(rxKEY);
-    delay(100); //it can take the receiver a bit to stash things in eeprom
+    delay(10); //it can take the receiver a bit to stash things in eeprom
   }
     
   init_SENSOR(SNM,SBN); //name of sensor returned in SNM
+  name_EE_GET(SNM,SBN); //leaves SNM unchanged if eeprom empty
 
   txBV = get_BatteryVoltage();
  
@@ -59,27 +60,16 @@ void init_SETUP(){
   //and now the TX parameters? just look/expect or, yes...  ask for them.
   // RX expects PUR:IDxxxx:PRM0:NAME - that's Parameter Update Request, the TXID and PaRaMeter set #0. 
   // RX responds with  ididid:i:h:p:s 
-  prm0_EE_GET(); //first, in case the following fails...
+
+  prm0_EE_GET(SBN); //first, in case the following fails...
   char msg[40];
   strcpy(msg,"PUR:"); strcat(msg,txID);
   strcat(msg,":PRM0:"); strcat(msg,SNM);
+  //PUR:IDxxxx:PRM0:NAME
   msg_SEND(msg, rxKEY,txPWR); //String &msgIN, String &key, int txPWR)
-  // and now look for ... 500mSec?
-  byte timeout=0;
-  while (!rf95.available() && timeout<250) { delay(10); timeout++; }
-  Serial.print(F("PUR timeout<250): "));Serial.println(timeout);Serial.flush();
-  if (timeout<250) {
-    uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-    uint8_t len = sizeof(buf);
-    if (rf95.recv(buf, &len)) {// print_HEX(buf,len);
-      rx_DECODE_0(msg,buf,len,rxKEY);
-      if (prm0_PKT2EE(msg,txID)) {  
-        prm0_EE_GET(); //from eeprom
-        prm0_PAK(); //ack? just info = PAK:ididid:int,hb,pwr,sysbyte
-        prm0_OPTIONS(SBN,optBYTE); //something to do in that option byte?
-      }
-    }
-  }
+  // and now look for PRM and SNM and ??
+  rx_LOOK(msg,rxKEY,25); //250mSec
+  if (msg[0]!=0) { prm0_PROCESS(msg,txID,SBN); }
   
 //***********************
   get_DATA(txDATA,SBN,1);
@@ -99,31 +89,61 @@ void init_SETUP(){
  Serial.print(F("rxKEY: "));Serial.println(rxKEY);Serial.flush();
 } //* END OF init_SETUP ************************
 //*****************************************
-
 //*****************************************
-bool prm0_PKT2EE(char *buf, char *id) { //ididid:d:h:p:s
-  Serial.print(F("prm0_PKT2EE...")); 
-  byte i; byte d;
-  for (i=0;i<6;i++) {if (id[i]!= buf[i]) {break;} }
-  if (i==6) { print_HEX(buf,15);  //all 6 chars match the txid
-    if ((buf[6]==':') && (buf[8]==':')&&(buf[10]==':')&&(buf[12]==':')) {
-      EEPROM.write(EE_INTERVAL,buf[7]);
-      Serial.print(F("buf7:"));Serial.println(buf[7],HEX);Serial.flush();
-      EEPROM.write(EE_HRTBEAT,buf[9]);
-      Serial.print(F("buf9:"));Serial.println(buf[9],HEX);Serial.flush();
-      EEPROM.write(EE_POWER,buf[11]);
-      Serial.print(F("buf11:"));Serial.println(buf[11],HEX);Serial.flush();
-      EEPROM.write(EE_OPTBYTE,buf[13]);
-      Serial.print(F("buf13:"));Serial.println(buf[13],HEX);Serial.flush();
-      led_GREEN_BLINK(3,10,10);
-      return true;
-    }
+
+//*****************************************  
+void name_EE_SET(char *snm, int sbn) {  sbn++;
+  word addr=EE_NAME-((sbn)*EE_BLKSIZE);
+  for (byte b=0;b<10;b++) {
+    if ((snm[b]==0) || (snm[b]==0xFF)) { break; }
+    else { EEPROM.write(addr-b,snm[b]); }
   }
-  return false;  
+}
+
+//*****************************************  
+char *name_EE_GET(char *snm, int sbn) { sbn++; char *ret=snm;
+  word addr=EE_NAME-((sbn)*EE_BLKSIZE);
+  if (EEPROM.read(addr)==0xFF) {return ret; }
+  else { byte b;
+    for (b=0;b<10;b++) {  snm[b]=EEPROM.read(addr-b);
+      if ((snm[b]==0) || (snm[b]==0xFF)) { break; }
+    }
+  snm[b]=0;
+  return ret;
+  }
 }
 
 //*****************************************
-void prm0_PAK() {
+//Sensor NaMe returned,Sensor Board Num, Name Length, Block Size
+char *eeSTR_GET(char *str, word addr, byte bix,  byte nl, byte bs) { char *ret=str;
+  //but basically a utility to 'get this much from there' from eeprom.
+  //and return as a c-sring - if not empty. But does return 0.
+  if (EEPROM.read(addr)==0xFF) {return ret; }
+  byte b; byte nb; 
+  for (b=0;b<nl;b++) {
+    str[b]=EEPROM.read(addr-b);
+    if ((str[b]==0xFF) || (str[b]==0)) { break; }
+  } 
+  str[b]=0; //one last null
+  return ret;
+}
+
+//*****************************************
+void prm0_PROCESS(char *buf, char *id, int sbn) {
+  Serial.print(F("prm0_PROCESS...")); 
+  prm0_EE_GET(SBN); //from eeprom - first in case following fails
+  char tmp[8]; mySubStr(tmp,buf,0,6);
+  if (strcmp(tmp,id)==0) { //id matches - good to go
+    if ((buf[6]==':') && (buf[8]==':')&&(buf[10]==':')&&(buf[12]==':')) { //this packet validation
+      prm0_EE_SET(buf,sbn); //to eeprom  
+      prm0_PAKOUT(); //ack? just info = PAK:ididid:int,hb,pwr,sysbyte
+      prm0_OPTIONS(SBN,optBYTE); //something to do in that option byte?
+      led_GREEN_BLINK(3,10,10);  }        
+  }
+}
+
+//*****************************************
+void prm0_PAKOUT() {
   //Serial.print(F("...prm0_PAK, txi="));Serial.print(txINTERVAL);
   //Serial.print(F("  txhb="));Serial.println(txHRTBEAT);
   char n2a[10]; // for Number TO Ascii things
@@ -145,16 +165,30 @@ void prm0_PAK() {
 }
 
 //*****************************************
-void prm0_EE_GET() { //and set to defaults if EEPROM erased.
+void prm0_EE_SET(char *buf,int sbn) { sbn++;
+Serial.println(F("prm0_EE_SET..."));
+  EEPROM.write((EE_INTERVAL-(sbn*EE_BLKSIZE)),buf[7]);
+  txINTERVAL=buf[7]*wdmTXI;
+  EEPROM.write((EE_HRTBEAT-(sbn*EE_BLKSIZE)),buf[9]);
+  txHRTBEAT=buf[9]*wdmHBP; 
+  EEPROM.write((EE_POWER-(sbn*EE_BLKSIZE)),buf[11]);
+  txPWR=buf[11]; 
+  //OPTBYTE is not a 'per sensor' thing - more like a 'du jour' thing.
+  EEPROM.write(EE_OPTBYTE,buf[13]);
+  optBYTE=buf[13]; 
+}
+
+//*****************************************
+void prm0_EE_GET(int sbn) { sbn++; //and set to defaults if EEPROM erased.
   if (EEPROM.read(EE_POWER)>20){ //the one that should be 2-20
-    EEPROM.write(EE_INTERVAL,defaultINTERVAL); //  
-    EEPROM.write(EE_HRTBEAT,defaultHEARTBEAT); //  
-    EEPROM.write(EE_POWER,2); //low power default value
+    EEPROM.write((EE_INTERVAL-(sbn*EE_BLKSIZE)),defaultINTERVAL); //  
+    EEPROM.write((EE_HRTBEAT-(sbn*EE_BLKSIZE)),defaultHEARTBEAT); //  
+    EEPROM.write((EE_POWER-(sbn*EE_BLKSIZE)),2); //low power default value
     EEPROM.write(EE_OPTBYTE,0);
   }
-  txINTERVAL=EEPROM.read(EE_INTERVAL)*wdmTXI;    //255*(8*1)sec. * 255 = 2,040/60= 34 min.
-  txHRTBEAT=EEPROM.read(EE_HRTBEAT)*wdmHBP;    //255*(8*16)sec = 32,640 sec./60 = 544 min
-  txPWR=EEPROM.read(EE_POWER);            //2-20
+  txINTERVAL=EEPROM.read(EE_INTERVAL-(sbn*EE_BLKSIZE))*wdmTXI;    //255*(8*1)sec. * 255 = 2,040/60= 34 min.
+  txHRTBEAT=EEPROM.read(EE_HRTBEAT-(sbn*EE_BLKSIZE))*wdmHBP;    //255*(8*16)sec = 32,640 sec./60 = 544 min
+  txPWR=EEPROM.read(EE_POWER-(sbn*EE_BLKSIZE));            //2-20
   optBYTE=EEPROM.read(EE_OPTBYTE);        //
 }
 
@@ -203,7 +237,7 @@ char * init_SENSOR(char *snm, int sbn) { char* ret=snm; DATA_TYPE = BEACON; //pr
   switch (sbn) {  strcpy(SNM,"????"); //init sensors as needed
     case -1: { DATA_TYPE = BEACON; strcpy(snm,"BEACON");} break;        //no sensor board detected
     case 0: { DATA_TYPE = BEACON; strcpy(snm,"SBN0"); } break;        //your pick - sbn pin grounded
-    case 1: { DATA_TYPE = EVENT_RISE;   strcpy(snm,"BUTTON"); 
+    case 1: { DATA_TYPE = EVENT_RISE;  strcpy(snm,"BUTTON"); 
       pinMode(pinEVENT, INPUT);  } break;
     case 2: { DATA_TYPE = EVENT_RISE;  strcpy(snm,"TILT"); strcpy(dataOLD,"NULL");
       pinMode(pinEVENT, INPUT); digitalWrite(pinEVENT, LOW); } break;

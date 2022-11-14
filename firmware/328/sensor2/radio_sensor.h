@@ -48,20 +48,22 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 //bit#5: 
 //bit#6: 
 //bit#7: 
-
 #define EE_SEQNUM   EE_OPTBYTE-1  //TX sequence # for detecting missing data - not implemented yet.
-#define EE_INTERVAL EE_SEQNUM-1 //  'seconds/16' WDT counter
-#define EE_HRTBEAT EE_INTERVAL-1 //'seconds/64
-#define EE_POWER    EE_HRTBEAT-1 //1 byte for tx power 0-9
-#define EE_MAX1  EE_POWER-1     
-#define EE_MIN1  EE_MAX1-2  //2-bytes to cover a2d's 1024 values, msb,lsb
-#define EE_MAX2  EE_MIN1-2  //2 bytes 
-#define EE_MIN2  EE_MAX2-2  //2-bytes 
-#define EE_KEY   EE_MIN2-2  //2-bytes 
-#define EE_ID   EE_KEY-16     //up to 16 byte KEY
-//#define EE_NAME   EE_ID-6     //6 byte ID - name not at this time
+// parameter flag bits
+#define EE_MAX1     EE_SEQNUM-1  //an idea in waiting - some other packet format  
+#define EE_MIN1     EE_MAX1-2   //2-bytes to cover a2d's 1024 values, msb,lsb
+#define EE_MAX2     EE_MIN1-2   //2 bytes 
+#define EE_MIN2     EE_MAX2-2   //2-bytes  //not storing these at this time
+#define EE_KEY      EE_MIN2-2   //2-bytes 
+//these are stored for each sbn, 22*22 = 484 bytes - room for more!
+#define EE_ID       EE_KEY-16   // 16 byte KEY
+#define EE_INTERVAL EE_ID-6 //  'seconds/16' WDT counter    1
+#define EE_HRTBEAT  EE_INTERVAL-1 //'seconds/64             1
+#define EE_POWER    EE_HRTBEAT-1 //1 byte for tx power 0-9  1
+#define EE_NAME     EE_POWER-1     // 6+1+1+1+10 = 19 per sensor
+#define EE_BLKSIZE  20 //plus one more for nice number
+
 //bottomless assignment for EE-ID's as they are 'per sensor' unique persistant ID's
-//with name is 6+10(max) bytes per id
 
 #define pinRF95_INT  2
 #define pinEVENT  3

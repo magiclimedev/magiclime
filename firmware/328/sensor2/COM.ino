@@ -54,6 +54,20 @@ char *rx_DECODE_0(char *msgOUT,char *rxBUF, byte rxLEN, char *key) {char *ret=ms
 }
 
 //*****************************************
+char *rx_LOOK(char *msg, char *rxkey, int ctr) { char *ret=msg;
+  byte timeout=0; msg[0]=0; ctr=abs(ctr); if (ctr>1000) {ctr=1000;}
+  while (!rf95.available() && timeout<ctr) { delay(10); timeout++; }
+  Serial.print(F("rx_LOOK<")); Serial.print(ctr);  Serial.print(F(": ")); 
+  Serial.println(timeout);Serial.flush();
+  if (timeout<=ctr) {
+    uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+    uint8_t len = sizeof(buf);
+    if (rf95.recv(buf, &len)) {rx_DECODE_0(msg,buf,len,rxkey); }
+  }
+  return ret;
+}
+
+//*****************************************
 void print_HEX(char *buf,byte len) { byte i;
   Serial.print(len);Serial.print(F(": "));
   for (i=0;i<(len-1);i++) {Serial.print(byte(buf[i]),HEX);Serial.print(F(" "));}

@@ -36,7 +36,7 @@ extern char *__brkval;
 #define RF95_FREQ   915.0
 RH_RF95 rf95(RF95_CS, RF95_INT);
 
-#define EE_OPTBYTE  1023 //Sensor Option Bits - misc flag/status/mode bits
+#define EE_SYSBYTE  1023 //System byte, misc flag/status/mode bits for ???? nothing yet.
 //bit#0: erase the current ID (so it makes a new one on boot)
 //bit#1: reset max's (to 0)
 //bit#2: reset min's (to 1023) 
@@ -45,50 +45,18 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 //bit#5: 
 //bit#6: 
 //bit#7:
-#define EE_KEY_RSS        EE_OPTBYTE-1 // rss for key exchange
+#define EE_KEY_RSS        EE_SYSBYTE-1 // rss for key exchange
 #define EE_KEY            EE_KEY_RSS-1  //KEY is 16 - no string null 
-#define EE_PRM_ID       EE_KEY-16     // 6 char
-#define EE_PRM_INTERVAL EE_PRM_ID-6 //7, 'seconds/16' 255=68 min.
-#define EE_PRM_HRTBEAT  EE_INTERVAL-1 //8, 'seconds/64' 255=272 min.
-#define EE_PRM_POWER    EE_PRM_HRTBEAT-1  //9, 1-10  (2-20dB in sensor).
-#define EE_PRM_OPTBYTE  EE_PRM_POWER-1  //10, + this one = 10 bytes per ID,
-#define EE_PRM_NAME     EE_PRM_OPTBYTE-1  //20, and then this one = 10 more bytes per ID,
-
+#define EE_ID       EE_KEY-16     // 6 char
+#define EE_INTERVAL EE_ID-6 //7, 'seconds/16' 255=68 min.
+#define EE_HRTBEAT  EE_INTERVAL-1 //8, 'seconds/64' 255=272 min.
+#define EE_POWER    EE_HRTBEAT-1  //9, 1-10  (2-20dB in sensor).
+#define EE_OPTBYTE  EE_POWER-1  //10, + this one = 10 bytes per ID,
+#define EE_NAME     EE_OPTBYTE-1  //20, and then this one = 10 more bytes per ID,
 // PARAM ID things go all the way down to 0
 
 boolean flgShowChar;
 boolean flgShowHex;
-
-//here's the type look-up table...
-const char TM1[] PROGMEM = "Beacon"; 
-const char T0[] PROGMEM = "MY_SBN0"; 
-const char T1[] PROGMEM = "Button";  
-const char T2[] PROGMEM = "Tilt"; 
-const char T3[] PROGMEM = "Reed";
-const char T4[] PROGMEM = "Shake";
-const char T5[] PROGMEM = "Motion";
-const char T6[] PROGMEM = "Knock";
-const char T7[] PROGMEM = "2Button";
-const char T8[] PROGMEM = "SBN8"; 
-const char T9[] PROGMEM = "SBN9"; 
-const char T10[] PROGMEM = "Temp"; 
-const char T11[] PROGMEM = "Light";
-const char T12[] PROGMEM = "T,RH";
-const char T13[] PROGMEM = "SBN13";
-const char T14[] PROGMEM = "SBN14";
-const char T15[] PROGMEM = "SBN15";
-const char T16[] PROGMEM = "SBN16";
-const char T17[] PROGMEM = "SBN17";
-const char T18[] PROGMEM = "SBN18";
-const char T19[] PROGMEM = "SBN19";
-const char T20[] PROGMEM = "SBN20";
-const char T21[] PROGMEM = "MTN_DOT";
-const char T22[] PROGMEM = "MY_SBN22";
-
-
-PGM_P const table_T[] PROGMEM ={TM1,T0,T1,T2,
-  T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13,T14,T15,
-  T16,T17,T18,T19,T20,T21,T22};
 
 static char rxBUF[64]; //for the rx buf
 static byte rxLEN; //for the length
@@ -125,7 +93,7 @@ void setup() {
     key_EE_MAKE();
     key_EE_GET(rxKEY); //Serial.print(F("key new="));Serial.println(rxKEY);
   }
-  showINFO(rxKEY);
+  //showINFO(rxKEY);
   flgDONE=false;
 } // End Of SETUP ******************
 
@@ -163,9 +131,10 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
     //special decode key - not the regular rxKEY
     char pairKEY[18]; strcpy(pairKEY,"thisisamagiclime");
     pair_VALIDATE(msg,rxBUF,rxLEN,pairKEY); //!ididid!txkey.. --> ididid:keykeykey
+    //Serial.print(F("pair msg: "));Serial.println(msg);
     if ((msg[0]!=0) && (msg[6]==':')) {
       char txid[8]; char txkey[18];
-      mySubStr(txid,msg,0,6);
+      mySubStr(txid,msg,0,6);//
       mySubStr(txkey,msg,7,strlen(msg)-7);
       key_SEND(txid,txkey,rxKEY);
       word newaddr=addr_FIND(txid);
@@ -174,7 +143,8 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
       return;
     }
   } 
-//************************************
+  
+//************ not key stuff ... *************
 //Serial.print(F("key: ")); Serial.println(rxKEY);Serial.flush();
   rx_DECODE_0(msg,rxBUF,rxLEN,rxKEY); //decode using rx KEY
   if (msg[0]!=0) { //is it 'PUR'? Or DATA? or INFO?
@@ -285,41 +255,56 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
       showKSS();
       return;
     }
-   if (( PCbuf[0] == 'k')&&( PCbuf[1] == 'e')&&( PCbuf[2] == 'e')) {key_EE_ERASE();}
-   if (( PCbuf[0] == 'p')&&( PCbuf[1] == 'e')&&( PCbuf[2] == 'e')) {prm_EE_ERASE();} 
-   if (( PCbuf[0] == 'p')&&( PCbuf[1] == 'r')&&( PCbuf[2] == 'm')&&(PCbuf[3] == ':')) { //Parameter stuff to follow
-      byte cp[6]; byte len[6]; byte cpp=0; //Colon Positions/Pointer
-      for (byte i=0;i<bufLEN;i++) {//format prm:ididid:iii:hhh:p:o c[0],c[1],c[2],c[3],c[4]
-        if (PCbuf[i]==':') {cp[cpp]=i; cpp++;} // log postion of all ':'s
-      } 
-      len[1]=(cp[1]-cp[0])-1;  //ID, 6 char
-      len[2]=(cp[2]-cp[1])-1;  //data interval, 1 byte
-      len[3]=(cp[3]-cp[2])-1;  //heartbeat, 1 byte
-      len[4]=(cp[4]-cp[3])-1;  //power level, 2-20, 1 byte   
-      len[5]=(bufLEN-cp[4])-1;     //system byte flag bits, ascii hex text 00-FF
-      //Serial.print(F("len[1]="));Serial.println(len[1]);Serial.flush();
-      if (len[1]==6) { //validation of format prm:ididid:iii:hhh:p:o 
-        len[1]=(cp[1]-cp[0])-1;  //ID, 6 char      
-        char p_id[8]; memcpy(p_id,&PCbuf[cp[0]+1],len[1]); p_id[len[1]]=0; //ID, 6 char
-        char p_int[5];memcpy(p_int,&PCbuf[cp[1]+1],len[2]); p_int[len[2]]=0; //data interval, 1 byte
-        char p_hb[5];memcpy(p_hb,&PCbuf[cp[2]+1],len[3]); p_hb[len[3]]=0; //heartbeat, 1 byte        
-        char p_pwr[3];memcpy(p_pwr,&PCbuf[cp[3]+1],len[4]);  p_pwr[len[4]]=0;   //power level, 2-20, 1 byte
-        char p_opt[3];memcpy(p_opt,&PCbuf[cp[4]+1],len[5]);  p_opt[len[5]]=0;   //system byte flag bits, ascii hex text 00-FF
-        byte bINT=byte(atoi(p_int));
-        byte bHB=byte(atoi(p_hb));
-        byte bPWR=byte(atoi(p_pwr)); 
-        byte bOPT=byte(strtol(p_opt,NULL,16)); //2 char hex string -> long
-
-        //put it eeprom...
-        prm_2EEPROM(p_id,bINT,bHB,bPWR,bOPT);
-        char pkt[32];
-        prm_pkt(pkt,p_id,bINT,bHB,bPWR,bOPT);
-        showINFO(pkt);
-      } //(len[1]==6)
+    if (( PCbuf[0] == 's')&&( PCbuf[1] == 'n')&&( PCbuf[2] == 'm')) {name_UPDATE(PCbuf,bufLEN);}
+    if (( PCbuf[0] == 'k')&&( PCbuf[1] == 'e')&&( PCbuf[2] == 'e')) {key_EE_ERASE();}
+    if (( PCbuf[0] == 'p')&&( PCbuf[1] == 'e')&&( PCbuf[2] == 'e')) {prm_EE_ERASE();} 
+    if (( PCbuf[0] == 'p')&&( PCbuf[1] == 'r')&&( PCbuf[2] == 'm')) { //Parameter stuff to follow
+      prm_UPDATE(PCbuf,bufLEN); 
     } // if PCbuf[0] == 'p')      
   } //if Serial.aval
 } //End Of CheckPCbuf
 
+//**********************************************************************
+void name_UPDATE(char *buf, byte len){ // snm:ididid:snsnsnsnsn
+  char id[8]; char nm[12];
+  mySubStr(id,buf,4,6);
+  mySubStr(nm,buf,11,len-11);
+  word addr=addr_FIND(id);
+  nameTO_EE(addr, nm);
+}
+
+//**********************************************************************
+void prm_UPDATE(char *PCbuf,byte bufLEN){
+  byte cp[6]; byte len[6]; byte cpp=0; //Colon Positions/Pointer
+  for (byte i=0;i<bufLEN;i++) {//format prm:ididid:iii:hhh:p:o c[0],c[1],c[2],c[3],c[4]
+    if (PCbuf[i]==':') {cp[cpp]=i; cpp++;} // log postion of all ':'s
+  } 
+  len[1]=(cp[1]-cp[0])-1;  //ID, 6 char
+  len[2]=(cp[2]-cp[1])-1;  //data interval, 1 byte
+  len[3]=(cp[3]-cp[2])-1;  //heartbeat, 1 byte
+  len[4]=(cp[4]-cp[3])-1;  //power level, 2-20, 1 byte   
+  len[5]=(bufLEN-cp[4])-1;     //system byte flag bits, ascii hex text 00-FF
+  //Serial.print(F("len[1]="));Serial.println(len[1]);Serial.flush();
+  if (len[1]==6) { //validation of format prm:ididid:iii:hhh:p:o 
+    len[1]=(cp[1]-cp[0])-1;  //ID, 6 char      
+    char p_id[8]; memcpy(p_id,&PCbuf[cp[0]+1],len[1]); p_id[len[1]]=0; //ID, 6 char
+    char p_int[5]; memcpy(p_int,&PCbuf[cp[1]+1],len[2]); p_int[len[2]]=0; //data interval, 1 byte
+    char p_hb[5]; memcpy(p_hb,&PCbuf[cp[2]+1],len[3]); p_hb[len[3]]=0; //heartbeat, 1 byte        
+    char p_pwr[3]; memcpy(p_pwr,&PCbuf[cp[3]+1],len[4]);  p_pwr[len[4]]=0;   //power level, 2-20, 1 byte
+    char p_opt[3]; memcpy(p_opt,&PCbuf[cp[4]+1],len[5]);  p_opt[len[5]]=0;   //system byte flag bits, ascii hex text 00-FF
+    byte bINT=byte(atoi(p_int));
+    byte bHB=byte(atoi(p_hb));
+    byte bPWR=byte(atoi(p_pwr)); 
+    byte bOPT=byte(strtol(p_opt,NULL,16)); //2 char hex string -> long
+
+    //put it eeprom...
+    prm_2EEPROM(p_id,bINT,bHB,bPWR,bOPT);
+    char pkt[32];
+    prm_pkt(pkt,p_id,bINT,bHB,bPWR,bOPT);
+    showINFO(pkt);
+  } 
+}
+             
 //*****************************************pair_VALIDATE(msg,rxBUF,rxLEN,pairKEY);
 char *pair_VALIDATE(char *idkey, char *rxbuf, byte rxlen, char *pkey) { char *ret=idkey; 
   idkey[0]=0; //fail flag
@@ -400,10 +385,10 @@ void prm0_SEND(word eeAddr) {
 }
 
 //*****************************************
-word addr_FIND(char *pID) { word eeAddr=EE_PRM_ID;
+word addr_FIND(char *pID) { word eeAddr=EE_ID;
 //Serial.print(F("addr_FIND= ")); Serial.println(pID); Serial.flush();
  //print_HEX(pID,strlen(pID));
- //for(word x=EE_PRM_ID;x>980;x--) {Serial.print(x);Serial.print(":");Serial.println(EEPROM.read(x),HEX);} 
+ //for(word x=EE_ID;x>980;x--) {Serial.print(x);Serial.print(":");Serial.println(EEPROM.read(x),HEX);} 
   byte eeByte=EEPROM.read(eeAddr); byte ptr;
   while ((eeByte!=255)&&(eeAddr>20)) {
     //Serial.print(F("......"));Serial.println(eeAddr);
@@ -498,8 +483,8 @@ void key_SEND(char *txid, char *txkey, char *rxkey) {
   char txBUF[48]; 
   strcpy(txBUF,txid); strcat(txBUF,":"); strcat(txBUF,rxkey); //ididid:rxkeyrxkeyrxkeyr
   msg_SEND(txBUF,txkey,1); //the TX will decode this, it made the key
-  //Serial.print(F("{\"source\":\"rx\",\"info\":\"key2tx\",\"id\":\""));
-  //Serial.print(txid); Serial.println(F("\"}")); Serial.flush();
+  Serial.print(F("{\"source\":\"rx\",\"info\":\"key2tx\",\"id\":\""));
+  Serial.print(txid); Serial.println(F("\"}")); Serial.flush();
 }
 
 //*****************************************
@@ -571,12 +556,6 @@ bool key_VALIDATE(char *key) { //check EEPROM for proper character range
 }
 
 //*****************************************
-char *T2S(char *type, byte idx) { char *ret=type;
-  strcpy_P(type, (char*)pgm_read_word(&(table_T[idx])));
-  return ret;
-}
-
-//*****************************************
 void json_PRINTdata(char jsn[][24], byte pNum) {
   Serial.print(F("{\"source\":\"tx\","));
   for (byte pn=0;pn<pNum;pn++) { //Pair Number
@@ -635,7 +614,7 @@ void key_EE_ERASE() {
 //*****************************************
 void prm_EE_ERASE() { //danger danger will robinson! this is ALL sensor parameters
   Serial.print(F("prm_EE_ERASE...."));Serial.flush();
-  for (word i=EE_PRM_ID;i>0;i--) { EEPROM.write(i,255); } //the rest get FF's
+  for (word i=EE_ID;i>0;i--) { EEPROM.write(i,255); } //the rest get FF's
   Serial.println(F(" Done"));Serial.flush();
 }
 
