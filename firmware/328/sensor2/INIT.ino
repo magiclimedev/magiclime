@@ -41,7 +41,7 @@ void init_SETUP(){
     if (init_RF95(txPWR)==true) {
       key_REQUEST(rxKEY,txID,keyRSS); //ask for RX's KEY
       if (rxKEY[0]!=0) { //good key returned
-        Serial.print(F("rxKEY=")); Serial.println(rxKEY);
+        //Serial.print(F("rxKEY="));Serial.println(rxKEY);Serial.flush();
         if (key_VALIDATE(rxKEY)==false){ strcpy(rxKEY,"thisisamagiclime"); }
         key_EE_SET(rxKEY);
       }
@@ -129,7 +129,7 @@ char *eeSTR_GET(char *str, word addr, byte bix,  byte nl, byte bs) { char *ret=s
 
 //*****************************************
 void prm_PROCESS(char *buf, char *id, int sbn) {
-  Serial.print(F("prm_PROCESS...")); print_HEX(buf,strlen(buf));
+  //Serial.print(F("prm_PROCESS...")); print_HEX(buf,strlen(buf));
   char cmp[6]; mySubStr(cmp,buf,0,4);
   if (strcmp(cmp,"PRM:")==0) { //what parameters number is it?
     switch (buf[4]) { // should be the parameter number
@@ -164,14 +164,14 @@ void prm0_PAKOUT() {
   char msn[2]; msn[0]=hex[msnb]; msn[1]=0;
   char lsn[2]; lsn[0]=hex[lsnb]; lsn[1]=0;
   strcat(msg,":"); strcat(msg,msn); strcat(msg,lsn);
-  Serial.print(F("pak0_SEND:"));Serial.println(msg);Serial.flush();
+  //Serial.print(F("pak0_SEND:"));Serial.println(msg);Serial.flush();
   msg_SEND(msg,rxKEY,1);
   delay(10);
 }
 
 //*****************************************
 void prm0_EE_SET(char *buf,int sbn) { sbn++;  //PRM:0:ididid:i:h:p:o
-Serial.println(F("prm0_EE_SET..."));          //01234567890123456789
+//Serial.println(F("prm0_EE_SET..."));          //01234567890123456789
   EEPROM.write((EE_INTERVAL-(sbn*EE_BLKSIZE)),buf[13]);
   txINTERVAL=buf[13]*wdmTXI;
   EEPROM.write((EE_HRTBEAT-(sbn*EE_BLKSIZE)),buf[15]);

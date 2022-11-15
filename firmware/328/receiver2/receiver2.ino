@@ -327,19 +327,19 @@ char *pair_VALIDATE(char *idkey, char *rxbuf, byte rxlen, char *pkey) { char *re
   
 //*****************************************
 char *purFIND(char *purOUT, char *purIN) {char *ret=purOUT; // RX expects PUR:0:IDxxxx:SENSORNAME
-  Serial.print(F("...purFIND..."));Serial.println(purIN);Serial.flush();
+  //Serial.print(F("...purFIND..."));Serial.println(purIN);Serial.flush();
   purOUT[0]=0; //default failflag
   char pfx[6];
   mySubStr(pfx,purIN,0,4);
   if (strcmp(pfx,"PUR:")==0) { mySubStr(purOUT,purIN,4,strlen(purIN)); }//strip off the 'PUR:'
-  Serial.println(purOUT);Serial.flush();
+  //Serial.println(purOUT);Serial.flush();
   return ret;
 }
 
 //***************************************** Paramter AcK - spit it back to rcvr as info
 //expecting... PAK0:IdIdId:10:30:2:0 - like
 char *pakFIND(char *pakOUT, char *pakIN) {char *ret=pakOUT; 
-  Serial.println(F("...pakFIND..."));Serial.flush();
+  //Serial.println(F("...pakFIND..."));Serial.flush();
   pakOUT[0]=0; //default failflag
   char pfx[6];
   mySubStr(pfx,pakIN,0,3);

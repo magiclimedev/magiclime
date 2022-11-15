@@ -10,13 +10,13 @@ char *key_REQUEST(char *rxkey, char* TxId, byte rssREF) { char *ret=rxkey;
   key_TXID_SEND(TxId,keyTEMP); //expect a response = 'keyTEMP' encoded 'ID:RX-KEY'
   char msg[64]; char id[8];
   rx_LOOK(msg,keyTEMP,25);
-  Serial.print(F("keylook: "));Serial.println(msg); Serial.flush(); 
+  //Serial.print(F("keylook: "));Serial.println(msg);Serial.flush(); 
   if (msg[0] !=0) { 
     if (msg[6]==':') { //not a fail-to-find...
       mySubStr(id,msg,0,6); //ID
       if (strcmp(id,TxId)==0) { //does this id match this sensors' ID?
         mySubStr(rxkey,msg,7,16);}
-        Serial.print(F("rxkey: "));Serial.println(rxkey); Serial.flush(); 
+        //Serial.print(F("rxkey: "));Serial.println(rxkey);Serial.flush(); 
     }
   }
   digitalWrite(pinPAIR_LED,LOW); 
