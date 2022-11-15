@@ -58,18 +58,17 @@ void init_SETUP(){
 //***********************************************
   //Serial.println(F("requesting paramters... "));Serial.flush();
   //and now the TX parameters? just look/expect or, yes...  ask for them.
-  // RX expects PUR:IDxxxx:PRM0:NAME - that's Parameter Update Request, the TXID and PaRaMeter set #0. 
-  // RX responds with  ididid:i:h:p:s 
+  // RX expects PUR:0:IDxxxx:NAME - that's Parameter Update Request, the TXID and PaRaMeter set #0. 
+  // RX responds with  prm:0:ididid:i:h:p:s 
 
   prm0_EE_GET(SBN); //first, in case the following fails...
   char msg[40];
-  strcpy(msg,"PUR:"); strcat(msg,txID);
-  strcat(msg,":PRM0:"); strcat(msg,SNM);
-  //PUR:IDxxxx:PRM0:NAME
+  strcpy(msg,"PUR:0:"); strcat(msg,txID);strcat(msg,":"); strcat(msg,SNM);
+  //PUR:IDxxxx:NAME
   msg_SEND(msg, rxKEY,txPWR); //String &msgIN, String &key, int txPWR)
   // and now look for PRM and SNM and ??
   rx_LOOK(msg,rxKEY,25); //250mSec
-  if (msg[0]!=0) { prm0_PROCESS(msg,txID,SBN); }
+  if (msg[0]!=0) { prm_PROCESS(msg,txID,SBN); }
   
 //***********************
   get_DATA(txDATA,SBN,1);
@@ -129,16 +128,23 @@ char *eeSTR_GET(char *str, word addr, byte bix,  byte nl, byte bs) { char *ret=s
 }
 
 //*****************************************
-void prm0_PROCESS(char *buf, char *id, int sbn) {
-  Serial.print(F("prm0_PROCESS...")); 
-  prm0_EE_GET(SBN); //from eeprom - first in case following fails
-  char tmp[8]; mySubStr(tmp,buf,0,6);
-  if (strcmp(tmp,id)==0) { //id matches - good to go
-    if ((buf[6]==':') && (buf[8]==':')&&(buf[10]==':')&&(buf[12]==':')) { //this packet validation
-      prm0_EE_SET(buf,sbn); //to eeprom  
-      prm0_PAKOUT(); //ack? just info = PAK:ididid:int,hb,pwr,sysbyte
-      prm0_OPTIONS(SBN,optBYTE); //something to do in that option byte?
-      led_GREEN_BLINK(3,10,10);  }        
+void prm_PROCESS(char *buf, char *id, int sbn) {
+  Serial.print(F("prm_PROCESS...")); print_HEX(buf,strlen(buf));
+  char cmp[6]; mySubStr(cmp,buf,0,4);
+  if (strcmp(cmp,"PRM:")==0) { //what parameters number is it?
+    switch (buf[4]) { // should be the parameter number
+      case '0': {  prm0_EE_GET(SBN); //from eeprom - first in case following fails
+        char tmp[8]; mySubStr(tmp,buf,6,6); //PRM:0:ididid:i:h:p:o
+        if (strcmp(tmp,id)==0) { //id matches - good to go
+          if ((buf[3]==':') && (buf[5]==':') && (buf[12]==':') && (buf[14]==':')
+          && (buf[16]==':') && (buf[18]==':') ) { //this packet validation
+            prm0_EE_SET(buf,sbn); //to eeprom  
+            prm0_PAKOUT(); //ack? just info = PAK:ididid:int,hb,pwr,sysbyte
+            prm_OPTIONS(SBN,optBYTE); //something to do in that option byte?
+            led_GREEN_BLINK(3,10,10);  }        
+        }
+      } break;
+    }
   }
 }
 
@@ -148,9 +154,8 @@ void prm0_PAKOUT() {
   //Serial.print(F("  txhb="));Serial.println(txHRTBEAT);
   char n2a[10]; // for Number TO Ascii things
   char msg[32];
-  strcpy(msg,"PAK:");
+  strcpy(msg,"PAK:0:");
   strcat(msg,txID); 
-  strcat(msg,":"); 
   strcat(msg,":"); dtoa(float((float(txINTERVAL)*8.0)/60.0),n2a,1); strcat(msg,n2a);
   strcat(msg,":"); dtoa(float((float(txHRTBEAT)*8.0)/60.0),n2a,1); strcat(msg,n2a);
   strcat(msg,":"); itoa((txPWR),n2a,10); strcat(msg,n2a);
@@ -159,23 +164,23 @@ void prm0_PAKOUT() {
   char msn[2]; msn[0]=hex[msnb]; msn[1]=0;
   char lsn[2]; lsn[0]=hex[lsnb]; lsn[1]=0;
   strcat(msg,":"); strcat(msg,msn); strcat(msg,lsn);
-  Serial.print(F("pak_SEND:"));Serial.println(msg);Serial.flush();
+  Serial.print(F("pak0_SEND:"));Serial.println(msg);Serial.flush();
   msg_SEND(msg,rxKEY,1);
   delay(10);
 }
 
 //*****************************************
-void prm0_EE_SET(char *buf,int sbn) { sbn++;
-Serial.println(F("prm0_EE_SET..."));
-  EEPROM.write((EE_INTERVAL-(sbn*EE_BLKSIZE)),buf[7]);
-  txINTERVAL=buf[7]*wdmTXI;
-  EEPROM.write((EE_HRTBEAT-(sbn*EE_BLKSIZE)),buf[9]);
-  txHRTBEAT=buf[9]*wdmHBP; 
-  EEPROM.write((EE_POWER-(sbn*EE_BLKSIZE)),buf[11]);
-  txPWR=buf[11]; 
+void prm0_EE_SET(char *buf,int sbn) { sbn++;  //PRM:0:ididid:i:h:p:o
+Serial.println(F("prm0_EE_SET..."));          //01234567890123456789
+  EEPROM.write((EE_INTERVAL-(sbn*EE_BLKSIZE)),buf[13]);
+  txINTERVAL=buf[13]*wdmTXI;
+  EEPROM.write((EE_HRTBEAT-(sbn*EE_BLKSIZE)),buf[15]);
+  txHRTBEAT=buf[15]*wdmHBP; 
+  EEPROM.write((EE_POWER-(sbn*EE_BLKSIZE)),buf[17]);
+  txPWR=buf[17]; 
   //OPTBYTE is not a 'per sensor' thing - more like a 'du jour' thing.
-  EEPROM.write(EE_OPTBYTE,buf[13]);
-  optBYTE=buf[13]; 
+  EEPROM.write(EE_OPTBYTE,buf[19]);
+  optBYTE=buf[19]; 
 }
 
 //*****************************************
@@ -208,7 +213,7 @@ word eeREAD2(word eeloc) {
 }
 
 //*****************************************
-void prm0_OPTIONS(int sbn, byte optbyte) { sbn++; //to make -1 = 0
+void prm_OPTIONS(int sbn, byte optbyte) { sbn++; //to make -1 = 0
   switch (sbn) { //init sensors as needed
     case -1: {  EEPROM.write(EE_OPTBYTE,optBYTE);  } break; //beacon
     case 0: {  EEPROM.write(EE_OPTBYTE,optBYTE);  } break; //my_sbn0
