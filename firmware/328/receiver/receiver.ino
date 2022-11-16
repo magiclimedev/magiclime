@@ -56,6 +56,25 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 #define EE_BLKSIZE  20 //plus one more for nice number
 // PARAM ID things go all the way down to 0
 
+//here's the type look-up table...
+const char H00[] PROGMEM = "---- commands ----"; 
+const char H01[] PROGMEM = "kss:xxx       -set Key Signal Strength ref. level";  
+const char H02[] PROGMEM = "snr:ididid:sensorname -Sensor Name Replace for that sensor ID"; 
+const char H03[] PROGMEM = "kee           -Key Erase Eeprom";
+const char H04[] PROGMEM = "pee:ididid    -Parameter Erase Eeprom for that ID";
+const char H05[] PROGMEM = "idr:ididid    -ID is Removed from eeprom";
+const char H06[] PROGMEM = "idl           -ID list";
+const char H07[] PROGMEM = "prm:n:ididid:int:hb:p:o -parameter set 'n'";
+const char H08[] PROGMEM = " -- examples --";
+const char H09[] PROGMEM = "kss:90"; 
+const char H10[] PROGMEM = "snr:SGPOJS:MOT_BEDRM"; 
+const char H11[] PROGMEM = "idr:SGPOJS";
+const char H12[] PROGMEM = "pee:SGPOJS";
+const char H13[] PROGMEM = "prm:0:SGPOJS:5:20:2:0";
+PGM_P const table_HLP[] PROGMEM ={H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10
+                        ,H11,H12,H13};
+const byte hlpLIM=14;
+
 boolean flgShowChar;
 boolean flgShowHex;
 
@@ -70,17 +89,17 @@ bool flgDONE;
 void setup() { 
   while (!Serial);
   Serial.begin(57600);
-  showVER();
+  jsonVER();
   if (EEPROM.read(EE_KEY_RSS)<200) {keyRSS=EEPROM.read(EE_KEY_RSS);} 
-  showKSS();
+  jsonKSS();
   
   if (rf95.init()) { rf95.setFrequency(RF95_FREQ); 
     char info[10]; strcpy(info,"rf95.init !OK!");
-    showINFO(info); 
+    jsonINFO(info); 
   }
   else {
     char info[10]; strcpy(info,"rf95.init !FAIL!");
-    showINFO(info);
+    jsonINFO(info);
     while (1);
   }
 
@@ -94,7 +113,7 @@ void setup() {
     key_EE_MAKE();
     key_EE_GET(rxKEY); //Serial.print(F("key new="));Serial.println(rxKEY);
   }
-  //showINFO(rxKEY);
+  //jsonINFO(rxKEY);
   flgDONE=false;
 } // End Of SETUP ******************
 
@@ -251,34 +270,41 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
     //Serial.print(F("pcbuf("));Serial.print(bufLEN);Serial.print(F(") "));
     //Serial.println(PCbuf);Serial.flush();
     
-    if ( PCbuf[0] == '?') {
-      showVER();
-      if (PCbuf[1]='?') {
-        showHELP();return;}
-      }
+    if ( PCbuf[0] == '?') { Serial.println("");Serial.println(VER); Serial.flush();
+      if (PCbuf[1]=='?') { showHELP(hlpLIM); }
+      return; 
+    }
     char pfx[6]; mySubStr(pfx,PCbuf,0,3);
     if (strcmp(pfx,"kss")==0) {key_SETREF(PCbuf,bufLEN);} //Key Signal Strength
-    if (strcmp(pfx,"snm")==0) {name_UPDATE(PCbuf,bufLEN);}
+    if (strcmp(pfx,"snr")==0) {name_REPLACE(PCbuf,bufLEN);}
     if (strcmp(pfx,"kee")==0) {key_EE_ERASE();}
     if (strcmp(pfx,"pee")==0) {prm_EE_ERASE();} 
+    if (strcmp(pfx,"idr")==0) {id_REMOVE(PCbuf);}
+    if (strcmp(pfx,"idl")==0) {id_LIST();}    
     if (strcmp(pfx,"prm")==0) {prm_UPDATE(PCbuf,bufLEN);  }//Parameter stuff to follow
   } //if Serial.aval
 } //End Of CheckPCbuf
 
 //**********************************************************************
 void key_SETREF(char *buf,byte len) {
-  char kss[4];  mySubStr(kss,buf,3,len-3);  //get kss value at PCbuf[3,4 and maybe 5]
-  keyRSS=byte(atoi(kss));
-  if ((keyRSS<80) and (keyRSS>120)) {keyRSS=100;}
-  EEPROM.write(EE_KEY_RSS,keyRSS);
-  showKSS();
+  if (buf[3]==':') { //one more validate
+    char kss[4];  mySubStr(kss,buf,4,len-4);  //get kss value at PCbuf[3,4 and maybe 5]
+    keyRSS=byte(atoi(kss));
+    if ((keyRSS<80) and (keyRSS>120)) {keyRSS=100;}
+    EEPROM.write(EE_KEY_RSS,keyRSS);
+    jsonKSS();
+  }
 }
 
 //**********************************************************************
-void name_UPDATE(char *buf, byte len){ // snm:ididid:snsnsnsnsn
+void name_REPLACE(char *buf, byte len){ // snr:ididid:snsnsnsnsn
   char id[8]; char nm[12];
-  mySubStr(id,buf,4,6);     mySubStr(nm,buf,11,len-11);
-  word addr=addr_FIND(id);  nameTO_EE(addr, nm);
+  if ((buf[3]==':') && (buf[10]==':')) {//one more validate
+    mySubStr(id,buf,4,6);
+    mySubStr(nm,buf,11,len-11);
+    word addr=addr_FIND(id);
+    nameTO_EE(addr, nm);
+  }
 }
 
 //**********************************************************************
@@ -312,7 +338,7 @@ void prm_UPDATE(char *PCbuf,byte bufLEN){
         prm_2EEPROM(p_id,bINT,bHB,bPWR,bOPT);
         char pkt[32];
         prm_pkt(pkt,0,p_id,bINT,bHB,bPWR,bOPT);
-        showINFO(pkt);      
+        jsonINFO(pkt);      
       }
     } break;
   } 
@@ -399,7 +425,7 @@ word addr_FIND(char *pID) { word eeAddr=EE_ID;
  //print_HEX(pID,strlen(pID));
  //for(word x=EE_ID;x>980;x--) {Serial.print(x);Serial.print(":");Serial.println(EEPROM.read(x),HEX);} 
   byte eeByte=EEPROM.read(eeAddr); byte ptr;
-  while ((eeByte!=255)&&(eeAddr>20)) {
+  while (eeAddr>EE_BLKSIZE) { //don't bail on removed id's
     //Serial.print(F("......"));Serial.println(eeAddr);
     ptr=0;
     while ( eeByte==pID[ptr] ) {
@@ -567,6 +593,14 @@ bool key_VALIDATE(char *key) { //check EEPROM for proper character range
 }
 
 //*****************************************
+bool id_VALIDATE(char *id) { //check EEPROM for proper character range
+  for (byte i=0;i<6;i++) { 
+    if ( ((id[i]<'2')||(id[i]>'Z')) || ((id[i]>'9')&&(id[i]<'A')) ) { return false; }
+  }
+  return true;
+}
+
+//*****************************************
 void json_PRINTdata(char jsn[][24], byte pNum) {
   Serial.print(F("{\"source\":\"tx\","));
   for (byte pn=0;pn<pNum;pn++) { //Pair Number
@@ -591,21 +625,21 @@ char *mySubStr(char *out, char* in,byte from,byte len) { char *ret=out;
 }
 
 //**********************************************************************
-void showINFO(char *info) { 
+void jsonINFO(char *info) { 
   Serial.print(F("{\"source\":\"rx\",\"info\":\""));
   Serial.print(info);
   Serial.println(F("\"}")); Serial.flush();
 }
 
 //**********************************************************************
-void showKSS() { 
+void jsonKSS() { 
   Serial.print(F("{\"source\":\"rx\",\"info\":\"kss="));
   Serial.print(keyRSS);
   Serial.println(F("\"}")); Serial.flush();
 }
 
 //**********************************************************************
-void showVER() { 
+void jsonVER() { 
   Serial.print(F("{\"source\":\"rx\",\"info\":\"ver="));
   Serial.print(VER);
   Serial.println(F("\"}")); Serial.flush();
@@ -613,6 +647,36 @@ void showVER() {
 
 //*****************************************
 ISR(WDT_vect) { //in avr library
+}
+
+//*****************************************
+void id_REMOVE(char *buf) {
+  char id[8]; mySubStr(id,buf,4,6);
+  if (buf[3]==':') { word addr=addr_FIND(id);
+    if (byte(EEPROM.read(addr))!=byte(0xFF)) { //not an empty place
+      for (byte i=0;i<EE_BLKSIZE;i++) { EEPROM.write(addr-i,0xFF); }
+      Serial.print("removed "); Serial.println(id); Serial.flush(); 
+    }
+  }
+}
+
+//*****************************************
+void id_LIST() { char id[8]; char nm[12]; byte blknum=0;
+  for (word addr=EE_ID;addr>EE_BLKSIZE;addr-=EE_BLKSIZE) {
+    for (byte i=0;i<6;i++) { id[i]=EEPROM.read(addr-i); }
+    id[6]=0; //null term stringify
+    blknum++;
+    if (byte(id[0])!=0xFF) { byte n;
+      for (n=0;n<10;n++) {
+        nm[n]= EEPROM.read(addr-10-n);
+        if ((byte(nm[n])==0) || (byte(nm[n])==0xFF)) {break;}
+      }
+      nm[n]=0;
+      Serial.print(blknum); Serial.print(":");
+      Serial.print(id);  Serial.print(":");
+      Serial.println(nm);Serial.flush(); 
+    }
+  }
 }
 
 //*****************************************
@@ -679,24 +743,8 @@ void freeMemory() {  char top;  int fm;
 Serial.print(F("Free Mem: "));Serial.println(fm);Serial.flush();
 }
 
-//here's the type look-up table...
-const char H0[] PROGMEM = "help words0"; 
-const char H1[] PROGMEM = "help words1";  
-const char H2[] PROGMEM = "help words2"; 
-const char H3[] PROGMEM = "help words3";
-const char H4[] PROGMEM = "help words4";
-const char H5[] PROGMEM = "help words5";
-const char H6[] PROGMEM = "help words6";
-const char H7[] PROGMEM = "help words7";
-const char H8[] PROGMEM = "help words8"; 
-const char H9[] PROGMEM = "help words9"; 
-
-PGM_P const table_H[] PROGMEM ={H0,H1,H2,
-  H3,H4,H5,H6,H7,H8,H9 };
-
-void showHELP() {
-  for (byte i=0;i<9;i++) {
-    Serial.print( (char*)pgm_read_word(&(table_H[i])) );
-  }
-  Serial.println( (char*)pgm_read_word(&(table_H[9])) );  Serial.println("");
+void showHELP(byte lim) { Serial.println("");
+  char sHLP[80]; for (byte i=0;i<lim-1;i++) { *sHLP=0;
+    strcat_P(sHLP, (char*)pgm_read_word(&(table_HLP[i]))); Serial.println(sHLP); }
+  Serial.println("");Serial.flush();
 }
