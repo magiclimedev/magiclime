@@ -6,7 +6,8 @@
  * this file. If not, please write to: , or visit :
  * magiclime.com
  */
- 
+ const static char VER[] = "TX221115";
+
 #include "radio_sensor.h"
 
 const int wdmTXI = 1; //WatchDogMultiplier for TX data Interval
@@ -33,7 +34,7 @@ void loop () {
     if (digitalRead(pinBOOST)==0){boost_ON();}
      get_DATA(txDATA,SBN,wakeWHY);
      
-    //(byte sbn, char *id, double bv, char *key, char *data, int pwr, int wait) 
+    //(int sbn, char *id, double bv, char *key, char *data, int pwr, int wait) 
     packet_SEND(SBN,txID,txBV,rxKEY,txDATA,txPWR);
     trigger_RESET(SBN); //mostly because Motion chip E931 needs this.
     wakeWHY=0; 

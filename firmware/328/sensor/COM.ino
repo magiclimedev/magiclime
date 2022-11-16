@@ -18,7 +18,7 @@ byte PV=1; //Protocol Version - very first char byte out;
 void msg_SEND(char *msgIN, char *key, int pwr) { 
   if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(100);}
   digitalWrite(pinLED, HIGH);
-  Serial.print(F("msgSEND: ")); print_CHR(msgIN,strlen(msgIN));
+  //Serial.print(F("msgSEND: ")); print_CHR(msgIN,strlen(msgIN));
   byte txLEN=strlen(msgIN);
   char txBUF[64];
   tx_ENCODE_0(txBUF,msgIN,txLEN,key);
@@ -54,10 +54,24 @@ char *rx_DECODE_0(char *msgOUT,char *rxBUF, byte rxLEN, char *key) {char *ret=ms
 }
 
 //*****************************************
+char *rx_LOOK(char *msg, char *rxkey, int ctr) { char *ret=msg;
+  byte timeout=0; msg[0]=0; ctr=abs(ctr); if (ctr>1000) {ctr=1000;}
+  while (!rf95.available() && timeout<ctr) { delay(10); timeout++; }
+  //Serial.print(F("rx_LOOK<"));Serial.print(ctr);Serial.print(F(": ")); 
+  //Serial.println(timeout);Serial.flush();
+  if (timeout<=ctr) {
+    uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+    uint8_t len = sizeof(buf);
+    if (rf95.recv(buf, &len)) {rx_DECODE_0(msg,buf,len,rxkey); }
+  }
+  return ret;
+}
+
+//*****************************************
 void print_HEX(char *buf,byte len) { byte i;
   Serial.print(len);Serial.print(F(": "));
   for (i=0;i<(len-1);i++) {Serial.print(byte(buf[i]),HEX);Serial.print(F(" "));}
-  Serial.println(byte(buf[len-1]),HEX); Serial.flush();
+  Serial.println(byte(buf[len-1]),HEX);Serial.flush();
 }
 //*****************************************
 void print_CHR(char *buf,byte len) { byte i;

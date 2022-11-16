@@ -8,29 +8,19 @@ char *key_REQUEST(char *rxkey, char* TxId, byte rssREF) { char *ret=rxkey;
   key_NEW(keyTEMP); //returns new key in keyTEMP
   //print_CHR(keyTEMP,16);
   key_TXID_SEND(TxId,keyTEMP); //expect a response = 'keyTEMP' encoded 'ID:RX-KEY'
-
-  byte timeout=0;
-  while (!rf95.available() && timeout<250) { delay(10); timeout++; }
-  if (timeout==250) { digitalWrite(pinPAIR_LED,LOW);  return ret;}
-  Serial.print(F("KEY timeout<250): "));Serial.println(timeout);Serial.flush();
-  
-  uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-  uint8_t len = sizeof(buf);
-  if (rf95.recv(buf, &len)) {
-    if ((rf95.lastRssi()+rssOFFSET)>=rssREF) { 
-      char msg[64]; char id[8];
-      rx_DECODE_0(msg,buf,len,keyTEMP); //decode with key sent
-      if (msg[0] !=0) { 
-        if (msg[6]==':') { //not a fail-to-find...
-          mySubStr(id,msg,0,6); //ID
-          if (strcmp(id,TxId)==0) { //does this id match this sensors' ID?
-            mySubStr(rxkey,msg,7,len-7);} 
-        }
-      }
+  char msg[64]; char id[8];
+  rx_LOOK(msg,keyTEMP,25);
+  //Serial.print(F("keylook: "));Serial.println(msg);Serial.flush(); 
+  if (msg[0] !=0) { 
+    if (msg[6]==':') { //not a fail-to-find...
+      mySubStr(id,msg,0,6); //ID
+      if (strcmp(id,TxId)==0) { //does this id match this sensors' ID?
+        mySubStr(rxkey,msg,7,16);}
+        //Serial.print(F("rxkey: "));Serial.println(rxkey);Serial.flush(); 
     }
   }
   digitalWrite(pinPAIR_LED,LOW); 
-  return rxkey;
+  return ret;
 }
 
 //*****************************************
@@ -78,7 +68,7 @@ char *key_NEW(char *key) { char *ret=key;
 } 
   
 //*****************************************
-void id_MAKEifBAD(byte sbn) {
+void id_MAKEifBAD(int sbn) { sbn++; //to make -1 = 0
   byte idbyte; word idLoc=(EE_ID-(sbn*6)); bool badID=false;
   for (byte i=0;i<6;i++) { idbyte=EEPROM.read(idLoc-i);
     if (((idbyte<'2')||(idbyte>'Z'))|| ((idbyte>'9')&&(idbyte<'A'))) {
@@ -95,7 +85,7 @@ void id_MAKEifBAD(byte sbn) {
 }
 
 //*****************************************
-char *id_GET(char *idOUT, byte sbn) { char *ret=idOUT;
+char *id_GET(char *idOUT, int sbn) { char *ret=idOUT; sbn++; //to make -1 = 0
   word idLoc=(EE_ID-(sbn*6));
   for (byte i=0;i<6;i++) { idOUT[i]=EEPROM.read(idLoc-i);
   }
