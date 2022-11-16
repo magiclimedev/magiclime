@@ -163,9 +163,10 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
       mySubStr(txid,msg,0,6);//
       mySubStr(txkey,msg,7,strlen(msg)-7);
       key_SEND(txid,txkey,rxKEY);
-      word newaddr=addr_FIND(txid);
-      if (EEPROM.read(newaddr)==255) { //new addition?
-        prm_EE_SET_DFLT(txid,newaddr);  } //sensor name="unassigned";
+      word addr=addr_FIND_ID(txid);
+      if (addr==0) {addr=addr_FIND_NEW();}
+      if (byte(EEPROM.read(addr))==byte(0xFF)) { //new addition?
+        prm_EE_SET_DFLT(txid,addr);  } //sensor name="unassigned";
       return;
     }
   } 
@@ -302,8 +303,8 @@ void name_REPLACE(char *buf, byte len){ // snr:ididid:snsnsnsnsn
   if ((buf[3]==':') && (buf[10]==':')) {//one more validate
     mySubStr(id,buf,4,6);
     mySubStr(nm,buf,11,len-11);
-    word addr=addr_FIND(id);
-    nameTO_EE(addr, nm);
+    word addr=addr_FIND_ID(id);
+    if (addr>0) {nameTO_EE(addr, nm);}
   }
 }
 
@@ -387,16 +388,17 @@ void pur_PROCESS(char *pktIDNM) { //looking for 0:txidxx:SENSORNAME
     char txid[10];
     mySubStr(txid,pktIDNM,2,6); //2-7, 
     //Serial.print(F("txid= ")); Serial.println(txid); Serial.flush();
-    word eeAddr= addr_FIND(txid); //overflow writes over eeADR=10
-    //Serial.print(F("eeAddr= ")); Serial.println(eeAddr); Serial.flush();
+    word addr= addr_FIND_ID(txid); //overflow writes over addr=10
+    if (addr==0) {addr=addr_FIND_NEW(); }
+    //Serial.print(F("addr= ")); Serial.println(addr); Serial.flush();
     char snm[12];
     byte nmLEN=pktLEN-9; 
     mySubStr(snm,pktIDNM,9,nmLEN); //0:ididid: 9-end
     //Serial.print(F("snm= ")); Serial.println(snm); Serial.flush();
-    if (EEPROM.read(eeAddr)==255) { //new addition
-      prm_EE_SET_DFLT(txid,eeAddr);  } //sensor name="unassigned";
-    else { nameTO_EE(eeAddr,snm); }
-    prm_SEND(0,eeAddr); //parameter set '0' to sensor at eeAddr
+    if (byte(EEPROM.read(addr))==byte(0xFF)) { //new addition
+      prm_EE_SET_DFLT(txid,addr);  } //sensor name="unassigned";
+    else { nameTO_EE(addr,snm); }
+    prm_SEND(0,addr); //parameter set '0' to sensor at eeAddr
   }
 }
 
@@ -420,25 +422,30 @@ void prm_SEND(byte pnum, word eeAddr) {
 }
 
 //*****************************************
-word addr_FIND(char *pID) { word eeAddr=EE_ID;
-//Serial.print(F("addr_FIND= ")); Serial.println(pID); Serial.flush();
- //print_HEX(pID,strlen(pID));
+word addr_FIND_NEW() { word ret=0;
+  for (word addr=EE_ID;addr>EE_BLKSIZE;addr-=EE_BLKSIZE) {
+    if (byte(EEPROM.read(addr))==byte(0xFF)) {ret=addr; break;}
+  }
+  return ret;  
+}
+
+//*****************************************
+word addr_FIND_ID(char *id) { word ret=0; word addr;
+//Serial.print(F("addr_FINDing ")); Serial.print(id); Serial.flush();
+ //print_HEX(pID,strlen(id));
  //for(word x=EE_ID;x>980;x--) {Serial.print(x);Serial.print(":");Serial.println(EEPROM.read(x),HEX);} 
-  byte eeByte=EEPROM.read(eeAddr); byte ptr;
-  while (eeAddr>EE_BLKSIZE) { //don't bail on removed id's
-    //Serial.print(F("......"));Serial.println(eeAddr);
-    ptr=0;
-    while ( eeByte==pID[ptr] ) {
+  byte ptr; byte eeByte;
+  for (addr=EE_ID;addr>EE_BLKSIZE;addr-=EE_BLKSIZE) {
+    ptr=0; eeByte=byte(EEPROM.read(addr-ptr));
+    while ( eeByte==byte(id[ptr]) ) {
       //Serial.print(ptr);Serial.print(F(":"));Serial.println(eeByte,HEX);
       ptr++;
-      if (ptr==6) { return eeAddr; }
-      eeByte=EEPROM.read(eeAddr-ptr);
+      if (ptr==6) { ret=addr; break; }
+      eeByte=byte(EEPROM.read(addr-ptr));
     }
-    eeAddr=eeAddr-EE_BLKSIZE; //try next block
-    eeByte=EEPROM.read(eeAddr);
+    if (ret>0) {break;}
   }
-  delay(10);
-  return eeAddr;
+  return ret;
 }
 
 //*****************************************
@@ -458,8 +465,8 @@ void prm_EE_SET_DFLT(char *id, word addr) {//ID,Interval,Power
 
 //*****************************************
 void nameTO_EE(word addr, char *snm) { 
-  //Serial.print(F("nameTO_EE at "));
-  //Serial.print(addr); Serial.print(F(" is "));Serial.println(snm); Serial.flush();
+  Serial.print(F("nameTO_EE at "));
+  Serial.print(addr); Serial.print(F(" is "));Serial.println(snm); Serial.flush();
   byte snLEN=strlen(snm);
   addr=addr-10; //where the name goes - after 6 char ID and four paramters
   for (byte b=0;b<10;b++) { char t=snm[b];
@@ -470,31 +477,35 @@ void nameTO_EE(word addr, char *snm) {
 //*****************************************
 char* nameFROM_EE(char *snm, char *id) { char *ret=snm;
   //Serial.print(F("nameFROM_EE: "));Serial.print(id);
-  word addr=addr_FIND(id);
+  word addr=addr_FIND_ID(id);
   //Serial.print(F(" at "));Serial.print(addr);Serial.flush();
-  for (byte bp=0;bp<10;bp++) { //10 char max
-    snm[bp]=EEPROM.read(addr-10-bp); //starting at '6 char id + 4 paramters = 10
-    if (snm[bp]>126) {snm[bp]=0;} //10-19
-  }
-  snm[10]=0;
-  //delay(10);Serial.print(F(" is "));Serial.println(snm);Serial.flush();
+  if (addr>0) {
+    for (byte bp=0;bp<10;bp++) { //10 char max
+      snm[bp]=EEPROM.read(addr-10-bp); //starting at '6 char id + 4 paramters = 10
+      if (snm[bp]>126) {snm[bp]=0;} //10-19
+    }
+    snm[10]=0;
+  }  
+    //delay(10);Serial.print(F(" is "));Serial.println(snm);Serial.flush();
   return ret;
 }
   
 //*****************************************
 void prm_2EEPROM(char *id, byte intvl, byte hb, byte pwr, byte opt) { 
   //Serial.print(F("prm_2EEPROM..."));Serial.println(id);Serial.flush();
-  word addr=addr_FIND(id);
-  //Serial.print(F("addr="));Serial.println(addr);Serial.flush();
-  for (byte b=0;b<6;b++) { EEPROM.write(addr-b, id[b]); } //0-5
-  EEPROM.write(addr-6,intvl); 
-  EEPROM.write(addr-7,hb);        
-  EEPROM.write(addr-8,pwr);
-  EEPROM.write(addr-9,opt);
-  //Serial.print(F("bINT "));Serial.println(intrvl);Serial.flush();
-  //Serial.print(F("bHB  "));Serial.println(hb);Serial.flush();
-  //Serial.print(F("bPWR "));Serial.println(pwr);Serial.flush();
-  //Serial.print(F("bOPT "));Serial.println(opt);Serial.flush();
+  word addr=addr_FIND_ID(id);
+  if (addr>0) {
+    //Serial.print(F("addr="));Serial.println(addr);Serial.flush();
+    for (byte b=0;b<6;b++) { EEPROM.write(addr-b, id[b]); } //0-5
+    EEPROM.write(addr-6,intvl); 
+    EEPROM.write(addr-7,hb);        
+    EEPROM.write(addr-8,pwr);
+    EEPROM.write(addr-9,opt);
+    //Serial.print(F("bINT "));Serial.println(intrvl);Serial.flush();
+    //Serial.print(F("bHB  "));Serial.println(hb);Serial.flush();
+    //Serial.print(F("bPWR "));Serial.println(pwr);Serial.flush();
+    //Serial.print(F("bOPT "));Serial.println(opt);Serial.flush();
+  }
 }
 
 //*****************************************
@@ -652,7 +663,7 @@ ISR(WDT_vect) { //in avr library
 //*****************************************
 void id_REMOVE(char *buf) {
   char id[8]; mySubStr(id,buf,4,6);
-  if (buf[3]==':') { word addr=addr_FIND(id);
+  if (buf[3]==':') { word addr=addr_FIND_ID(id);
     if (byte(EEPROM.read(addr))!=byte(0xFF)) { //not an empty place
       for (byte i=0;i<EE_BLKSIZE;i++) { EEPROM.write(addr-i,0xFF); }
       Serial.print("removed "); Serial.println(id); Serial.flush(); 
@@ -666,10 +677,10 @@ void id_LIST() { char id[8]; char nm[12]; byte blknum=0;
     for (byte i=0;i<6;i++) { id[i]=EEPROM.read(addr-i); }
     id[6]=0; //null term stringify
     blknum++;
-    if (byte(id[0])!=0xFF) { byte n;
+    if (byte(id[0])!=byte(0xFF)) { byte n;
       for (n=0;n<10;n++) {
         nm[n]= EEPROM.read(addr-10-n);
-        if ((byte(nm[n])==0) || (byte(nm[n])==0xFF)) {break;}
+        if ((byte(nm[n])==0) || (byte(nm[n])==byte(0xFF))) {break;}
       }
       nm[n]=0;
       Serial.print(blknum); Serial.print(":");
@@ -682,21 +693,21 @@ void id_LIST() { char id[8]; char nm[12]; byte blknum=0;
 //*****************************************
 void key_EE_ERASE() {
   Serial.print(F("key_EE_ERASE..."));Serial.flush();
-  for (byte i=0;i<16;i++) { EEPROM.write(EE_KEY-i,255); } //the rest get FF's
+  for (byte i=0;i<16;i++) { EEPROM.write(EE_KEY-i,0xFF); } //the rest get FF's
   Serial.println(F(" Done"));Serial.flush();
 }
 
 //*****************************************
 void prm_EE_ERASE() { //danger danger will robinson! this is ALL sensor parameters
   Serial.print(F("prm_EE_ERASE...."));Serial.flush();
-  for (word i=EE_ID;i>0;i--) { EEPROM.write(i,255); } //the rest get FF's
+  for (word i=EE_ID;i>0;i--) { EEPROM.write(i,0xFF); } //the rest get FF's
   Serial.println(F(" Done"));Serial.flush();
 }
 
 //*****************************************
 void EE_ERASE_all() {
   Serial.print(F("EE_ERASE_all...#"));Serial.flush();
-  for (word i=0;i<1024;i++) { EEPROM.write(i,255); } //the rest get FF's
+  for (word i=0;i<1024;i++) { EEPROM.write(i,0xFF); } //the rest get FF's
   Serial.println(F(" Done")); Serial.flush();
 }
 
