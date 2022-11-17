@@ -60,8 +60,8 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 const char H00[] PROGMEM = "---- commands ----"; 
 const char H01[] PROGMEM = "kss:xxx       -set Key Signal Strength ref. level";  
 const char H02[] PROGMEM = "snr:ididid:sensorname -Sensor Name Replace for that sensor ID"; 
-const char H03[] PROGMEM = "kee           -Key Erase Eeprom";
-const char H04[] PROGMEM = "pee:ididid    -Parameter Erase Eeprom for that ID";
+const char H03[] PROGMEM = "kye           -Key Erase m";
+const char H04[] PROGMEM = "ide           -ALL ID's erased";
 const char H05[] PROGMEM = "idr:ididid    -ID is Removed from eeprom";
 const char H06[] PROGMEM = "idl           -ID list";
 const char H07[] PROGMEM = "prm:n:ididid:int:hb:p:o -parameter set 'n'";
@@ -278,8 +278,8 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
     char pfx[6]; mySubStr(pfx,PCbuf,0,3);
     if (strcmp(pfx,"kss")==0) {key_SETREF(PCbuf,bufLEN);} //Key Signal Strength
     if (strcmp(pfx,"snr")==0) {name_REPLACE(PCbuf,bufLEN);}
-    if (strcmp(pfx,"kee")==0) {key_EE_ERASE();}
-    if (strcmp(pfx,"pee")==0) {prm_EE_ERASE();} 
+    if (strcmp(pfx,"kye")==0) {key_EE_ERASE();}
+    if (strcmp(pfx,"ide")==0) {id_EE_ERASE();} 
     if (strcmp(pfx,"idr")==0) {id_REMOVE(PCbuf);}
     if (strcmp(pfx,"idl")==0) {id_LIST();}    
     if (strcmp(pfx,"prm")==0) {prm_UPDATE(PCbuf,bufLEN);  }//Parameter stuff to follow
@@ -698,8 +698,8 @@ void key_EE_ERASE() {
 }
 
 //*****************************************
-void prm_EE_ERASE() { //danger danger will robinson! this is ALL sensor parameters
-  Serial.print(F("prm_EE_ERASE...."));Serial.flush();
+void id_EE_ERASE() { //danger danger will robinson! this is ALL sensor parameters
+  Serial.print(F("id_EE_ERASE...."));Serial.flush();
   for (word i=EE_ID;i>0;i--) { EEPROM.write(i,0xFF); } //the rest get FF's
   Serial.println(F(" Done"));Serial.flush();
 }
