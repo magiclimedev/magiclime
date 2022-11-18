@@ -59,28 +59,31 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 //here's the type look-up table...
 const char H00[] PROGMEM = "---- commands ----"; 
 const char H01[] PROGMEM = "prm:n:ididid:int:hb:p:o = PaRaMeters settings.";
-const char H02[] PROGMEM = "  - n ='parameter group #, always '0'(for now).";
+const char H02[] PROGMEM = "  - n ='parameter group #, aldways '0'(for now).";
 const char H03[] PROGMEM = "  - ididid = 6 char. id string.";
-const char H04[] PROGMEM = "  - int = interval, periodic TX counter limit (8 sec. per).";
-const char H05[] PROGMEM = "  - hb = heartbeat counter limit (64 sec. per).";
+const char H04[] PROGMEM = "  - int = interval, periodic TX counter limit (x 8 sec.).";
+const char H05[] PROGMEM = "  - hb = heartbeat counter limit (x 64 sec.).";
 const char H06[] PROGMEM = "  - p = power setting, 2-20.";
 const char H07[] PROGMEM = "  - o = option byte, sensor-dependent flag bits.";
 const char H08[] PROGMEM = "kss:xxx       -Key Signal Strength ref. level";  
 const char H09[] PROGMEM = "snr:ididid:sensorname -Sensor Name Replace."; 
-const char H10[] PROGMEM = "kye           -KeY Erase ";
-const char H11[] PROGMEM = "ide           -ID's Erase !ALL!";
-const char H12[] PROGMEM = "idr:ididid    -ID Remove from eeprom";
-const char H13[] PROGMEM = "idl           -ID List";
-const char H14[] PROGMEM = " -- examples --";
-const char H15[] PROGMEM = "prm:0:SGPOJS:5:20:2:0";
-const char H16[] PROGMEM = "kss:90"; 
-const char H17[] PROGMEM = "snr:SGPOJS:MOT_HALL1"; 
-const char H18[] PROGMEM = "idr:SGPOJS";
-const char H19[] PROGMEM = "";
+const char H10[] PROGMEM = "idd:ididid    -ID Delete from eeprom";
+const char H11[] PROGMEM = "idl           -ID List";
+const char H12[] PROGMEM = "ide           -ID's Erase !ALL!";
+const char H13[] PROGMEM = "kye           -KeY Erase ";
+const char H14[] PROGMEM = "eee           -Erase Entire Eeprom";
+const char H15[] PROGMEM = "";
+const char H16[] PROGMEM = " -- examples --";
+const char H17[] PROGMEM = "prm:0:SGPOJS:5:20:2:0";
+const char H18[] PROGMEM = "kss:90"; 
+const char H19[] PROGMEM = "snr:SGPOJS:MOT_HALL1"; 
+const char H20[] PROGMEM = "idr:SGPOJS";
+const char H21[] PROGMEM = "";
 
 PGM_P const table_HLP[] PROGMEM ={H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,
-                                  H10,H11,H12,H13,H14,H15,H16,H17,H18,H19};
-const byte hlpLIM=20;
+                                  H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,
+                                  H20,H21};
+const byte hlpLIM=22;
 
 boolean flgShowChar;
 boolean flgShowHex;
@@ -92,6 +95,7 @@ static char rxKEY[18]; //16 char + null
 const byte rssOFFSET=140;
 byte keyRSS=90;
 bool flgDONE;
+
 //**********************************************************************
 void setup() { 
   while (!Serial);
@@ -285,11 +289,12 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
     char pfx[6]; mySubStr(pfx,PCbuf,0,3);
     if (strcmp(pfx,"kss")==0) {key_SETREF(PCbuf,bufLEN);} //Key Signal Strength
     if (strcmp(pfx,"snr")==0) {name_REPLACE(PCbuf,bufLEN);}
+    if (strcmp(pfx,"idd")==0) {id_DELETE(PCbuf);}
+    if (strcmp(pfx,"idl")==0) {id_LIST();}  
     if (strcmp(pfx,"kye")==0) {key_EE_ERASE();}
-    if (strcmp(pfx,"ide")==0) {id_EE_ERASE();} 
-    if (strcmp(pfx,"idr")==0) {id_REMOVE(PCbuf);}
-    if (strcmp(pfx,"idl")==0) {id_LIST();}    
-    if (strcmp(pfx,"prm")==0) {prm_UPDATE(PCbuf,bufLEN);  }//Parameter stuff to follow
+    if (strcmp(pfx,"ide")==0) {id_EE_ERASE();}
+    if (strcmp(pfx,"eee")==0) {all_EE_ERASE();}
+    if (strcmp(pfx,"prm")==0) {prm_UPDATE(PCbuf,bufLEN);}//Parameter stuff to follow
   } //if Serial.aval
 } //End Of CheckPCbuf
 
@@ -417,11 +422,11 @@ void prm_SEND(byte pnum, word eeAddr) {
     case 0: { //PRM:0:ididid:i:h:p:o
       memcpy(prm,"PRM:0:",6); //0-5
       for (byte i=0;i<6;i++) { prm[i+6]=EEPROM.read(eeAddr-i); } //6-11, ID to prm
-      prm[12]=':'; prm[13]=EEPROM.read(eeAddr-6);  //interval in wdt timeouts * multiplier in sensor (wdmTXI)
+      prm[12]=':'; prm[13]=EEPROM.read(eeAddr-6);//interval in wdt timeouts * multiplier in sensor (wdmTXI)
       prm[14]=':'; prm[15]=EEPROM.read(eeAddr-7);//heartbeat, in wdt timeouts * multiplier in sensor (wdmHBP)
       prm[16]=':'; prm[17]=EEPROM.read(eeAddr-8); //power
-      prm[18]=':'; prm[19]=EEPROM.read(eeAddr-9); //20th byte
-    } break;//13th, System byte? might be zero
+      prm[18]=':'; prm[19]=EEPROM.read(eeAddr-9); //option byte, 20th byte
+    } break;
   } 
   //print_HEX(prm,24);
   msg_SEND_HEX(prm,20,rxKEY,2); //
@@ -472,8 +477,8 @@ void prm_EE_SET_DFLT(char *id, word addr) {//ID,Interval,Power
 
 //*****************************************
 void nameTO_EE(word addr, char *snm) { 
-  Serial.print(F("* nameTO_EE at "));
-  Serial.print(addr); Serial.print(F(" is "));Serial.println(snm); Serial.flush();
+  //Serial.print(F("* nameTO_EE at "));
+  //Serial.print(addr); Serial.print(F(" is "));Serial.println(snm); Serial.flush();
   byte snLEN=strlen(snm);
   addr=addr-10; //where the name goes - after 6 char ID and four paramters
   for (byte b=0;b<10;b++) { char t=snm[b];
@@ -502,7 +507,7 @@ void prm_2EEPROM(char *id, byte intvl, byte hb, byte pwr, byte opt) {
   //Serial.print(F("* prm_2EEPROM..."));Serial.println(id);Serial.flush();
   word addr=addr_FIND_ID(id);
   if (addr>0) {
-    //Serial.print(F("addr="));Serial.println(addr);Serial.flush();
+    //Serial.print(F("* addr="));Serial.println(addr);Serial.flush();
     for (byte b=0;b<6;b++) { EEPROM.write(addr-b, id[b]); } //0-5
     EEPROM.write(addr-6,intvl); 
     EEPROM.write(addr-7,hb);        
@@ -516,9 +521,9 @@ void prm_2EEPROM(char *id, byte intvl, byte hb, byte pwr, byte opt) {
 }
 
 //*****************************************
-char *prm_pkt(char *pktOUT, byte pktnum, char *id, byte intvl, byte hb, byte pwr, byte opt) { char *ret=pktOUT;
-  char n2a[10]; // for Number TO Ascii things
-  strcpy(pktOUT,"PRM");
+char *prm_pkt(char *pktOUT, byte pktnum, char *id, byte intvl, byte hb, byte pwr, byte opt) {
+  char *ret=pktOUT;  char n2a[10]; // for Number TO Ascii things
+  strcpy(pktOUT,"PRM"); //instead of 'itoa' just add 48?
   strcat(pktOUT,":"); itoa(n2a,pktnum,10); strcat(pktOUT,n2a); 
   strcat(pktOUT,":"); strcat(pktOUT,id); 
   strcat(pktOUT,":"); itoa(intvl,n2a,10); strcat(pktOUT,n2a); n2a[0]=0;
@@ -633,15 +638,6 @@ void json_PRINTinfo(char info[32], byte iNum) {
   Serial.println(""); Serial.flush();  
 }
 
-//*****************************************
-char *mySubStr(char *out, char* in,byte from,byte len) { char *ret=out;
-  byte p=0; 
-  for (byte i=from;i<(from+len);i++) {out[p]=in[i]; p++;}
-  out[p]=0;
-  //Serial.print(F("* ssout=")); Serial.println(out);Serial.flush();
-  return ret;
-}
-
 //**********************************************************************
 void jsonINFO(char *info) { 
   Serial.print(F("{\"source\":\"rx\",\"info\":\""));
@@ -664,11 +660,7 @@ void jsonVER() {
 }
 
 //*****************************************
-ISR(WDT_vect) { //in avr library
-}
-
-//*****************************************
-void id_REMOVE(char *buf) {
+void id_DELETE(char *buf) {
   char id[8]; mySubStr(id,buf,4,6);
   if (buf[3]==':') { word addr=addr_FIND_ID(id);
     if (byte(EEPROM.read(addr))!=byte(0xFF)) { //not an empty place
@@ -706,15 +698,17 @@ void key_EE_ERASE() {
 
 //*****************************************
 void id_EE_ERASE() { //danger danger will robinson! this is ALL sensor parameters
-  Serial.print(F("id_EE_ERASE...."));Serial.flush();
-  for (word i=EE_ID;i>0;i--) { EEPROM.write(i,0xFF); } //the rest get FF's
+  Serial.print(F("id_EE_ERASE "));
+  for (word i=EE_ID;i>0;i--) { EEPROM.write(i,0xFF);
+    if ((i % 64)==0){Serial.print(F(". "));} } //the rest get FF's
   Serial.println(F(" Done"));Serial.flush();
 }
 
 //*****************************************
-void EE_ERASE_all() {
-  Serial.print(F("* EE_ERASE_all...#"));Serial.flush();
-  for (word i=0;i<1024;i++) { EEPROM.write(i,0xFF); } //the rest get FF's
+void all_EE_ERASE() {
+  Serial.print(F("* EE_ERASE_all "));
+  for (word i=0;i<1024;i++) { EEPROM.write(i,0xFF); 
+    if ((i % 64)==0){Serial.print(F(". "));} } //the rest get FF's
   Serial.println(F(" Done")); Serial.flush();
 }
 
@@ -730,6 +724,12 @@ void print_CHR(char *buf,byte len) { byte i;
   Serial.print(len);Serial.print(F(": "));
   for (i=0;i<(len-1);i++) {Serial.print( buf[i]);}
   Serial.println(buf[len-1]);Serial.flush();
+}
+
+void showHELP(byte lim) { char sHLP[80]; 
+  for (byte i=0;i<lim-1;i++) { *sHLP=0;
+    strcat_P(sHLP, (char*)pgm_read_word(&(table_HLP[i]))); Serial.println(sHLP); }
+  Serial.println("");Serial.flush();
 }
 
 //*****************************************
@@ -749,6 +749,16 @@ char* dtoa(double dN, char *cMJA, int iP) {
   while (iP>1) { if (lR< lP) { *cMJA='0'; cMJA++; } lP=lP*10;  iP--; }
   ltoa(lR, cMJA, 10); }  return ret; }
   
+
+//*****************************************
+char *mySubStr(char *out, char* in,byte from,byte len) { char *ret=out;
+  byte p=0; 
+  for (byte i=from;i<(from+len);i++) {out[p]=in[i]; p++;}
+  out[p]=0;
+  //Serial.print(F("* ssout=")); Serial.println(out);Serial.flush();
+  return ret;
+}
+
 //*****************************************
 void freeMemory() {  char top;  int fm;
 #ifdef __arm__
@@ -761,8 +771,7 @@ void freeMemory() {  char top;  int fm;
 Serial.print(F("* Free Mem: "));Serial.println(fm);Serial.flush();
 }
 
-void showHELP(byte lim) { Serial.println("");
-  char sHLP[80]; for (byte i=0;i<lim-1;i++) { *sHLP=0;
-    strcat_P(sHLP, (char*)pgm_read_word(&(table_HLP[i]))); Serial.println(sHLP); }
-  Serial.println("");Serial.flush();
+
+//*****************************************
+ISR(WDT_vect) { //in avr library
 }
