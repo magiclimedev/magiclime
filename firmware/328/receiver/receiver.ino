@@ -7,7 +7,7 @@
  * magiclime.com
  */
  
-const static char VER[] = "RX221115";
+const static char VER[] = "RX221116";
 
 #include <EEPROM.h>
 #include <avr/interrupt.h>
@@ -59,7 +59,7 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 //here's the type look-up table...
 const char H00[] PROGMEM = "---- commands ----"; 
 const char H01[] PROGMEM = "prm:n:ididid:int:hb:p:o = PaRaMeters settings.";
-const char H02[] PROGMEM = "  - n ='parameter group #, allways '0'(for now).";
+const char H02[] PROGMEM = "  - n ='parameter group #, always '0'(for now).";
 const char H03[] PROGMEM = "  - ididid = 6 char. id string.";
 const char H04[] PROGMEM = "  - int = interval, periodic TX counter limit (8 sec. per).";
 const char H05[] PROGMEM = "  - hb = heartbeat counter limit (64 sec. per).";
