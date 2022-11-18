@@ -77,7 +77,7 @@ const char H16[] PROGMEM = " -- examples --";
 const char H17[] PROGMEM = "prm:0:SGPOJS:5:20:2:0";
 const char H18[] PROGMEM = "kss:90"; 
 const char H19[] PROGMEM = "snr:SGPOJS:MOT_HALL1"; 
-const char H20[] PROGMEM = "idr:SGPOJS";
+const char H20[] PROGMEM = "idd:SGPOJS";
 const char H21[] PROGMEM = "";
 
 PGM_P const table_HLP[] PROGMEM ={H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,
