@@ -58,22 +58,29 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 
 //here's the type look-up table...
 const char H00[] PROGMEM = "---- commands ----"; 
-const char H01[] PROGMEM = "kss:xxx       -set Key Signal Strength ref. level";  
-const char H02[] PROGMEM = "snr:ididid:sensorname -Sensor Name Replace for that sensor ID"; 
-const char H03[] PROGMEM = "kye           -Key Erase m";
-const char H04[] PROGMEM = "ide           -ALL ID's erased";
-const char H05[] PROGMEM = "idr:ididid    -ID is Removed from eeprom";
-const char H06[] PROGMEM = "idl           -ID list";
-const char H07[] PROGMEM = "prm:n:ididid:int:hb:p:o -parameter set 'n'";
-const char H08[] PROGMEM = " -- examples --";
-const char H09[] PROGMEM = "kss:90"; 
-const char H10[] PROGMEM = "snr:SGPOJS:MOT_BEDRM"; 
-const char H11[] PROGMEM = "idr:SGPOJS";
-const char H12[] PROGMEM = "pee:SGPOJS";
-const char H13[] PROGMEM = "prm:0:SGPOJS:5:20:2:0";
-PGM_P const table_HLP[] PROGMEM ={H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,H10
-                        ,H11,H12,H13};
-const byte hlpLIM=14;
+const char H01[] PROGMEM = "prm:n:ididid:int:hb:p:o = PaRaMeters settings.";
+const char H02[] PROGMEM = "  - n ='parameter group #, allways '0'(for now).";
+const char H03[] PROGMEM = "  - ididid = 6 char. id string.";
+const char H04[] PROGMEM = "  - int = interval, periodic TX counter limit (8 sec. per).";
+const char H05[] PROGMEM = "  - hb = heartbeat counter limit (64 sec. per).";
+const char H06[] PROGMEM = "  - p = power setting, 2-20.";
+const char H07[] PROGMEM = "  - o = option byte, sensor-dependent flag bits.";
+const char H08[] PROGMEM = "kss:xxx       -Key Signal Strength ref. level";  
+const char H09[] PROGMEM = "snr:ididid:sensorname -Sensor Name Replace."; 
+const char H10[] PROGMEM = "kye           -KeY Erase ";
+const char H11[] PROGMEM = "ide           -ID's Erase !ALL!";
+const char H12[] PROGMEM = "idr:ididid    -ID Remove from eeprom";
+const char H13[] PROGMEM = "idl           -ID List";
+const char H14[] PROGMEM = " -- examples --";
+const char H15[] PROGMEM = "prm:0:SGPOJS:5:20:2:0";
+const char H16[] PROGMEM = "kss:90"; 
+const char H17[] PROGMEM = "snr:SGPOJS:MOT_HALL1"; 
+const char H18[] PROGMEM = "idr:SGPOJS";
+const char H19[] PROGMEM = "";
+
+PGM_P const table_HLP[] PROGMEM ={H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,
+                                  H10,H11,H12,H13,H14,H15,H16,H17,H18,H19};
+const byte hlpLIM=20;
 
 boolean flgShowChar;
 boolean flgShowHex;
@@ -108,10 +115,10 @@ void setup() {
   flgShowChar=false;
   flgShowHex=false;
 
-  key_EE_GET(rxKEY); //Serial.print(F("key="));Serial.println(rxKEY);
-  if (key_VALIDATE(rxKEY)==false) { //Serial.println(F("key_VALIDATE(rxKEY)==false"));Serial.flush(); //bad key? - make a new one?
+  key_EE_GET(rxKEY); //Serial.print(F("* key="));Serial.println(rxKEY);
+  if (key_VALIDATE(rxKEY)==false) { //Serial.println(F("* key_VALIDATE(rxKEY)==false"));Serial.flush(); //bad key? - make a new one?
     key_EE_MAKE();
-    key_EE_GET(rxKEY); //Serial.print(F("key new="));Serial.println(rxKEY);
+    key_EE_GET(rxKEY); //Serial.print(F("* key new="));Serial.println(rxKEY);
   }
   //jsonINFO(rxKEY);
   flgDONE=false;
@@ -150,14 +157,14 @@ byte rxBUF_CHECK() { //********* get RF Messages - return RSS=0 for no rx
 //  4.  an ack of those parameters with time in minutes. ('PAK')
 
 void rxBUF_PROCESS(byte rss) { flgDONE=true;
-  //Serial.println(F("rxBUF_PROCESS..."));Serial.flush();
+  //Serial.println(F("* rxBUF_PROCESS..."));Serial.flush();
   char msg[64]; 
   if (rss>=keyRSS) { //first requirement for pairing
-   // Serial.print(F("rss>keyRSS:"));Serial.println(rss);Serial.flush();
+   // Serial.print(F("* rss>keyRSS:"));Serial.println(rss);Serial.flush();
     //special decode key - not the regular rxKEY
     char pairKEY[18]; strcpy(pairKEY,"thisisamagiclime");
     pair_PROCESS(msg,rxBUF,rxLEN,pairKEY); //!ididid!txkey.. --> ididid:keykeykey
-    //Serial.print(F("pair msg: "));Serial.println(msg);
+    //Serial.print(F("* pair msg: "));Serial.println(msg);
     if ((msg[0]!=0) && (msg[6]==':')) {
       char txid[8]; char txkey[18];
       mySubStr(txid,msg,0,6);//
@@ -172,11 +179,11 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
   } 
   
 //************ not key stuff ... *************
-//Serial.print(F("key: ")); Serial.println(rxKEY);Serial.flush();
+//Serial.print(F("* key: ")); Serial.println(rxKEY);Serial.flush();
   rx_DECODE_0(msg,rxBUF,rxLEN,rxKEY); //decode using rx KEY
   if (msg[0]!=0) { //is it 'PUR'? Or DATA? or INFO?
     byte msgLEN=strlen(msg);
-    //Serial.print(F("msg: ")); Serial.print(msgLEN);Serial.print(F(" : "));Serial.println(msg);Serial.flush();
+    //Serial.print(F("* msg: ")); Serial.print(msgLEN);Serial.print(F(" : "));Serial.println(msg);Serial.flush();
 //Quick - get the DATA! (then look for other stuff)
     if ((msg[0]>='0') && (msg[0]<='9') && (msg[1]=='|')) { //protocol # validate
       char protocol=msg[0];
@@ -249,7 +256,7 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
 //**********************************************************************
 void pcBUF_CHECK() { // Look for Commands from the Host PC
   if (Serial.available())  {
-    //Serial.print(F("pcbufchk("));
+    //Serial.print(F("* pcbufchk("));
     char cbyte;   byte c_pos = 0;  char PCbuf[50];
     cbyte = Serial.read();
     while ((cbyte != '\n') && (cbyte != '\r'))  {
@@ -268,7 +275,7 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
     
     PCbuf[c_pos] = 0; // mark end-of-string ...
     byte bufLEN=strlen(PCbuf);
-    //Serial.print(F("pcbuf("));Serial.print(bufLEN);Serial.print(F(") "));
+    //Serial.print(F("* pcbuf("));Serial.print(bufLEN);Serial.print(F(") "));
     //Serial.println(PCbuf);Serial.flush();
     
     if ( PCbuf[0] == '?') { Serial.println("");Serial.println(VER); Serial.flush();
@@ -320,7 +327,7 @@ void prm_UPDATE(char *PCbuf,byte bufLEN){
   len[4]=(cp[4]-cp[3])-1;  //heartbeat, 1 byte
   len[5]=(cp[5]-cp[4])-1;  //power level, 2-20, 1 byte   
   len[6]=(bufLEN-cp[5])-1;     //system byte flag bits, ascii hex text 00-FF
-  //Serial.print(F("len[1]="));Serial.println(len[1]);Serial.flush();
+  //Serial.print(F("* len[1]="));Serial.println(len[1]);Serial.flush();
   char pnum = PCbuf[4];
   switch (pnum) {
     case '0': {
@@ -361,7 +368,7 @@ char *pair_PROCESS(char *idkey, char *rxbuf, byte rxlen, char *pkey) { char *ret
   
 //*****************************************
 char *pur_LOOK(char *purOUT, char *purIN) {char *ret=purOUT; // RX expects PUR:0:IDxxxx:SENSORNAME
-  //Serial.print(F("...pur_LOOK..."));Serial.println(purIN);Serial.flush();
+  //Serial.print(F("* ...pur_LOOK..."));Serial.println(purIN);Serial.flush();
   purOUT[0]=0; //default failflag
   char pfx[6];
   mySubStr(pfx,purIN,0,4);
@@ -373,7 +380,7 @@ char *pur_LOOK(char *purOUT, char *purIN) {char *ret=purOUT; // RX expects PUR:0
 //***************************************** Paramter AcK - spit back to rcvr as info
 //expecting... PAK:0:IdIdId:10:30:2:0 - like
 char *pak_LOOK(char *pakOUT, char *pakIN) {char *ret=pakOUT; 
-  //Serial.println(F("...pak_LOOK..."));Serial.flush();
+  //Serial.println(F("* ...pak_LOOK..."));Serial.flush();
   pakOUT[0]=0; //default failflag
   char pfx[6];  mySubStr(pfx,pakIN,0,3);
   if (strcmp(pfx,"PAK")==0) { strcpy(pakOUT,pakIN); }
@@ -382,19 +389,19 @@ char *pak_LOOK(char *pakOUT, char *pakIN) {char *ret=pakOUT;
 
 //*****************************************
 void pur_PROCESS(char *pktIDNM) { //looking for 0:txidxx:SENSORNAME
-  //Serial.print(F("pur_PROCESS: ")); Serial.print(pktIDNM); 
+  //Serial.print(F("* pur_PROCESS: ")); Serial.print(pktIDNM); 
   byte pktLEN=strlen(pktIDNM);
   if (pktIDNM[0]='0') { //parameter set #0?
     char txid[10];
     mySubStr(txid,pktIDNM,2,6); //2-7, 
-    //Serial.print(F("txid= ")); Serial.println(txid); Serial.flush();
+    //Serial.print(F("* txid= ")); Serial.println(txid); Serial.flush();
     word addr= addr_FIND_ID(txid); //overflow writes over addr=10
     if (addr==0) {addr=addr_FIND_NEW(); }
-    //Serial.print(F("addr= ")); Serial.println(addr); Serial.flush();
+    //Serial.print(F("* addr= ")); Serial.println(addr); Serial.flush();
     char snm[12];
     byte nmLEN=pktLEN-9; 
     mySubStr(snm,pktIDNM,9,nmLEN); //0:ididid: 9-end
-    //Serial.print(F("snm= ")); Serial.println(snm); Serial.flush();
+    //Serial.print(F("* snm= ")); Serial.println(snm); Serial.flush();
     if (byte(EEPROM.read(addr))==byte(0xFF)) { //new addition
       prm_EE_SET_DFLT(txid,addr);  } //sensor name="unassigned";
     else { nameTO_EE(addr,snm); }
@@ -404,7 +411,7 @@ void pur_PROCESS(char *pktIDNM) { //looking for 0:txidxx:SENSORNAME
 
 //*****************************************
 void prm_SEND(byte pnum, word eeAddr) { 
-  //Serial.print(F("prm0_SEND addr= ")); Serial.println(eeAddr); Serial.flush();
+  //Serial.print(F("* prm0_SEND addr= ")); Serial.println(eeAddr); Serial.flush();
   byte prm[24]; word eeID;  //Param Pointer 
   switch (pnum) {
     case 0: { //PRM:0:ididid:i:h:p:o
@@ -431,7 +438,7 @@ word addr_FIND_NEW() { word ret=0;
 
 //*****************************************
 word addr_FIND_ID(char *id) { word ret=0; word addr;
-//Serial.print(F("addr_FINDing ")); Serial.print(id); Serial.flush();
+//Serial.print(F("* addr_FINDing ")); Serial.print(id); Serial.flush();
  //print_HEX(pID,strlen(id));
  //for(word x=EE_ID;x>980;x--) {Serial.print(x);Serial.print(":");Serial.println(EEPROM.read(x),HEX);} 
   byte ptr; byte eeByte;
@@ -450,8 +457,8 @@ word addr_FIND_ID(char *id) { word ret=0; word addr;
 
 //*****************************************
 void prm_EE_SET_DFLT(char *id, word addr) {//ID,Interval,Power
-  //Serial.print(F("prm_EE_SET_DFLT, id= ")); Serial.print(id);
-  //Serial.print(F(" at ")); Serial.println(addr); Serial.flush();
+  //Serial.print(F("* prm_EE_SET_DFLT, id= ")); Serial.print(id);
+  //Serial.print(F("*  at ")); Serial.println(addr); Serial.flush();
   char sn[]="unassigned";
   for(byte b=0;b<6;b++) { EEPROM.write((addr-b),id[b]); } //0-5
   EEPROM.write(addr-6,4); //interval sec/16       //6
@@ -465,7 +472,7 @@ void prm_EE_SET_DFLT(char *id, word addr) {//ID,Interval,Power
 
 //*****************************************
 void nameTO_EE(word addr, char *snm) { 
-  Serial.print(F("nameTO_EE at "));
+  Serial.print(F("* nameTO_EE at "));
   Serial.print(addr); Serial.print(F(" is "));Serial.println(snm); Serial.flush();
   byte snLEN=strlen(snm);
   addr=addr-10; //where the name goes - after 6 char ID and four paramters
@@ -476,7 +483,7 @@ void nameTO_EE(word addr, char *snm) {
 
 //*****************************************
 char* nameFROM_EE(char *snm, char *id) { char *ret=snm;
-  //Serial.print(F("nameFROM_EE: "));Serial.print(id);
+  //Serial.print(F("* nameFROM_EE: "));Serial.print(id);
   word addr=addr_FIND_ID(id);
   //Serial.print(F(" at "));Serial.print(addr);Serial.flush();
   if (addr>0) {
@@ -492,7 +499,7 @@ char* nameFROM_EE(char *snm, char *id) { char *ret=snm;
   
 //*****************************************
 void prm_2EEPROM(char *id, byte intvl, byte hb, byte pwr, byte opt) { 
-  //Serial.print(F("prm_2EEPROM..."));Serial.println(id);Serial.flush();
+  //Serial.print(F("* prm_2EEPROM..."));Serial.println(id);Serial.flush();
   word addr=addr_FIND_ID(id);
   if (addr>0) {
     //Serial.print(F("addr="));Serial.println(addr);Serial.flush();
@@ -501,10 +508,10 @@ void prm_2EEPROM(char *id, byte intvl, byte hb, byte pwr, byte opt) {
     EEPROM.write(addr-7,hb);        
     EEPROM.write(addr-8,pwr);
     EEPROM.write(addr-9,opt);
-    //Serial.print(F("bINT "));Serial.println(intrvl);Serial.flush();
-    //Serial.print(F("bHB  "));Serial.println(hb);Serial.flush();
-    //Serial.print(F("bPWR "));Serial.println(pwr);Serial.flush();
-    //Serial.print(F("bOPT "));Serial.println(opt);Serial.flush();
+    //Serial.print(F("* bINT "));Serial.println(intrvl);Serial.flush();
+    //Serial.print(F("* bHB  "));Serial.println(hb);Serial.flush();
+    //Serial.print(F("* bPWR "));Serial.println(pwr);Serial.flush();
+    //Serial.print(F("* bOPT "));Serial.println(opt);Serial.flush();
   }
 }
 
@@ -537,7 +544,7 @@ void key_SEND(char *txid, char *txkey, char *rxkey) {
 
 //*****************************************
 void msg_SEND(char *msgIN, char *key, int pwr) { 
-  //Serial.print(F("msg_SEND: ")); print_CHR(msgIN,strlen(msgIN));
+  //Serial.print(F("* msg_SEND: ")); print_CHR(msgIN,strlen(msgIN));
   char txBUF[64]; byte txLEN=strlen(msgIN);
   tx_ENCODE_0(txBUF,msgIN,txLEN,key);
   rf95.setTxPower(pwr, false); // 2-20
@@ -546,7 +553,7 @@ void msg_SEND(char *msgIN, char *key, int pwr) {
 
 //*****************************************
 void msg_SEND_HEX(char *hexIN, byte len, char *key, int pwr) { 
-  //Serial.print(F("msg_SEND_HEX: ")); print_HEX(hexIN,len);
+  //Serial.print(F("* msg_SEND_HEX: ")); print_HEX(hexIN,len);
   char hexBUF[64]; // memcpy(hexBUF,&hexIN,len);
   tx_ENCODE_0(hexBUF,hexIN,len,key);
   rf95.setTxPower(pwr, false); //from 1-10 to 2-20dB
@@ -631,7 +638,7 @@ char *mySubStr(char *out, char* in,byte from,byte len) { char *ret=out;
   byte p=0; 
   for (byte i=from;i<(from+len);i++) {out[p]=in[i]; p++;}
   out[p]=0;
-  //Serial.print(F("ssout=")); Serial.println(out);Serial.flush();
+  //Serial.print(F("* ssout=")); Serial.println(out);Serial.flush();
   return ret;
 }
 
@@ -692,7 +699,7 @@ void id_LIST() { char id[8]; char nm[12]; byte blknum=0;
 
 //*****************************************
 void key_EE_ERASE() {
-  Serial.print(F("key_EE_ERASE..."));Serial.flush();
+  Serial.print(F("* key_EE_ERASE..."));Serial.flush();
   for (byte i=0;i<16;i++) { EEPROM.write(EE_KEY-i,0xFF); } //the rest get FF's
   Serial.println(F(" Done"));Serial.flush();
 }
@@ -706,7 +713,7 @@ void id_EE_ERASE() { //danger danger will robinson! this is ALL sensor parameter
 
 //*****************************************
 void EE_ERASE_all() {
-  Serial.print(F("EE_ERASE_all...#"));Serial.flush();
+  Serial.print(F("* EE_ERASE_all...#"));Serial.flush();
   for (word i=0;i<1024;i++) { EEPROM.write(i,0xFF); } //the rest get FF's
   Serial.println(F(" Done")); Serial.flush();
 }
@@ -751,7 +758,7 @@ void freeMemory() {  char top;  int fm;
 #else  // __arm__
   fm= __brkval ? &top - __brkval : &top - __malloc_heap_start;
 #endif  // __arm__
-Serial.print(F("Free Mem: "));Serial.println(fm);Serial.flush();
+Serial.print(F("* Free Mem: "));Serial.println(fm);Serial.flush();
 }
 
 void showHELP(byte lim) { Serial.println("");
