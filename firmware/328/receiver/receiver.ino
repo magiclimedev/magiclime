@@ -7,7 +7,7 @@
  * magiclime.com
  */
  
-const static char VER[] = "RX221116";
+const static char VER[] = "RX221121";
 
 #include <EEPROM.h>
 #include <avr/interrupt.h>
@@ -49,7 +49,7 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 #define EE_KEY            EE_KEY_RSS-1  //KEY is 16 - no string null 
 #define EE_ID       EE_KEY-16     // 6 char
 #define EE_INTERVAL EE_ID-6 //7, 'seconds/16' 255=68 min.
-#define EE_HRTBEAT  EE_INTERVAL-1 //8, 'seconds/64' 255=272 min.
+#define EE_HRTBEAT  EE_INTERVAL-1 //8, 'seconds/128' 255=544 min.
 #define EE_POWER    EE_HRTBEAT-1  //9, 1-10  (2-20dB in sensor).
 #define EE_OPTBYTE  EE_POWER-1  //10, + this one = 10 bytes per ID,
 #define EE_NAME     EE_OPTBYTE-1  //20, and then this one = 10 more bytes per ID,
@@ -62,7 +62,7 @@ const char H01[] PROGMEM = "prm:n:ididid:int:hb:p:o = PaRaMeters settings.";
 const char H02[] PROGMEM = "  - n ='parameter group #, aldways '0'(for now).";
 const char H03[] PROGMEM = "  - ididid = 6 char. id string.";
 const char H04[] PROGMEM = "  - int = interval, periodic TX counter limit (x 8 sec.).";
-const char H05[] PROGMEM = "  - hb = heartbeat counter limit (x 64 sec.).";
+const char H05[] PROGMEM = "  - hb = heartbeat counter limit (x 128 sec.).";
 const char H06[] PROGMEM = "  - p = power setting, 2-20.";
 const char H07[] PROGMEM = "  - o = option byte, sensor-dependent flag bits.";
 const char H08[] PROGMEM = "kss:xxx       -Key Signal Strength ref. level";  
@@ -76,7 +76,7 @@ const char H15[] PROGMEM = "";
 const char H16[] PROGMEM = " -- examples --";
 const char H17[] PROGMEM = "prm:0:SGPOJS:5:20:2:0";
 const char H18[] PROGMEM = "kss:90"; 
-const char H19[] PROGMEM = "snr:SGPOJS:MOT_HALL1"; 
+const char H19[] PROGMEM = "snr:SGPOJS:MOT_STAIRS (10-char. max)"; 
 const char H20[] PROGMEM = "idd:SGPOJS";
 const char H21[] PROGMEM = "";
 
@@ -303,10 +303,11 @@ void key_SETREF(char *buf,byte len) {
   if (buf[3]==':') { //one more validate
     char kss[4];  mySubStr(kss,buf,4,len-4);  //get kss value at PCbuf[3,4 and maybe 5]
     keyRSS=byte(atoi(kss));
-    if ((keyRSS<80) and (keyRSS>120)) {keyRSS=100;}
+    if ((keyRSS<80) and (keyRSS>120)) {keyRSS=90;}
     EEPROM.write(EE_KEY_RSS,keyRSS);
     jsonKSS();
   }
+  else {jsonKSS();}
 }
 
 //**********************************************************************

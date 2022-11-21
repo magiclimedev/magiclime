@@ -68,9 +68,9 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 #define pinRF95_INT  2
 #define pinEVENT  3
 #define pinSWITCH 4
-#define pinPAIR_SW  7
-#define pinPAIR_LED 6
-#define pinLED    8
+#define pinBOOT_SW  7
+#define pinLED_BOOT 6
+#define pinLED_TX   8
 #define pinBOOST  9 
 #define pinRF95_CS  10
 #define pinMOSI   11

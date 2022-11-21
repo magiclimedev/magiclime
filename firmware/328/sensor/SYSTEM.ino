@@ -36,33 +36,34 @@ void boost_ON() {
 
 //*****************************************
 void boost_OFF() {
-  digitalWrite(pinBOOST, LOW);
-  pinMode(pinMOSI, INPUT);digitalWrite(pinMOSI,LOW);
-  pinMode(pinSCK, INPUT);digitalWrite(pinSCK,LOW); 
   digitalWrite(pinRF95_CS,LOW);
-  digitalWrite(pinLED, LOW);
+  pinMode(pinMOSI, INPUT);digitalWrite(pinMOSI,LOW);
+  pinMode(pinSCK, INPUT);digitalWrite(pinSCK,LOW);
+  digitalWrite(pinLED_TX, LOW);
+  digitalWrite(pinLED_BOOT, LOW); 
+  digitalWrite(pinBOOST, LOW);
   RF95_UP=false;
 }
 
 //*****************************************
-void led_GREEN_BLINK(byte count,byte bON,byte bOFF) { //dur,rate is 10mS per
-  byte pStat=digitalRead(pinLED);
-  if (pStat==1) { digitalWrite(pinLED, LOW); delay(200);}
+void led_TX_BLINK(byte count,byte bON,byte bOFF) { //dur,rate is 10mS per
+  byte pStat=digitalRead(pinLED_TX);
+  if (pStat==1) { digitalWrite(pinLED_TX, LOW); delay(200);}
   for (byte i=0;i<count;i++) {
     word onDly=bON*10; word offDly=bOFF*10;
-    digitalWrite(pinLED, HIGH); delay(onDly);
-    digitalWrite(pinLED, LOW); delay(offDly);
+    digitalWrite(pinLED_TX, HIGH); delay(onDly);
+    digitalWrite(pinLED_TX, LOW); delay(offDly);
   }
-  if (pStat==1) {digitalWrite(pinLED, HIGH);}
+  if (pStat==1) {digitalWrite(pinLED_TX, HIGH);}
 }
 
 //*****************************************
-void led_PAIR_BLINK(byte count,byte bON,byte bOFF) { //dur,rate is 10mS per
-  digitalWrite(pinPAIR_LED, LOW); delay(200);
+void led_BOOT_BLINK(byte count,byte bON,byte bOFF) { //dur,rate is 10mS per
+  digitalWrite(pinLED_BOOT, LOW); delay(200);
   for (byte i=0;i<count;i++) {
     word onDly=bON*10; word offDly=bOFF*10;
-    digitalWrite(pinPAIR_LED, HIGH); delay(onDly);
-    digitalWrite(pinPAIR_LED, LOW); delay(offDly);
+    digitalWrite(pinLED_BOOT, HIGH); delay(onDly);
+    digitalWrite(pinLED_BOOT, LOW); delay(offDly);
   }
 }
 

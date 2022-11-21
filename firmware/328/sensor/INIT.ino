@@ -1,13 +1,13 @@
 
 //*****************************************
 void init_SETUP(){ 
-  //pinPAIR_SW is connected to the reset pin.
-  pinMode(pinPAIR_SW, INPUT); digitalWrite(pinPAIR_SW, HIGH); //so, do first
-  pinMode(pinLED, OUTPUT);   digitalWrite(pinLED, HIGH); delay(20); digitalWrite(pinLED, LOW);
+  //pinBOOT_SW is connected to the reset pin.
+  pinMode(pinBOOT_SW, INPUT); digitalWrite(pinBOOT_SW, HIGH); //so, do first
+  pinMode(pinLED_TX, OUTPUT);   digitalWrite(pinLED_TX, HIGH); delay(20); digitalWrite(pinLED_TX, LOW);
   pinMode(pinRF95_INT, INPUT);
   pinMode(pinRF95_CS, OUTPUT); digitalWrite(pinRF95_CS, LOW);
   pinMode(pinBOOST, OUTPUT); digitalWrite(pinBOOST, LOW);
-  pinMode(pinPAIR_LED, OUTPUT);   digitalWrite(pinLED, LOW);
+  pinMode(pinLED_BOOT, OUTPUT);   digitalWrite(pinLED_BOOT, LOW);
   analogReference(EXTERNAL); //3.0V vref.
       
   Serial.begin(57600);
@@ -18,23 +18,23 @@ void init_SETUP(){
   //EE_ERASE_id(SBN); //assuming you set SBN to something '22 or less'.
 
   boost_ON();
-  digitalWrite(pinPAIR_LED, HIGH);
+  digitalWrite(pinLED_BOOT, HIGH);
   delay(200);
   prm0_EE_GET(SBN); //from eeprom
-  digitalWrite(pinPAIR_LED, LOW);
+  digitalWrite(pinLED_BOOT, LOW);
   
   if (SBN==255) {SBN=get_SBNum();}
   id_MAKEifBAD(SBN); //into eeprom
   id_GET(txID,SBN);  //from eeprom
   Serial.print(F("txID: "));Serial.print(txID);
   Serial.print(F(", SBN: "));Serial.println(SBN);Serial.flush();
-  delay(1000); //keeps green led on for a sec before checking pair pin
+  delay(1000); //keeps  led on for a sec before checking pair pin
   txBV = get_BatteryVoltage(); //good time to get this?
     
-  if (pinPAIR_SW==LOW) { //long press means - remove key/disassociate from rx.
+  if (pinBOOT_SW==LOW) { //long press means - remove key/disassociate from rx.
     key_NEW(rxKEY); //probably could just ="1234567890123456\0"
     key_EE_SET(rxKEY);
-    led_PAIR_BLINK(10,50,50);
+    led_BOOT_BLINK(10,50,50);
     delay(500);
   }
  
@@ -70,9 +70,9 @@ void init_SETUP(){
   // and now look for PRM and SNM and ??
   rx_LOOK(msg,rxKEY,25); //250mSec
   if (msg[0]!=0) { prm_PROCESS(msg,txID,SBN); }
-  digitalWrite(pinPAIR_LED, HIGH);
+  digitalWrite(pinLED_BOOT, HIGH);
   delay(1000);
-  digitalWrite(pinPAIR_LED, LOW);
+  digitalWrite(pinLED_BOOT, LOW);
 //***********************
   get_DATA(txDATA,SBN,1);
   packet_SEND(SBN,txID,txBV,rxKEY,txDATA,1); // does boost_OFF();
@@ -144,9 +144,10 @@ void prm_PROCESS(char *buf, char *id, int sbn) {
             prm0_EE_SET(buf,sbn); //to eeprom  
             prm0_PAKOUT(); //ack? just info = PAK:ididid:int,hb,pwr,sysbyte
             prm_OPTIONS(SBN,optBYTE); //something to do in that option byte?
-            led_GREEN_BLINK(3,10,10);  }        
+          }//led_TX_BLINK(3,10,10);  }        
         }
       } break;
+      case '1': { } break;//wdmTXI and wdmHBI?
     }
   }
 }

@@ -2,7 +2,7 @@
 //*****************************************
 char *key_REQUEST(char *rxkey, char* TxId, byte rssREF) { char *ret=rxkey;
   rxkey[0]=0; //prep for fail
-  digitalWrite(pinPAIR_LED, HIGH); delay(1000);
+  //digitalWrite(pinLED_BOOT, HIGH); delay(1000);
   char keyTEMP[18];
 
   key_NEW(keyTEMP); //returns new key in keyTEMP
@@ -19,7 +19,7 @@ char *key_REQUEST(char *rxkey, char* TxId, byte rssREF) { char *ret=rxkey;
         //Serial.print(F("rxkey: "));Serial.println(rxkey);Serial.flush(); 
     }
   }
-  digitalWrite(pinPAIR_LED,LOW); 
+  //digitalWrite(pinLED_BOOT,LOW); 
   return ret;
 }
 
@@ -55,7 +55,7 @@ char *key_EE_GET(char *keyOUT) { char *ret=keyOUT;
 void key_EE_SET(char *key) {
   byte lenKEY=strlen(key);
   for (byte i=0;i<lenKEY;i++) {EEPROM.write(EE_KEY-i,key[i]);}
-  led_PAIR_BLINK(3,5,5); //5*10mS=50mS
+  led_BOOT_BLINK(3,5,5); //5*10mS=50mS
 }
 
 //*****************************************
