@@ -6,7 +6,7 @@
  * this file. If not, please write to: , or visit :
  * magiclime.com
  */
- const static char VER[] = "TX221115";
+ const static char VER[] = "TX221121";
 
 #include "radio_sensor.h"
 
@@ -19,7 +19,7 @@ const int defaultHEARTBEAT = 113; //'I'm still alive' period 113 x 128 sec = 4 h
 
 //*****************************************
 void setup () { 
-//SBN -> Sensor Board Number 1-21..-1 is 'no board', 0 is A6 pin grounded, 22 is A6 tied to Aref.
+//SBN -> Sensor Board Number 1-21. A '-1' is 'no board', 0 is A6 pin grounded, 22 is A6 tied to Aref.
   SBN=255; //3;//255; //set to '255' to get SBN via resistors.
 // otherwise, SBN will be the one you specify here
   init_SETUP();
@@ -41,8 +41,6 @@ void loop () {
   }
   //sleepStuff();
   systemSleep(); 
-  //if (txCOUNTER % 32 ==0) {Serial.println("");}
-  //Serial.print(F(":"));Serial.print(wakeWHY);Serial.flush();
 
 } //End Of Loop ****************************
 //*****************************************

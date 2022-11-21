@@ -18,10 +18,10 @@ void init_SETUP(){
   //EE_ERASE_id(SBN); //assuming you set SBN to something '22 or less'.
 
   boost_ON();
-  digitalWrite(pinLED, HIGH);
+  digitalWrite(pinPAIR_LED, HIGH);
   delay(200);
   prm0_EE_GET(SBN); //from eeprom
-  digitalWrite(pinLED, LOW);
+  digitalWrite(pinPAIR_LED, LOW);
   
   if (SBN==255) {SBN=get_SBNum();}
   id_MAKEifBAD(SBN); //into eeprom
@@ -35,6 +35,7 @@ void init_SETUP(){
     key_NEW(rxKEY); //probably could just ="1234567890123456\0"
     key_EE_SET(rxKEY);
     led_PAIR_BLINK(10,50,50);
+    delay(500);
   }
  
   else {
@@ -69,7 +70,9 @@ void init_SETUP(){
   // and now look for PRM and SNM and ??
   rx_LOOK(msg,rxKEY,25); //250mSec
   if (msg[0]!=0) { prm_PROCESS(msg,txID,SBN); }
-  
+  digitalWrite(pinPAIR_LED, HIGH);
+  delay(1000);
+  digitalWrite(pinPAIR_LED, LOW);
 //***********************
   get_DATA(txDATA,SBN,1);
   packet_SEND(SBN,txID,txBV,rxKEY,txDATA,1); // does boost_OFF();
