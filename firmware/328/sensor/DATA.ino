@@ -83,7 +83,7 @@ char *get_TMP36_F(char *data) { char *ret=data;
   float TF=((TC * 9.0) / 5.0) + 32.0;  //Fahrenheit
   float TP=get_Average(pinTrimPot,10);
   float CalAdj=TF*( ((512.0-TP)/128.0 )/100.0); //+-4%
-  char n2a[10]; dtoa((TF+CalAdj),n2a,1); 
+  char n2a[10]; dtoa(n2a,(TF+CalAdj),1); 
   strcpy(data,n2a);
   return ret;
 } 
@@ -132,7 +132,7 @@ char *get_Si7020_F(char *data) { char *ret=data;
     wTMP=(msb*256)+lsb; 
     fTMP=((175.72 * float(wTMP))/ 65536.0)-46.85; //celcius
     fTMP=((fTMP*9.0)/5.0)+32.0; //Fahrenheit
-    char n2a[10]; dtoa(int(fTMP),n2a,1); 
+    char n2a[10]; dtoa(n2a,fTMP,1);
     strcpy(data,n2a);
   }
   else {strcat(data,"---"); }
@@ -274,11 +274,11 @@ float get_Average (byte pinANA, unsigned int SampNum) {
 }
 
 //*****************************************
-char* dtoa(double dN, char *cMJA, int iP) {
+char* dtoa(char *cMJA, double dN, int iP) {char *ret = cMJA;
   //arguments... 
   // float-double value, char array to fill, precision (4 is .xxxx)
   //and... it rounds last digit up/down!
-  char *ret = cMJA; long lP=1; byte bW=iP;
+   long lP=1; byte bW=iP;
   while (bW>0) { lP=lP*10;  bW--;  }
   long lL = long(dN); double dD=(dN-double(lL))* double(lP); 
   if (dN>=0) { dD=(dD + 0.5);  } else { dD=(dD-0.5); }

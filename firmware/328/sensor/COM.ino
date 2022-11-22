@@ -8,7 +8,7 @@ byte PV=1; //Protocol Version - very first char byte out;
     itoa(int(PV),n2a,10); strcpy(msg,n2a); //Prot-Ver always very first char out
     strcat(msg,"|");strcat(msg,id);     
     strcat(msg,"|"); itoa(sbn,n2a,10); strcat(msg,n2a); 
-    strcat(msg,"|"); dtoa(bv,n2a,1); strcat(msg,n2a);    
+    strcat(msg,"|"); dtoa(n2a,bv,1); strcat(msg,n2a);    
     strcat(msg,"|"); strcat(msg,data);                   
     msg_SEND(msg,key,pwr); 
   }

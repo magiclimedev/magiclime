@@ -23,7 +23,6 @@ void setup () {
   SBN=255; //3;//255; //set to '255' to get SBN via resistors.
 // otherwise, SBN will be the one you specify here
   init_SETUP();
-
 }
 //*****************************************
 

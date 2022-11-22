@@ -11,7 +11,7 @@ void init_SETUP(){
   analogReference(EXTERNAL); //3.0V vref.
       
   Serial.begin(57600);
-  Serial.println(VER);
+  Serial.println("");Serial.println(VER);
 
   //EE_ERASE_all();
   //EE_ERASE_key();
@@ -70,6 +70,10 @@ void init_SETUP(){
   // and now look for PRM and SNM and ??
   rx_LOOK(msg,rxKEY,25); //250mSec
   if (msg[0]!=0) { prm_PROCESS(msg,txID,SBN); }
+  
+  if (HrtBtON==true) { txTIMER=txHRTBEAT; }
+  else { txTIMER=txINTERVAL; }
+  
   digitalWrite(pinLED_BOOT, HIGH);
   delay(1000);
   digitalWrite(pinLED_BOOT, LOW);
@@ -87,8 +91,8 @@ void init_SETUP(){
   wakeWHY=0;
   txCOUNTER=txTIMER-1;
   //freeMemory();
-
- Serial.print(F("rxKEY: "));Serial.println(rxKEY);Serial.flush();
+  Serial.print(F("txTIMER: "));Serial.println(txTIMER);Serial.flush();
+  Serial.print(F("rxKEY: "));Serial.println(rxKEY);Serial.flush();
 } //* END OF init_SETUP ************************
 //*****************************************
 //*****************************************
@@ -160,8 +164,8 @@ void prm0_PAKOUT() {
   char msg[32];
   strcpy(msg,"PAK:0:");
   strcat(msg,txID); 
-  strcat(msg,":"); dtoa(float((float(txINTERVAL)*8.0)/60.0),n2a,1); strcat(msg,n2a);
-  strcat(msg,":"); dtoa(float((float(txHRTBEAT)*8.0)/60.0),n2a,1); strcat(msg,n2a);
+  strcat(msg,":"); dtoa(n2a,float((float(txINTERVAL)*8.0)/60.0),1); strcat(msg,n2a);
+  strcat(msg,":"); dtoa(n2a,float((float(txHRTBEAT)*8.0)/60.0),1); strcat(msg,n2a);
   strcat(msg,":"); itoa((txPWR),n2a,10); strcat(msg,n2a);
   static const char hex[] = "0123456789ABCDEF";
   byte msnb = byte((optBYTE>>4)& 0x0F); byte lsnb=byte(optBYTE & 0x0F);
@@ -178,13 +182,17 @@ void prm0_EE_SET(char *buf,int sbn) { sbn++;  //PRM:0:ididid:i:h:p:o
 //Serial.println(F("prm0_EE_SET..."));          //01234567890123456789
   EEPROM.write((EE_INTERVAL-(sbn*EE_BLKSIZE)),buf[13]);
   txINTERVAL=buf[13]*wdmTXI;
+  //Serial.print(F("txINTERVAL="));Serial.println( txINTERVAL);Serial.flush();
   EEPROM.write((EE_HRTBEAT-(sbn*EE_BLKSIZE)),buf[15]);
   txHRTBEAT=buf[15]*wdmHBP; 
+  //Serial.print(F("txHRTBEAT=")); Serial.println(txHRTBEAT);Serial.flush();
   EEPROM.write((EE_POWER-(sbn*EE_BLKSIZE)),buf[17]);
   txPWR=buf[17]; 
+  //Serial.print(F("txPWR=")); Serial.println(txPWR);Serial.flush();
   //OPTBYTE is not a 'per sensor' thing - more like a 'du jour' thing.
   EEPROM.write(EE_OPTBYTE,buf[19]);
   optBYTE=buf[19]; 
+  //Serial.print(F("optBYTE=")); Serial.println(optBYTE);Serial.flush();
 }
 
 //*****************************************
@@ -279,11 +287,7 @@ char * init_SENSOR(char *snm, int sbn) { char* ret=snm; DATA_TYPE = BEACON; //pr
   }
 
   init_TYPE(DATA_TYPE);// enable interrupts, etc.
-  
-  if (HrtBtON==true) { txTIMER=txHRTBEAT; }
-  else { txTIMER=txINTERVAL; }
 }
-
    
 //*****************************************
 void init_TYPE(TYPE sbt){ //Serial.print(F("...init_TYPE"));
