@@ -11,7 +11,7 @@ void init_SETUP(){
   analogReference(EXTERNAL); //3.0V vref.
       
   Serial.begin(57600);
-  Serial.print(VER);
+  Serial.println(VER);
 
   //EE_ERASE_all();
   //EE_ERASE_key();
