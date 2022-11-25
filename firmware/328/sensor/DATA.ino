@@ -276,7 +276,7 @@ float get_Average (byte pinANA, unsigned int SampNum) {
 //*****************************************
 char* dtoa(char *cMJA, double dN, int iP) {char *ret = cMJA;
   //arguments... 
-  // float-double value, char array to fill, precision (4 is .xxxx)
+  // char array to fill,float-double value,  precision (4 is .xxxx)
   //and... it rounds last digit up/down!
    long lP=1; byte bW=iP;
   while (bW>0) { lP=lP*10;  bW--;  }

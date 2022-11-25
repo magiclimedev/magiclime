@@ -32,6 +32,7 @@ void init_SETUP(){
   txBV = get_BatteryVoltage(); //good time to get this?
     
   if (pinBOOT_SW==LOW) { //long press means - remove key/disassociate from rx.
+    EE_ERASE_all();
     key_NEW(rxKEY); //probably could just ="1234567890123456\0"
     key_EE_SET(rxKEY);
     led_BOOT_BLINK(10,50,50);
@@ -53,7 +54,7 @@ void init_SETUP(){
     
   init_SENSOR(SNM,SBN); //name of sensor returned in SNM
   name_EE_GET(SNM,SBN); //leaves SNM unchanged if eeprom empty
-
+  Serial.print(F("Name:"));Serial.println(SNM);
   txBV = get_BatteryVoltage();
  
 //***********************************************
