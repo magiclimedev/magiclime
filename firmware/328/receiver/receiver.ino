@@ -56,7 +56,7 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 #define EE_BLKSIZE  20 //plus one more for nice number
 // PARAM ID things go all the way down to 0
 
-//here's the type look-up table...
+//here's the help menu table...
 const char H00[] PROGMEM = "---- commands ----"; 
 const char H01[] PROGMEM = "prm:n:ididid:int:hb:p:o = PaRaMeters settings.";
 const char H02[] PROGMEM = "  - n ='parameter group #, aldways '0'(for now).";
@@ -732,24 +732,6 @@ void showHELP(byte lim) { char sHLP[80];
     strcat_P(sHLP, (char*)pgm_read_word(&(table_HLP[i]))); Serial.println(sHLP); }
   Serial.println("");Serial.flush();
 }
-
-//*****************************************
-char* dtoa(double dN, char *cMJA, int iP) {
-  //arguments... 
-  // float-double value, char array to fill, precision (4 is .xxxx)
-  //and... it rounds last digit up/down!
-  char *ret = cMJA; long lP=1; byte bW=iP;
-  while (bW>0) { lP=lP*10;  bW--;  }
-  long lL = long(dN); double dD=(dN-double(lL))* double(lP); 
-  if (dN>=0) { dD=(dD + 0.5);  } else { dD=(dD-0.5); }
-  long lR=abs(long(dD));  lL=abs(lL);  
-  if (lR==lP) { lL=lL+1;  lR=0;  }
-  if ((dN<0) & ((lR+lL)>0)) { *cMJA++ = '-';  } 
-  ltoa(lL, cMJA, 10);
-  if (iP>0) { while (*cMJA != '\0') { cMJA++; } *cMJA++ = '.'; lP=10; 
-  while (iP>1) { if (lR< lP) { *cMJA='0'; cMJA++; } lP=lP*10;  iP--; }
-  ltoa(lR, cMJA, 10); }  return ret; }
-  
 
 //*****************************************
 char *mySubStr(char *out, char* in,byte from,byte len) { char *ret=out;
