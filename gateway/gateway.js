@@ -71,18 +71,27 @@ async function main() {
    *
    */
   function handleSerialDataIn(incoming) {
-    // Remove newline
-    if (incoming.charAt(incoming.length - 1) === "\r") incoming = incoming.slice(0, -1);
-      let obj = JSON.parse(incoming);
+    var obj;
 
-      var now = Math.round(Date.now()/1000);
-      obj.timestamp = lib.convertTimestamp(now);
-      
-      logToConsole(JSON.stringify(obj));
-      if (obj.source === "tx" && obj.data){
-        database.log(obj);
-        forwardToEndpoints(obj);
-      }  
+    // Remove newline
+    if (incoming.charAt(incoming.length - 1) === "\r")
+      incoming = incoming.slice(0, -1);
+
+    try {
+      obj = JSON.parse(incoming);
+    }  catch(e) {
+      logToConsole("Invalid JSON received: " + incoming);
+      return;
+    }
+
+    var now = Math.round(Date.now()/1000);
+    obj.timestamp = lib.convertTimestamp(now);
+
+    logToConsole(JSON.stringify(obj));
+    if (obj.source === "tx" && obj.data){
+      database.log(obj);
+      forwardToEndpoints(obj);
+    }
   }
 
   function forwardToEndpoints(obj){
