@@ -3,7 +3,7 @@
 void init_SETUP(){ 
   //pinBOOT_SW is connected to the reset pin.
   pinMode(pinBOOT_SW, INPUT); digitalWrite(pinBOOT_SW, HIGH); //so, do first
-  pinMode(pinLED_TX, OUTPUT);   digitalWrite(pinLED_TX, HIGH); delay(20); digitalWrite(pinLED_TX, LOW);
+  pinMode(pinLED_TX, OUTPUT); digitalWrite(pinLED_TX, HIGH); delay(50); digitalWrite(pinLED_TX, LOW);
   pinMode(pinRF95_INT, INPUT);
   pinMode(pinRF95_CS, OUTPUT); digitalWrite(pinRF95_CS, LOW);
   pinMode(pinBOOST, OUTPUT); digitalWrite(pinBOOST, LOW);
@@ -19,24 +19,21 @@ void init_SETUP(){
 
   boost_ON();
   digitalWrite(pinLED_BOOT, HIGH);
-  delay(200);
-  prm0_EE_GET(SBN); //from eeprom
-  digitalWrite(pinLED_BOOT, LOW);
-  
   if (SBN==255) {SBN=get_SBNum();}
+  
+  prm0_EE_GET(SBN); //paramters from eeprom
   id_MAKEifBAD(SBN); //into eeprom
   id_GET(txID,SBN);  //from eeprom
   Serial.print(F("txID: "));Serial.print(txID);
   Serial.print(F(", SBN: "));Serial.println(SBN);Serial.flush();
   delay(1000); //keeps  led on for a sec before checking pair pin
   txBV = get_BatteryVoltage(); //good time to get this?
-    
-  if (pinBOOT_SW==LOW) { //long press means - remove key/disassociate from rx.
+  digitalWrite(pinLED_BOOT, LOW);  
+  if (pinBOOT_SW==LOW) { //long press reset
     EE_ERASE_all();
-    key_NEW(rxKEY); //probably could just ="1234567890123456\0"
+    key_NEW(rxKEY); 
     key_EE_SET(rxKEY);
     led_BOOT_BLINK(10,50,50);
-    delay(500);
   }
  
   else {
@@ -90,13 +87,14 @@ void init_SETUP(){
   WDTCSR |= B00011000; WDTCSR = B01100001;
   sei(); //watchdog timer - 8 sec   
   wakeWHY=0;
-  txCOUNTER=txTIMER-1;
+  txCOUNTER=txTIMER-1; //for first HeartBeat = 8 sec. 
   //freeMemory();
   Serial.print(F("txTIMER: "));Serial.println(txTIMER);Serial.flush();
   Serial.print(F("rxKEY: "));Serial.println(rxKEY);Serial.flush();
 } //* END OF init_SETUP ************************
-//*****************************************
-//*****************************************
+
+//**********************************************************************************
+//**********************************************************************************
 
 //*****************************************  
 void name_EE_SET(char *snm, int sbn) {  sbn++;
