@@ -250,7 +250,8 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
 //*************************    
     pak_LOOK(prm,msg); //PAK:0:IDxxxx:10:30:2,7 -ish , 
     if (prm[0]!=0) { 
-      json_PRINTinfo(prm, strlen(prm)); 
+      //json_PRINTinfo(prm, strlen(prm)); 
+      jsonINFO(prm);
       return;
     }
     
@@ -636,7 +637,7 @@ void json_PRINTdata(char jsn[][24], byte pNum) {
 void json_PRINTinfo(char info[32], byte iNum) {
   Serial.print(F("{\"source\":\"tx\",\"info\":\""));
   for (byte i=0;i<iNum;i++) {Serial.print( info[i] ); }
-  Serial.println(""); Serial.flush();  
+  Serial.println(F("\"}"));  Serial.flush();  
 }
 
 //**********************************************************************

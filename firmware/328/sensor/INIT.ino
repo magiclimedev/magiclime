@@ -2,8 +2,8 @@
 //*****************************************
 void init_SETUP(){ 
   //pinBOOT_SW is connected to the reset pin.
-  pinMode(pinBOOT_SW, INPUT); digitalWrite(pinBOOT_SW, HIGH); //so, do first
-  pinMode(pinLED_TX, OUTPUT); digitalWrite(pinLED_TX, HIGH); delay(50); digitalWrite(pinLED_TX, LOW);
+  pinMode(pinBOOT_SW, INPUT); //digitalWrite(pinBOOT_SW, HIGH); //so, do first
+  pinMode(pinLED_TX, OUTPUT);
   pinMode(pinRF95_INT, INPUT);
   pinMode(pinRF95_CS, OUTPUT); digitalWrite(pinRF95_CS, LOW);
   pinMode(pinBOOST, OUTPUT); digitalWrite(pinBOOST, LOW);
@@ -18,42 +18,36 @@ void init_SETUP(){
   //EE_ERASE_id(SBN); //assuming you set SBN to something '22 or less'.
 
   boost_ON();
-  digitalWrite(pinLED_BOOT, HIGH);
-  if (SBN==255) {SBN=get_SBNum();}
-  
-  prm0_EE_GET(SBN); //paramters from eeprom
-  id_MAKEifBAD(SBN); //into eeprom
-  id_GET(txID,SBN);  //from eeprom
-  Serial.print(F("txID: "));Serial.print(txID);
-  Serial.print(F(", SBN: "));Serial.println(SBN);Serial.flush();
-  delay(1000); //keeps  led on for a sec before checking pair pin
-  txBV = get_BatteryVoltage(); //good time to get this?
-  digitalWrite(pinLED_BOOT, LOW);  
-  if (pinBOOT_SW==LOW) { //long press reset
-    EE_ERASE_all();
-    key_NEW(rxKEY); 
-    key_EE_SET(rxKEY);
-    led_BOOT_BLINK(10,50,50);
-  }
- 
-  else {
-    if (init_RF95(txPWR)==true) {
-      key_REQUEST(rxKEY,txID,keyRSS); //ask for RX's KEY
-      if (rxKEY[0]!=0) { //good key returned
-        //Serial.print(F("rxKEY="));Serial.println(rxKEY);Serial.flush();
-        if (key_VALIDATE(rxKEY)==false){ strcpy(rxKEY,"thisisamagiclime"); }
-        key_EE_SET(rxKEY);
-      }
-    }
-    key_EE_GET(rxKEY);
-    delay(10); //it can take the receiver a bit to stash things in eeprom
+  if (longPress()==true) {
+    led_TX_BLINK(3,5,5);
+    EE_ERASE_all();  //long press reset
   }
     
+  digitalWrite(pinLED_BOOT, HIGH);
+  if (SBN==255) {SBN=get_SBNum();}
+  Serial.print(F("SBN: "));Serial.print(SBN);Serial.flush();
+  id_MAKEifBAD(SBN); //into eeprom
+  id_GET(txID,SBN);  //from eeprom
+  Serial.print(F(", txID: "));Serial.println(txID);Serial.flush();
+  prm0_EE_GET(SBN); //paramters from eeprom
+  
+  txBV = get_BatteryVoltage(); //good time to get this?
+  digitalWrite(pinLED_BOOT, LOW); 
   init_SENSOR(SNM,SBN); //name of sensor returned in SNM
   name_EE_GET(SNM,SBN); //leaves SNM unchanged if eeprom empty
   Serial.print(F("Name:"));Serial.println(SNM);
   txBV = get_BatteryVoltage();
- 
+
+  if (init_RF95(txPWR)==true) {
+    key_REQUEST(rxKEY,txID,keyRSS); //ask for RX's KEY
+    if (rxKEY[0]!=0) { //good key returned
+      //Serial.print(F("rxKEY="));Serial.println(rxKEY);Serial.flush();
+      if (key_VALIDATE(rxKEY)==false){ strcpy(rxKEY,"thisisamagiclime"); }
+      key_EE_SET(rxKEY);
+    }
+  }
+    key_EE_GET(rxKEY);
+    delay(10); //it can take the receiver a bit to stash things in eeprom
 //***********************************************
   //Serial.println(F("requesting paramters... "));Serial.flush();
   //and now the TX parameters? just look/expect or, yes...  ask for them.

@@ -26,6 +26,7 @@ void msg_SEND(char *msgIN, char *key, int pwr) {
   else {rf95.setTxPower(pwr, false); }//from 1-10 to 2-20dB
   rf95.send(txBUF,txLEN); rf95.waitPacketSent();
   txBV = get_BatteryVoltage();
+  digitalWrite(pinLED_TX, LOW); //or let boost_OFF do that?
 }
 
 //*****************************************

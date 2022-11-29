@@ -138,11 +138,21 @@ void freeMemory() {  char top;  int fm;
 Serial.print(F("Free Mem: "));Serial.println(fm);Serial.flush();
 }
 
+//*****************************************
+bool longPress() { bool ret=false;
+  byte ctr=0;
+  if (digitalRead(pinBOOT_SW)==1){delay(100);}
+  while ((ctr<50) && (digitalRead(pinBOOT_SW)==0)) {
+    ctr++; delay(50); }
+  if (ctr==50) { ret=true; }
+  Serial.print(F("longPress="));Serial.println(ctr);Serial.flush();
+  return ret;
+}
 
 //*****************************************
 void EE_ERASE_all() {
   Serial.print(F("EE_ERASE_all...#"));Serial.flush();
-  for (word i=0;i<1024;i++) { EEPROM.write(i,255); } //the rest get FF's
+  for (word i=0;i<1024;i++) { EEPROM.write(i,255); } //FF's
   Serial.println(F(" ...Done#"));Serial.flush();
 }
 
