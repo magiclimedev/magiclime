@@ -3,11 +3,11 @@
 void init_SETUP(){ 
   //pinBOOT_SW is connected to the reset pin.
   pinMode(pinBOOT_SW, INPUT); //digitalWrite(pinBOOT_SW, HIGH); //so, do first
-  pinMode(pinLED_TX, OUTPUT);
+  pinMode(pinLED_TX, OUTPUT); digitalWrite(pinLED_TX, LOW);
   pinMode(pinRF95_INT, INPUT);
   pinMode(pinRF95_CS, OUTPUT); digitalWrite(pinRF95_CS, LOW);
   pinMode(pinBOOST, OUTPUT); digitalWrite(pinBOOST, LOW);
-  pinMode(pinLED_BOOT, OUTPUT);   digitalWrite(pinLED_BOOT, LOW);
+  pinMode(pinLED_BOOT, OUTPUT); digitalWrite(pinLED_BOOT, LOW);
   analogReference(EXTERNAL); //3.0V vref.
       
   Serial.begin(57600);
@@ -18,10 +18,7 @@ void init_SETUP(){
   //EE_ERASE_id(SBN); //assuming you set SBN to something '22 or less'.
 
   boost_ON();
-  if (longPress()==true) {
-    led_TX_BLINK(3,5,5);
-    EE_ERASE_all();  //long press reset
-  }
+  if (longPress()==true) {EE_ERASE_all(); }
     
   digitalWrite(pinLED_BOOT, HIGH);
   if (SBN==255) {SBN=get_SBNum();}
@@ -32,7 +29,7 @@ void init_SETUP(){
   prm0_EE_GET(SBN); //paramters from eeprom
   
   txBV = get_BatteryVoltage(); //good time to get this?
-  digitalWrite(pinLED_BOOT, LOW); 
+ 
   init_SENSOR(SNM,SBN); //name of sensor returned in SNM
   name_EE_GET(SNM,SBN); //leaves SNM unchanged if eeprom empty
   Serial.print(F("Name:"));Serial.println(SNM);
@@ -65,9 +62,6 @@ void init_SETUP(){
   
   if (HrtBtON==true) { txTIMER=txHRTBEAT; }
   else { txTIMER=txINTERVAL; }
-  
-  digitalWrite(pinLED_BOOT, HIGH);
-  delay(1000);
   digitalWrite(pinLED_BOOT, LOW);
 //***********************
   get_DATA(txDATA,SBN,1);

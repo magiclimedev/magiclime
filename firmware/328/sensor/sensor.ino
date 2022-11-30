@@ -6,7 +6,7 @@
  * this file. If not, please write to: , or visit :
  * magiclime.com
  */
- const static char VER[] = "TX221121";
+ const static char VER[] = "TX221130";
 
 #include "radio_sensor.h"
 
