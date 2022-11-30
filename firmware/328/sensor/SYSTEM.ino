@@ -58,7 +58,7 @@ void boost_OFF() {
 }
 */
 //*****************************************
-void led_BOOT_BLINK(byte count,byte bON,byte bOFF) { //dur,rate is 10mS per
+void led_BLINK_BOOT(byte count,byte bON,byte bOFF) { //dur,rate is 10mS per
   digitalWrite(pinLED_BOOT, LOW); delay(200);
   for (byte i=0;i<count;i++) {
     word onDly=bON*10; word offDly=bOFF*10;

@@ -55,7 +55,6 @@ char *key_EE_GET(char *keyOUT) { char *ret=keyOUT;
 void key_EE_SET(char *key) {
   byte lenKEY=strlen(key);
   for (byte i=0;i<lenKEY;i++) {EEPROM.write(EE_KEY-i,key[i]);}
-  led_BOOT_BLINK(3,5,5); //5*10mS=50mS
 }
 
 //*****************************************
