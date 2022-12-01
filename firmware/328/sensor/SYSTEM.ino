@@ -59,6 +59,7 @@ void boost_OFF() {
 */
 //*****************************************
 void ledBOTTOM_OnOffCnt(int msON, int msOFF,byte count) { 
+  delay(500); //can't be an ON if not OFF.
   for (byte i=0;i<count;i++) {
     digitalWrite(pinLED_BOOT, HIGH); delay(msON);
     digitalWrite(pinLED_BOOT, LOW); delay(msOFF);
@@ -89,7 +90,7 @@ void trigger_RESET(int sbn){ //global DATA_TYPE req,
 
 //*******//Interrupt on D3 (interrupt #1) ******
 void IRPT_D3() {  
-  wakeWHY=1; //do the data for this sensor
+  if (flgKEY_GOOD==true) {wakeWHY=1;} //do the data for this sensor
   txCOUNTER=txTIMER; //reset heartbeat timer 
 } 
 
@@ -97,7 +98,9 @@ void IRPT_D3() {
 ISR(WDT_vect) { //in avr library
   txCOUNTER++;  
   if (txCOUNTER==txTIMER) {
-    if (HrtBtON==true) {wakeWHY=2;} else {wakeWHY=1;};
+    if (flgKEY_GOOD==true) {
+      if (HrtBtON==true) {wakeWHY=2;} else {wakeWHY=1;};
+    }
     txCOUNTER=0;
   }
 }
