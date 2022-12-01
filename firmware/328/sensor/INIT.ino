@@ -1,10 +1,9 @@
 
 //*****************************************
 void init_SETUP(){ 
-  flgLED_BOOT=false;
   flgLED_KEY=false;
   //pinBOOT_SW is connected to the reset pin.
-  pinMode(pinBOOT_SW, INPUT); //digitalWrite(pinBOOT_SW, HIGH); //so, do first
+  pinMode(pinBOOT_SW, INPUT); digitalWrite(pinBOOT_SW, HIGH); //so, do first
   pinMode(pinLED_TX, OUTPUT); digitalWrite(pinLED_TX, LOW);
   pinMode(pinRF95_INT, INPUT);
   pinMode(pinRF95_CS, OUTPUT); digitalWrite(pinRF95_CS, LOW);
@@ -81,8 +80,10 @@ void init_SETUP(){
   //freeMemory();
   Serial.print(F("txTIMER: "));Serial.println(txTIMER);Serial.flush();
   Serial.print(F("rxKEY: "));Serial.println(rxKEY);Serial.flush();
-  if (flgLED_KEY==true) { led_BLINK_BOOT(3,5,20); }
-  else if (flgLED_BOOT==true) { led_BLINK_BOOT(1,100,1); } //1 sec solid on
+  if (flgLED_KEY==true) { ledBOOT_BLINK(3); }
+  else {
+    digitalWrite(pinLED_BOOT, HIGH); delay(1000);
+    digitalWrite(pinLED_BOOT, LOW);} //1 sec solid on
     
 } //* END OF init_SETUP ************************
 

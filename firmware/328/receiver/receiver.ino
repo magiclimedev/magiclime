@@ -6,9 +6,7 @@
  * this file. If not, please write to: , or visit :
  * magiclime.com
  */
- 
 const static char VER[] = "RX221121";
-
 #include <EEPROM.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
@@ -252,8 +250,7 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
     if (prm[0]!=0) { 
       //json_PRINTinfo(prm, strlen(prm)); 
       jsonINFO(prm);
-      return;
-    }
+     
     
   } //end of rxDECODED OK msg[0]!=0
 } //end of rxBUF_PROCESS() 
@@ -630,14 +627,14 @@ void json_PRINTdata(char jsn[][24], byte pNum) {
   Serial.print(F("{\"source\":\"tx\","));
   for (byte pn=0;pn<pNum;pn++) { //Pair Number
     Serial.print( jsn[pn] ); }
-  Serial.println(""); Serial.flush();  
+  Serial.println(F("\"}")); Serial.flush();  
 }
 
 //*****************************************
 void json_PRINTinfo(char info[32], byte iNum) {
   Serial.print(F("{\"source\":\"tx\",\"info\":\""));
   for (byte i=0;i<iNum;i++) {Serial.print( info[i] ); }
-  Serial.println(F("\"}"));  Serial.flush();  
+  Serial.println(F("\"}")); Serial.flush();  
 }
 
 //**********************************************************************

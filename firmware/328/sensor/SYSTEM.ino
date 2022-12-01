@@ -58,12 +58,11 @@ void boost_OFF() {
 }
 */
 //*****************************************
-void led_BLINK_BOOT(byte count,byte bON,byte bOFF) { //dur,rate is 10mS per
+void ledBOOT_BLINK(byte count) { 
   digitalWrite(pinLED_BOOT, LOW); delay(200);
   for (byte i=0;i<count;i++) {
-    word onDly=bON*10; word offDly=bOFF*10;
-    digitalWrite(pinLED_BOOT, HIGH); delay(onDly);
-    digitalWrite(pinLED_BOOT, LOW); delay(offDly);
+    digitalWrite(pinLED_BOOT, HIGH); delay(100);
+    digitalWrite(pinLED_BOOT, LOW); delay(100);
   }
 }
 
@@ -140,26 +139,30 @@ Serial.print(F("Free Mem: "));Serial.println(fm);Serial.flush();
 
 //*****************************************
 bool longPress() { bool ret=false;
+  pinMode(pinBOOT_SW, OUTPUT); digitalWrite(pinBOOT_SW, HIGH); 
+  delay(10);
+  pinMode(pinBOOT_SW, INPUT); digitalWrite(pinBOOT_SW, LOW); 
   byte ctr=0;
-  if (digitalRead(pinBOOT_SW)==1){delay(100);}
-  while ((ctr<50) && (digitalRead(pinBOOT_SW)==0)) {
+  if (digitalRead(pinBOOT_SW)==1){delay(200);}
+  while ((ctr<20) && (digitalRead(pinBOOT_SW)==0)) {
     ctr++; delay(50); }
-  if (ctr==50) { ret=true; }
+  if (ctr==20) { ret=true; }
   Serial.print(F("longPress="));Serial.println(ctr);Serial.flush();
+  digitalWrite(pinBOOT_SW, HIGH);
   return ret;
 }
 
 //*****************************************
 void EE_ERASE_all() {
-  Serial.print(F("EE_ERASE_all...#"));Serial.flush();
+  Serial.print(F("EE_ERASE_all "));Serial.flush();
   for (word i=0;i<1024;i++) { EEPROM.write(i,255); //FF's
-    if (i % 200 == 0) { Serial.println(F(" . "));
+    if (i % 205 == 0) { Serial.print(F(". "));
       digitalWrite(pinLED_BOOT, HIGH);
       delay(20);
       digitalWrite(pinLED_BOOT, LOW);
     }
   } 
-  Serial.println(F(" ...Done#"));Serial.flush();
+  Serial.println(F(" Done"));Serial.flush();
 }
 
 //*****************************************
