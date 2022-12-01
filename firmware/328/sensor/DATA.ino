@@ -40,7 +40,7 @@ char *get_2BTN(char *data) { char *ret=data;
     if ((digitalRead(A5)==1) && (digitalRead(A4)==1)) { strcpy(data,"PUSH-3");}
     else if (digitalRead(A5)==1) { strcpy(data,"PUSH-1");}
     else if (digitalRead(A4)==1) { strcpy(data,"PUSH-2");}
-    else {strcpy(data,"NULL");}
+    else {strcpy(data,"????");}
   return ret;
 }    
 
@@ -56,7 +56,7 @@ char *get_TILT(char *data) { char *ret=data; //uses global dataOLD
   }
   if ( (d1==0) && (strcmp(dataOLD,"LOW")!=0) ){ strcpy(data,"LOW"); strcpy(dataOLD,data); }
   else if ( (d1==1) && (strcmp(dataOLD,"HIGH")!=0) ) { strcpy(data,"HIGH"); strcpy(dataOLD,data); }
-  else {strcpy(data,"NULL");}
+  else {strcpy(data,"????");}
   return ret;
 }
 

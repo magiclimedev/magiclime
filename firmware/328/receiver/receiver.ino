@@ -1,12 +1,16 @@
-/* Copyright (C) 2022 Marlyn Anderson - All Rights Reserved
- * You may use, distribute and modify this code under the
- * terms of the ...
+/*
+ *  This is code for ThingBits sensors.
  *
- * You should have received a copy of the ... with
- * this file. If not, please write to: , or visit :
- * magiclime.com
+ *  ThingBits invests time and resources providing this open source code,
+ *  please support ThingBits and open-source hardware by purchasing products
+ *  from ThingBits!
+ *
+ *  Written by ThingBits Inc (http://www.thingbits.com)
+ *
+ *  MIT license, all text above must be included in any redistribution
  */
-const static char VER[] = "RX221121";
+ 
+const static char VER[] = "RX221202";
 #include <EEPROM.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>

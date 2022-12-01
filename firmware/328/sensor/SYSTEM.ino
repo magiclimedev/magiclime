@@ -58,11 +58,10 @@ void boost_OFF() {
 }
 */
 //*****************************************
-void ledBOOT_BLINK(byte count) { 
-  digitalWrite(pinLED_BOOT, LOW); delay(200);
+void ledBOTTOM_OnOffCnt(int msON, int msOFF,byte count) { 
   for (byte i=0;i<count;i++) {
-    digitalWrite(pinLED_BOOT, HIGH); delay(100);
-    digitalWrite(pinLED_BOOT, LOW); delay(100);
+    digitalWrite(pinLED_BOOT, HIGH); delay(msON);
+    digitalWrite(pinLED_BOOT, LOW); delay(msOFF);
   }
 }
 
@@ -162,6 +161,7 @@ void EE_ERASE_all() {
       digitalWrite(pinLED_BOOT, LOW);
     }
   } 
+  flgEE_ERASED=true;
   Serial.println(F(" Done"));Serial.flush();
 }
 

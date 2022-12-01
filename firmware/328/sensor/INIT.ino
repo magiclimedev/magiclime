@@ -37,14 +37,17 @@ void init_SETUP(){
 
   if (init_RF95(txPWR)==true) {
     key_REQUEST(rxKEY,txID,keyRSS); //ask for RX's KEY
-    if (rxKEY[0]!=0) { //good key returned
+    if (rxKEY[0]!=0) { // key returned
       //Serial.print(F("rxKEY="));Serial.println(rxKEY);Serial.flush();
-      if (key_VALIDATE(rxKEY)==false){ strcpy(rxKEY,"thisisamagiclime"); }
-      key_EE_SET(rxKEY);
-      flgLED_KEY=true;
+      if (key_VALIDATE(rxKEY)==true) { 
+        key_EE_SET(rxKEY);
+        flgLED_KEY=true;
+      }
     }
   }
     key_EE_GET(rxKEY);
+    flgKEY_GOOD=key_VALIDATE(rxKEY);
+    
     delay(10); //it can take the receiver a bit to stash things in eeprom
 //***********************************************
   //Serial.println(F("requesting paramters... "));Serial.flush();
@@ -52,23 +55,23 @@ void init_SETUP(){
   // RX expects PUR:0:IDxxxx:NAME - that's Parameter Update Request, the TXID and PaRaMeter set #0. 
   // RX responds with  prm:0:ididid:i:h:p:s 
 
-  prm0_EE_GET(SBN); //first, in case the following fails...
-  char msg[40];
-  strcpy(msg,"PUR:0:"); strcat(msg,txID);strcat(msg,":"); strcat(msg,SNM);
-  //PUR:IDxxxx:NAME
-  msg_SEND(msg, rxKEY,txPWR); //String &msgIN, String &key, int txPWR)
-  // and now look for PRM and SNM and ??
-  rx_LOOK(msg,rxKEY,25); //250mSec
-  if (msg[0]!=0) { prm_PROCESS(msg,txID,SBN); }
+  if (flgKEY_GOOD==true) {prm0_EE_GET(SBN); //first, in case the following fails...
+    char msg[40];
+    strcpy(msg,"PUR:0:"); strcat(msg,txID);strcat(msg,":"); strcat(msg,SNM);
+    //PUR:IDxxxx:NAME
+    msg_SEND(msg, rxKEY,txPWR); //String &msgIN, String &key, int txPWR)
+    // and now look for PRM and SNM and ??
+    rx_LOOK(msg,rxKEY,25); //250mSec
+    if (msg[0]!=0) { prm_PROCESS(msg,txID,SBN); }
+    //***********************
+    get_DATA(txDATA,SBN,1);
+    packet_SEND(SBN,txID,txBV,rxKEY,txDATA,1); // does boost_OFF();
+    //***********************
+  }
   
   if (HrtBtON==true) { txTIMER=txHRTBEAT; }
   else { txTIMER=txINTERVAL; }
 
-//***********************
-  get_DATA(txDATA,SBN,1);
-  packet_SEND(SBN,txID,txBV,rxKEY,txDATA,1); // does boost_OFF();
-//***********************
-  
   //sleep and 'power down' mode bits
   cbi( SMCR, SE ); cbi( SMCR, SM0 ); sbi( SMCR, SM1 ); cbi( SMCR, SM2 ); 
   //watchdog timer - 8 sec
@@ -80,11 +83,11 @@ void init_SETUP(){
   //freeMemory();
   Serial.print(F("txTIMER: "));Serial.println(txTIMER);Serial.flush();
   Serial.print(F("rxKEY: "));Serial.println(rxKEY);Serial.flush();
-  if (flgLED_KEY==true) { ledBOOT_BLINK(3); }
-  else {
-    digitalWrite(pinLED_BOOT, HIGH); delay(1000);
-    digitalWrite(pinLED_BOOT, LOW);} //1 sec solid on
-    
+
+  ledBOTTOM_OnOffCnt(1000,500,1);
+  if (flgKEY_GOOD==false){ledBOTTOM_OnOffCnt(1000,500,1);}
+  if (flgLED_KEY==true) { ledBOTTOM_OnOffCnt(200,200,3); } //3 flashes
+
 } //* END OF init_SETUP ************************
 
 //**********************************************************************************
@@ -190,7 +193,7 @@ void prm0_EE_SET(char *buf,int sbn) { sbn++;  //PRM:0:ididid:i:h:p:o
 
 //*****************************************
 void prm0_EE_GET(int sbn) { sbn++; //and set to defaults if EEPROM erased.
-  if (EEPROM.read(EE_POWER)>20){ //the one that should be 2-20
+  if (flgEE_ERASED==true){ //set to default values
     EEPROM.write((EE_INTERVAL-(sbn*EE_BLKSIZE)),defaultINTERVAL); //  
     EEPROM.write((EE_HRTBEAT-(sbn*EE_BLKSIZE)),defaultHEARTBEAT); //  
     EEPROM.write((EE_POWER-(sbn*EE_BLKSIZE)),2); //low power default value
@@ -249,7 +252,7 @@ char * init_SENSOR(char *snm, int sbn) { char* ret=snm; DATA_TYPE = BEACON; //pr
     case 0: { DATA_TYPE = BEACON; strcpy(snm,"SBN0"); } break;        //your pick - sbn pin grounded
     case 1: { DATA_TYPE = EVENT_RISE;  strcpy(snm,"BUTTON"); 
       pinMode(pinEVENT, INPUT);  } break;
-    case 2: { DATA_TYPE = EVENT_RISE;  strcpy(snm,"TILT"); strcpy(dataOLD,"NULL");
+    case 2: { DATA_TYPE = EVENT_RISE;  strcpy(snm,"TILT"); strcpy(dataOLD,"????");
       pinMode(pinEVENT, INPUT); digitalWrite(pinEVENT, LOW); } break;
     case 3: { DATA_TYPE = EVENT_CHNG; strcpy(snm,"REED");//(int.30K off, ext.pullup =1M  
       pinMode(pinEVENT, INPUT); digitalWrite(pinEVENT, LOW); } break;

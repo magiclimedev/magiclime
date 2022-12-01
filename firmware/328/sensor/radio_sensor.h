@@ -113,7 +113,9 @@ bool HrtBtON;
 volatile byte wakeWHY;
 
 char dataOLD[12]; //for discriminating against redundent TX's
-bool flgLED_KEY;
+bool flgLED_KEY=false;
+bool flgEE_ERASED=false;
+bool flgKEY_GOOD=false;
   
 const byte rssOFFSET=140;
 const byte keyRSS=80;  

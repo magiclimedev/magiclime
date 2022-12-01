@@ -27,7 +27,7 @@ char *key_REQUEST(char *rxkey, char* TxId, byte rssREF) { char *ret=rxkey;
 bool key_VALIDATE(char *key2VAL) { //check EEPROM for proper character range
   byte lenKEY=strlen(key2VAL);
   boolean ret=true;
-  if (lenKEY==0) {ret=false;}
+  if (lenKEY<16) {ret=false;}
   for (byte i=0;i<lenKEY;i++) { //Serial.print(key[i]);Serial.print(F(" ")); 
     if ((key2VAL[i]<34) || (key2VAL[i]>126)|| (lenKEY<4)) { ret=false; break; }
   }
