@@ -10,7 +10,7 @@
  *  MIT license, all text above must be included in any redistribution
  */
  
-const static char VER[] = "RX221202";
+const static char VER[] = "RX221205";
 #include <EEPROM.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
@@ -52,7 +52,7 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 
 #define EE_BLKSIZE  20      
 
-//help menu table...
+//here's the help menu table...
 const char H00[] PROGMEM = "---- commands ----"; 
 const char H01[] PROGMEM = "prm:n:ididid:int:hb:p:o = PaRaMeters settings.";
 const char H02[] PROGMEM = "  - n ='parameter group #, aldways '0'(for now).";
@@ -67,19 +67,21 @@ const char H10[] PROGMEM = "idd:ididid    -ID Delete from eeprom";
 const char H11[] PROGMEM = "idl           -ID List";
 const char H12[] PROGMEM = "ide           -ID's Erase !ALL!";
 const char H13[] PROGMEM = "kye           -KeY Erase ";
-const char H14[] PROGMEM = "eee           -Erase Entire Eeprom";
-const char H15[] PROGMEM = "";
-const char H16[] PROGMEM = " -- examples --";
-const char H17[] PROGMEM = "prm:0:SGPOJS:5:20:2:0";
-const char H18[] PROGMEM = "kss:90"; 
-const char H19[] PROGMEM = "snr:SGPOJS:MOT_STAIRS (10-char. max)"; 
-const char H20[] PROGMEM = "idd:SGPOJS";
-const char H21[] PROGMEM = "";
+const char H14[] PROGMEM = "kys:(16char.) -KeY Set ";
+const char H15[] PROGMEM = "eee           -Erase Entire Eeprom";
+const char H16[] PROGMEM = "";
+const char H17[] PROGMEM = " -- examples --";
+const char H18[] PROGMEM = "prm:0:SGPOJS:5:20:2:0";
+const char H19[] PROGMEM = "kss:90"; 
+const char H20[] PROGMEM = "kys:?6Rh0@'](MUTtN*R";
+const char H21[] PROGMEM = "snr:SGPOJS:MOT_STAIRS (10-char. max)"; 
+const char H22[] PROGMEM = "idd:SGPOJS";
+const char H23[] PROGMEM = "";
 
 PGM_P const table_HLP[] PROGMEM ={H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,
                                   H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,
-                                  H20,H21};
-const byte hlpLIM=22;
+                                  H20,H21,H22,H23};
+const byte hlpLIM=24;
 
 boolean flgShowChar;
 boolean flgShowHex;
