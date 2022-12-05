@@ -54,6 +54,7 @@ char *get_TILT(char *data) { char *ret=data; //uses global dataOLD
     d2=d1;
     delay(10); //10 * 200 = 2 sec.
   }
+  if (bitRead(optBYTE,0)==1){d1=!d1;} //optBYTE says - 'flip the state'
   if ( (d1==0) && (strcmp(dataOLD,"LOW")!=0) ){ strcpy(data,"LOW"); strcpy(dataOLD,data); }
   else if ( (d1==1) && (strcmp(dataOLD,"HIGH")!=0) ) { strcpy(data,"HIGH"); strcpy(dataOLD,data); }
   else {strcpy(data,"????");}

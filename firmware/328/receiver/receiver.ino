@@ -259,7 +259,7 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
     if (strcmp(pfx,"idd")==0) {id_DELETE(PCbuf);}
     if (strcmp(pfx,"idl")==0) {id_LIST();}  
     if (strcmp(pfx,"kye")==0) {eeprom_ERASE_KEY();}
-    if (strcmp(pfx,"ide")==0) {eeprom_ERASE_ID();} //!!! this needs work !!!
+    if (strcmp(pfx,"ide")==0) {eeprom_ERASE_ID();}
     if (strcmp(pfx,"eee")==0) {eeprom_ERASE_ALL();}
     if (strcmp(pfx,"prm")==0) {prm_UPDATE(PCbuf,bufLEN);}
   }
@@ -561,7 +561,7 @@ void json_PRINTdata(char jsn[][24], byte pNum) {
   Serial.print(F("{\"source\":\"tx\","));
   for (byte pn=0;pn<pNum;pn++) {
     Serial.print( jsn[pn] ); }
-  Serial.println(F("\"}")); Serial.flush();  
+  Serial.println(""); Serial.flush();  
 }
 
 //*****************************************
