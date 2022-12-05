@@ -83,9 +83,6 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 #define pinSCL  A5
 
 byte optBYTE; 
-//sending of sensor parameters is an 'on request' thing.
-//request format 'IDxxxx:param0' 0 to make six char and room for other param categories.
-//(length of each half is equal)
 
 word MAX1,MIN1,MAX2,MIN2; //for adaptive sensor reference
 word CAL_VAL; //trimpot set value
@@ -115,7 +112,7 @@ volatile byte wakeWHY;
 char dataOLD[12]; //for discriminating against redundent TX's
 bool flgLED_KEY=false;
 bool flgEE_ERASED=false;
-bool flgKEY_GOOD=false;
+volatile bool flgKEY_GOOD=false;
   
 const byte rssOFFSET=140;
 const byte keyRSS=80;  

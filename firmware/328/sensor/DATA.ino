@@ -1,6 +1,6 @@
 //*****************************************
 char *get_DATA(char *data, int sbn, byte why ) { char *ret=data;
-  detachInterrupt(digitalPinToInterrupt(pinEVENT));
+  detachInterrupt(digitalPinToInterrupt(pinEVENT)); //in IRPT3?
   if (why==2) {strcpy(data,"HEARTBEAT");}
   else {
     switch (sbn) { 
@@ -37,16 +37,17 @@ char *get_DATA(char *data, int sbn, byte why ) { char *ret=data;
 //************************************************************
 char *get_2BTN(char *data) { char *ret=data; 
     delay(100); //not a spike?
+    data[0]=0; //default fail flag
     if ((digitalRead(A5)==1) && (digitalRead(A4)==1)) { strcpy(data,"PUSH-3");}
     else if (digitalRead(A5)==1) { strcpy(data,"PUSH-1");}
     else if (digitalRead(A4)==1) { strcpy(data,"PUSH-2");}
-    else {strcpy(data,"????");}
   return ret;
 }    
 
 //************************************************************
 char *get_TILT(char *data) { char *ret=data; //uses global dataOLD
   byte smplCtr=0; byte d1=0; byte d2=0;
+  data[0]=0; //default fail flag
   while (smplCtr<200) {//2 sec of stable
     d1=digitalRead(A4);
     if (d1==d2) {smplCtr++;}
@@ -54,10 +55,11 @@ char *get_TILT(char *data) { char *ret=data; //uses global dataOLD
     d2=d1;
     delay(10); //10 * 200 = 2 sec.
   }
-  if (bitRead(optBYTE,0)==1){d1=!d1;} //optBYTE says - 'flip the state'
+  Serial.print(F("d1: "));Serial.println(d1);Serial.flush();
+  //if (bitRead(optBYTE,0)==1){d1=!d1;} //optBYTE says - 'flip the state'
+  //Serial.print(F("d1-flip: "));Serial.println(d1);Serial.flush();
   if ( (d1==0) && (strcmp(dataOLD,"LOW")!=0) ){ strcpy(data,"LOW"); strcpy(dataOLD,data); }
-  else if ( (d1==1) && (strcmp(dataOLD,"HIGH")!=0) ) { strcpy(data,"HIGH"); strcpy(dataOLD,data); }
-  else {strcpy(data,"????");}
+  else if ((d1==1)&&(strcmp(dataOLD,"HIGH")!=0) ) { strcpy(data,"HIGH"); strcpy(dataOLD,data); }
   return ret;
 }
 
@@ -136,7 +138,7 @@ char *get_Si7020_F(char *data) { char *ret=data;
     char n2a[10]; dtoa(n2a,fTMP,1);
     strcpy(data,n2a);
   }
-  else {strcat(data,"---"); }
+  else {strcpy(data,"---"); }
   return ret;
 }
 

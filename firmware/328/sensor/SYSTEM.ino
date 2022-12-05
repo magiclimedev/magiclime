@@ -75,7 +75,8 @@ float get_BatteryVoltage() {
 }
 
 //*****************************************
-void trigger_RESET(int sbn){ //global DATA_TYPE req,
+void trigger_RESET(int sbn){
+  Serial.println(F("trigger_RESET"));Serial.flush();
   switch (sbn) { //some sensors need resetting after activation, like E931
     case 5 : {pinMode(pinEVENT, OUTPUT);digitalWrite(pinEVENT,LOW);delay(1);pinMode(pinEVENT, INPUT);} break;
     case 21 : {pinMode(pinEVENT, OUTPUT);digitalWrite(pinEVENT,LOW);delay(1);pinMode(pinEVENT, INPUT);} break;
@@ -90,7 +91,9 @@ void trigger_RESET(int sbn){ //global DATA_TYPE req,
 
 //*******//Interrupt on D3 (interrupt #1) ******
 void IRPT_D3() {  
-  if (flgKEY_GOOD==true) {wakeWHY=1;} //do the data for this sensor
+  if (flgKEY_GOOD==true) {
+    //detachInterrupt(digitalPinToInterrupt(pinEVENT));
+    wakeWHY=1;} //do the data for this sensor
   txCOUNTER=txTIMER; //reset heartbeat timer 
 } 
 

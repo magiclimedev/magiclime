@@ -35,7 +35,7 @@ void loop () {
   if (wakeWHY!=0) {//1 is Data, 2 is Heartbeat
     if (digitalRead(pinBOOST)==0){boost_ON();}
     get_DATA(txDATA,SBN,wakeWHY);
-     
+    //Serial.print(F("data="));Serial.println(txDATA);Serial.flush(); 
     //(int sbn, char *id, double bv, char *key, char *data, int pwr, int wait) 
     packet_SEND(SBN,txID,txBV,rxKEY,txDATA,txPWR);
     trigger_RESET(SBN); //mostly because Motion chip E931 needs this.
