@@ -15,6 +15,7 @@ const {Settings} = require("./Settings")
 const websocket = require("./web/websocket.js");
 const server = require("./web/webserver.js");
 const serial = require("./serial.js");
+const ipc = require("./ipc.js");
 const { Console, log } = require("console");
 const db = require("better-sqlite3");
 const express = require("express");
