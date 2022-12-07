@@ -9,16 +9,16 @@
  *
  *  MIT license, all text above must be included in any redistribution
  */
-const static char VER[] = "TX221205";
+const static char VER[] = "TX221207";
 
 #include "radio_sensor.h"
 
 const int wdmTXI = 1; //WatchDogMultiplier for TX data Interval
 //wdmTXI=1 means (1*8) sec. per 'unit' of txINTERVAL.
-const int wdmHBP = 16; //WatchDogMultiplier for Heartbeat period 
-//wdmHBP=16 means (16*8) sec. per 'unit' of txHEARTBEAT.
+const int wdmHBP = 8; //WatchDogMultiplier for Heartbeat period 
+//wdmHBP=8 means (8*8) sec. per 'unit' of txHEARTBEAT.
 const int defaultINTERVAL = 16;       // periodic TX interval 8  X 16 sec = 128 sec.
-const int defaultHEARTBEAT = 113; //'I'm still alive' period 113 x 128 sec = 4 hour (approx)
+const int defaultHEARTBEAT = 113; //'I'm still alive' period 113 x 64 sec = 2 hour (approx)
 
 //*****************************************
 void setup () { 

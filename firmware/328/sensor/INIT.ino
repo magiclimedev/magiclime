@@ -154,21 +154,21 @@ void prm_PROCESS(char *buf, char *id, int sbn) {
 
 //*****************************************
 void prm0_PAKOUT() {
-  //Serial.print(F("...prm0_PAK, txi="));Serial.print(txINTERVAL);
-  //Serial.print(F("  txhb="));Serial.println(txHRTBEAT);
+  Serial.print(F("...prm0_PAK, txi="));Serial.print(txINTERVAL);
+  Serial.print(F("  txhb="));Serial.println(txHRTBEAT);Serial.flush();
   char n2a[10]; // for Number TO Ascii things
   char msg[32];
   strcpy(msg,"PAK:0:");
   strcat(msg,txID); 
-  strcat(msg,":"); dtoa(n2a,float((float(txINTERVAL)*8.0)/60.0),1); strcat(msg,n2a);
-  strcat(msg,":"); dtoa(n2a,float((float(txHRTBEAT)*8.0)/60.0),1); strcat(msg,n2a);
+  strcat(msg,":"); dtoa(n2a,(float(txINTERVAL)*8.0),1); strcat(msg,n2a); //sec.
+  strcat(msg,":"); dtoa(n2a,((float(txHRTBEAT)*8.0)/60.0),1); strcat(msg,n2a); //min.
   strcat(msg,":"); itoa((txPWR),n2a,10); strcat(msg,n2a);
   static const char hex[] = "0123456789ABCDEF";
   byte msnb = byte((optBYTE>>4)& 0x0F); byte lsnb=byte(optBYTE & 0x0F);
   char msn[2]; msn[0]=hex[msnb]; msn[1]=0;
   char lsn[2]; lsn[0]=hex[lsnb]; lsn[1]=0;
   strcat(msg,":"); strcat(msg,msn); strcat(msg,lsn);
-  //Serial.print(F("pak0_SEND:"));Serial.println(msg);Serial.flush();
+  Serial.print(F("pak0_SEND:"));Serial.println(msg);Serial.flush();
   msg_SEND(msg,rxKEY,1);
   delay(10);
 }
@@ -176,18 +176,28 @@ void prm0_PAKOUT() {
 //*****************************************
 void prm0_EE_SET(char *buf,int sbn) { sbn++;  //PRM:0:ididid:i:h:p:o
 //Serial.println(F("prm0_EE_SET..."));          //01234567890123456789
+//Serial.print(F("buf="));Serial.println( buf);Serial.flush();
+//Serial.print(F("buf[13]="));Serial.println( buf[13]);Serial.flush();
   EEPROM.write((EE_INTERVAL-(sbn*EE_BLKSIZE)),buf[13]);
-  txINTERVAL=buf[13]*wdmTXI;
+  //Serial.print(F("wdmTXI=")); Serial.println(wdmTXI);Serial.flush();
+  txINTERVAL=int(byte(buf[13])*wdmTXI);
   //Serial.print(F("txINTERVAL="));Serial.println( txINTERVAL);Serial.flush();
+  
+  //Serial.print(F("buf[15]="));Serial.println( buf[15]);Serial.flush();
   EEPROM.write((EE_HRTBEAT-(sbn*EE_BLKSIZE)),buf[15]);
-  txHRTBEAT=buf[15]*wdmHBP; 
+  //Serial.print(F("wdmHBP=")); Serial.println(wdmHBP);Serial.flush();
+  txHRTBEAT=int(byte(buf[15])*wdmHBP); 
   //Serial.print(F("txHRTBEAT=")); Serial.println(txHRTBEAT);Serial.flush();
+  
+  //Serial.print(F("buf[17]="));Serial.println( buf[17]);Serial.flush();
   EEPROM.write((EE_POWER-(sbn*EE_BLKSIZE)),buf[17]);
-  txPWR=buf[17]; 
+  txPWR=byte(buf[17]); 
   //Serial.print(F("txPWR=")); Serial.println(txPWR);Serial.flush();
+  
   //OPTBYTE is not a 'per sensor' thing - more like a 'du jour' thing.
+  //Serial.print(F("buf[19]="));Serial.println( buf[19]);Serial.flush();
   EEPROM.write(EE_OPTBYTE,buf[19]);
-  optBYTE=buf[19]; 
+  optBYTE=byte(buf[19]); 
   //Serial.print(F("optBYTE=")); Serial.println(optBYTE);Serial.flush();
 }
 
