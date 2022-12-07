@@ -80,7 +80,7 @@ char *get_DOT(char *data) { char *ret=data;
  
 //************************************************************
 char *get_TMP36_F(char *data) { char *ret=data;
-  if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(10);}
+  if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(100);}
   float TC=get_MilliVolts(0);
   TC=(TC-500.0)/10.0; //Celcius
   float TF=((TC * 9.0) / 5.0) + 32.0;  //Fahrenheit

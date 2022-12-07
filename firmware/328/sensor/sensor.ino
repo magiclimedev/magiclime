@@ -41,7 +41,6 @@ void loop () {
     trigger_RESET(SBN); //mostly because Motion chip E931 needs this.
     wakeWHY=0; 
   }
-  //sleepStuff();
   systemSleep(); 
 
 } //End Of Loop ****************************

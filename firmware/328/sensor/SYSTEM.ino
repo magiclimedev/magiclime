@@ -108,11 +108,7 @@ ISR(WDT_vect) { //in avr library
   }
 }
 
-//*****************************************
-void wakeStuff(){if (digitalRead(pinBOOST)==0){boost_ON();}}//SPI.begin();}
 
-//*****************************************
-void sleepStuff(){boost_OFF(); SPI.end();}
 
 //*****************************************
 void systemSleep() {
