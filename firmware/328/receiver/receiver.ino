@@ -10,7 +10,7 @@
  *  MIT license, all text above must be included in any redistribution
  */
  
-const static char VER[] = "RX221207";
+const static char VER[] = "RX221208";
 #include <EEPROM.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
@@ -252,7 +252,6 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
 //*************************    
     pak_LOOK(prm,msg); //PAK:0:IDxxxx:10:30:2,7 -ish , 
     if (prm[0]!=0) { 
-      //json_PRINTinfo(prm, strlen(prm)); 
       jsonINFO(prm);
     }
     
@@ -629,13 +628,6 @@ void json_PRINTdata(char jsn[][24], byte pNum) {
   for (byte pn=0;pn<pNum;pn++) { //Pair Number
     Serial.print( jsn[pn] ); }
   Serial.println("}"); Serial.flush();  
-}
-
-//*****************************************
-void json_PRINTinfo(char info[32], byte iNum) {
-  Serial.print(F("{\"source\":\"tx\",\"info\":\""));
-  for (byte i=0;i<iNum;i++) {Serial.print( info[i] ); }
-  Serial.println(F("\"}")); Serial.flush();  
 }
 
 //**********************************************************************

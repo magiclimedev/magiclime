@@ -14,7 +14,6 @@
 // Singleton instance of the radio driver
 #include <RH_RF95.h>
 
-
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #endif
@@ -29,7 +28,6 @@ extern "C" char* sbrk(int incr);
 extern char *__brkval;
 #endif  // __arm__
 
-
 #define ONE_WIRE_BUS 4
 
 #define RF95_RST 9 //not used
@@ -39,31 +37,24 @@ extern char *__brkval;
 RH_RF95 rf95(RF95_CS, RF95_INT);
 
 #define EE_OPTBYTE  1023 //Sensor Option flag/status/mode bits
-//example use - photocell as % of previously observed max/min
-//bit#0: reset max's (ex. photocell as % of previously observed max/min
-//bit#1: reset min's
-//bit#2: erase this ID (make new one) 
-//bit#3: erase all eeprom
-//bit#4: Stream data mode/count
-//bit#5: 
-//bit#6: 
-//bit#7: 
+
 #define EE_SEQNUM   EE_OPTBYTE-1  //TX sequence # for detecting missing data - not implemented yet.
 // parameter flag bits
 #define EE_MAX1     EE_SEQNUM-1  //an idea in waiting - some other packet format  
 #define EE_MIN1     EE_MAX1-2   //2-bytes to cover a2d's 1024 values, msb,lsb
 #define EE_MAX2     EE_MIN1-2   //2 bytes 
 #define EE_MIN2     EE_MAX2-2   //2-bytes  //not storing these at this time
+
 #define EE_KEY      EE_MIN2-2   //2-bytes 
-//these are stored for each sbn, 22*22 = 484 bytes - room for more!
+
+//these are stored for each sbn
 #define EE_ID       EE_KEY-16   // 16 byte KEY
 #define EE_INTERVAL EE_ID-6 //  'seconds/16' WDT counter    1
 #define EE_HRTBEAT  EE_INTERVAL-1 //'seconds/64             1
 #define EE_POWER    EE_HRTBEAT-1 //1 byte for tx power 0-9  1
 #define EE_NAME     EE_POWER-1     // 6+1+1+1+10 = 19 per sensor
-#define EE_BLKSIZE  20 //plus one more for nice number
 
-//bottomless assignment for EE-ID's as they are 'per sensor' unique persistant ID's
+#define EE_BLKSIZE  20 //plus one more, nice round number.
 
 #define pinRF95_INT  2
 #define pinEVENT  3
@@ -82,6 +73,9 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 #define pinSDA  A4
 #define pinSCL  A5
 
+#define rssOFFSET 140
+#define keyRSS 80 
+
 byte optBYTE; 
 
 word MAX1,MIN1,MAX2,MIN2; //for adaptive sensor reference
@@ -91,10 +85,10 @@ volatile int SBN; //the Sensor Board Number, -1 is 'no board', 0 is grounded, 22
 char SNM[20]; //sensor name
  
 int txPWR; //1-10 default - updateable by gateway?
-int txINTERVAL; //wdt counts - 8 sec. per
-int txHRTBEAT;
-volatile int txCOUNTER; //counter of 8-sec. Heart Beats
-volatile int txTIMER; //either interval or heartbeat depending on sensor
+int wd_INTERVAL; //wdt counts - 8 sec. per
+int wd_HEARTBEAT;
+volatile int wd_COUNTER; //counter of 8-sec. Heart Beats
+volatile int wd_TIMER; //either interval or heartbeat depending on sensor
 
 char txID[8]; //6 char + null 
 char rxKEY[18]; //16 char + null 
@@ -114,5 +108,4 @@ bool flgLED_KEY=false;
 bool flgEE_ERASED=false;
 volatile bool flgKEY_GOOD=false;
   
-const byte rssOFFSET=140;
-const byte keyRSS=80;  
+ 

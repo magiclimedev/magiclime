@@ -1,6 +1,6 @@
 //*****************************************
 char *get_DATA(char *data, int sbn, byte why ) { char *ret=data;
-  detachInterrupt(digitalPinToInterrupt(pinEVENT)); //in IRPT3?
+  detachInterrupt(digitalPinToInterrupt(pinEVENT));
   if (why==2) {strcpy(data,"HEARTBEAT");}
   else {
     switch (sbn) { 
@@ -36,8 +36,8 @@ char *get_DATA(char *data, int sbn, byte why ) { char *ret=data;
 
 //************************************************************
 char *get_2BTN(char *data) { char *ret=data; 
-    delay(100); //not a spike?
-    data[0]=0; //default fail flag
+    delay(10);
+    data[0]=0; 
     if ((digitalRead(A5)==1) && (digitalRead(A4)==1)) { strcpy(data,"PUSH-3");}
     else if (digitalRead(A5)==1) { strcpy(data,"PUSH-1");}
     else if (digitalRead(A4)==1) { strcpy(data,"PUSH-2");}
@@ -45,9 +45,9 @@ char *get_2BTN(char *data) { char *ret=data;
 }    
 
 //************************************************************
-char *get_TILT(char *data) { char *ret=data; //uses global dataOLD
+char *get_TILT(char *data) { char *ret=data;
   byte smplCtr=0; byte d1=0; byte d2=0;
-  data[0]=0; //default fail flag
+  data[0]=0; 
   while (smplCtr<200) {//2 sec of stable
     d1=digitalRead(A4);
     if (d1==d2) {smplCtr++;}
@@ -55,9 +55,7 @@ char *get_TILT(char *data) { char *ret=data; //uses global dataOLD
     d2=d1;
     delay(10); //10 * 200 = 2 sec.
   }
-  Serial.print(F("d1: "));Serial.println(d1);Serial.flush();
-  //if (bitRead(optBYTE,0)==1){d1=!d1;} //optBYTE says - 'flip the state'
-  //Serial.print(F("d1-flip: "));Serial.println(d1);Serial.flush();
+  if (bitRead(optBYTE,0)==1){d1=!d1;}
   if ( (d1==0) && (strcmp(dataOLD,"LOW")!=0) ){ strcpy(data,"LOW"); strcpy(dataOLD,data); }
   else if ((d1==1)&&(strcmp(dataOLD,"HIGH")!=0) ) { strcpy(data,"HIGH"); strcpy(dataOLD,data); }
   return ret;
@@ -104,7 +102,6 @@ char *get_TRH(char *data) { char *ret=data;
 
 //***********************  
 void init_Si7020() { 
-  //Serial.println(F("init_Si7020()... "));Serial.flush();
   if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(500);} 
   Wire.begin();
   byte ureg=Si7020_UREG_get();
@@ -278,10 +275,8 @@ float get_Average (byte pinANA, unsigned int SampNum) {
 
 //*****************************************
 char* dtoa(char *cMJA, double dN, int iP) {char *ret = cMJA;
-  //arguments... 
-  // char array to fill,float-double value,  precision (4 is .xxxx)
-  //and... it rounds last digit up/down!
-   long lP=1; byte bW=iP;
+  // destination char array,float-double value,  precision (4 is .xxxx)
+  long lP=1; byte bW=iP;
   while (bW>0) { lP=lP*10;  bW--;  }
   long lL = long(dN); double dD=(dN-double(lL))* double(lP); 
   if (dN>=0) { dD=(dD + 0.5);  } else { dD=(dD-0.5); }

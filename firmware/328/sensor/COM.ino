@@ -6,7 +6,7 @@ char n2a[10]; // for Number TO Ascii things
 char msg[48];
 byte PV=1; //Protocol Version - very first char byte out;
   if (data[0]!=0) {
-    itoa(int(PV),n2a,10); strcpy(msg,n2a); //Prot-Ver always very first char out
+    itoa(int(PV),n2a,10); strcpy(msg,n2a);
     strcat(msg,"|");strcat(msg,id);     
     strcat(msg,"|"); itoa(sbn,n2a,10); strcat(msg,n2a); 
     strcat(msg,"|"); dtoa(n2a,bv,1); strcat(msg,n2a);    
@@ -17,10 +17,9 @@ byte PV=1; //Protocol Version - very first char byte out;
 
 //*****************************************
 void msg_SEND(char *msgIN, char *key, int pwr) { 
+  //Serial.print(F("msg_SEND: "));Serial.println(msgIN);Serial.flush();
   if (digitalRead(pinBOOST) == 0) { boost_ON(); delay(100);}
   digitalWrite(pinLED_TX, HIGH);
-  //Serial.print(F("msgSEND: ")); print_CHR(msgIN,strlen(msgIN));
-  //Serial.print(F("key: ")); print_CHR(key,strlen(key));Serial.flush();
   byte txLEN=strlen(msgIN);
   char txBUF[64];
   tx_ENCODE_0(txBUF,msgIN,txLEN,key);
@@ -60,8 +59,6 @@ char *rx_DECODE_0(char *msgOUT,char *rxBUF, byte rxLEN, char *key) {char *ret=ms
 char *rx_LOOK(char *msg, char *rxkey, int ctr) { char *ret=msg;
   byte timeout=0; msg[0]=0; ctr=abs(ctr); if (ctr>1000) {ctr=1000;}
   while (!rf95.available() && timeout<ctr) { delay(10); timeout++; }
-  //Serial.print(F("rx_LOOK<"));Serial.print(ctr);Serial.print(F(": ")); 
-  //Serial.println(timeout);Serial.flush();
   if (timeout<=ctr) {
     uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
     uint8_t len = sizeof(buf);

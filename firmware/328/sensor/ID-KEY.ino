@@ -2,33 +2,28 @@
 //*****************************************
 char *key_REQUEST(char *rxkey, char* TxId, byte rssREF) { char *ret=rxkey;
   rxkey[0]=0; //prep for fail
-  //digitalWrite(pinLED_BOOT, HIGH); delay(1000);
   char keyTEMP[18];
-
-  key_NEW(keyTEMP); //returns new key in keyTEMP
+  key_NEW(keyTEMP);
   //print_CHR(keyTEMP,16);
-  key_TXID_SEND(TxId,keyTEMP); //expect a response = 'keyTEMP' encoded 'ID:RX-KEY'
+  key_TXID_SEND(TxId,keyTEMP);
   char msg[64]; char id[8];
   rx_LOOK(msg,keyTEMP,25);
-  //Serial.print(F("keylook: "));Serial.println(msg);Serial.flush(); 
   if (msg[0] !=0) { 
-    if (msg[6]==':') { //not a fail-to-find...
-      mySubStr(id,msg,0,6); //ID
-      if (strcmp(id,TxId)==0) { //does this id match this sensors' ID?
+    if (msg[6]==':') { 
+      mySubStr(id,msg,0,6); 
+      if (strcmp(id,TxId)==0) {
         mySubStr(rxkey,msg,7,16);}
-        //Serial.print(F("rxkey: "));Serial.println(rxkey);Serial.flush(); 
     }
   }
-  //digitalWrite(pinLED_BOOT,LOW); 
   return ret;
 }
 
 //*****************************************
-bool key_VALIDATE(char *key2VAL) { //check EEPROM for proper character range
+bool key_VALIDATE(char *key2VAL) {
   byte lenKEY=strlen(key2VAL);
   boolean ret=true;
   if (lenKEY<16) {ret=false;}
-  for (byte i=0;i<lenKEY;i++) { //Serial.print(key[i]);Serial.print(F(" ")); 
+  for (byte i=0;i<lenKEY;i++) {
     if ((key2VAL[i]<34) || (key2VAL[i]>126)|| (lenKEY<4)) { ret=false; break; }
   }
     return ret;
@@ -36,7 +31,6 @@ bool key_VALIDATE(char *key2VAL) { //check EEPROM for proper character range
 
 //*****************************************
 void key_TXID_SEND(char *txid, char* keyTEMP) {
-  //Serial.println(F("key_TXID_SEND... "));Serial.flush();
   char rxkey[18]; char idkey[26];
   strcpy(rxkey,"thisisamagiclime");
   strcpy(idkey,"!"); strcat(idkey,txid); strcat(idkey,"!"); strcat(idkey,keyTEMP);
@@ -62,12 +56,12 @@ char *key_NEW(char *key) { char *ret=key;
   word rs=analogRead(1); rs=rs+analogRead(2); rs=rs+analogRead(3);
   rs=rs+analogRead(4); rs=rs+analogRead(4); randomSeed(rs);
   for (byte i=0;i<16;i++) { key[i]=random(34,126); } 
-  key[16]=0; //?why??
+  key[16]=0; 
   return ret;
 } 
   
 //*****************************************
-void id_MAKEifBAD(int sbn) { sbn++; //to make -1 = 0
+void id_MAKEifBAD(int sbn) { sbn++;
   byte idbyte; word idLoc=(EE_ID-(sbn*6)); bool badID=false;
   for (byte i=0;i<6;i++) { idbyte=EEPROM.read(idLoc-i);
     if (((idbyte<'2')||(idbyte>'Z'))|| ((idbyte>'9')&&(idbyte<'A'))) {
@@ -84,11 +78,11 @@ void id_MAKEifBAD(int sbn) { sbn++; //to make -1 = 0
 }
 
 //*****************************************
-char *id_GET(char *idOUT, int sbn) { char *ret=idOUT; sbn++; //to make -1 = 0
+char *id_GET(char *idOUT, int sbn) { char *ret=idOUT; sbn++;
   word idLoc=(EE_ID-(sbn*6));
   for (byte i=0;i<6;i++) { idOUT[i]=EEPROM.read(idLoc-i);
   }
-  idOUT[6]=0; //string term
+  idOUT[6]=0;
   return ret;
 }
 
