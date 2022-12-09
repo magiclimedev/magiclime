@@ -21,9 +21,6 @@ var bootup = true;
 setInterval(async () => {
     await getSerialPort(function(error, result) {
         if (error) {
-            //console.log("Error: " + error);
-            //console.log("Exiting!");
-            //process.exit(1);
             if (bootup) {
                 console.log("Serial server:   Receiver not connected");
                 bootup = false;
@@ -43,13 +40,20 @@ setInterval(async () => {
                 
                 var serialPort = new SerialPort({
                     path: serialPortName,
-                    baudRate: 57600
-                    //autoOpen: false
+                    baudRate: 57600,
+                    autoOpen: false
                 })
                 const parser = new ReadlineParser();
                 serialPort.pipe(parser);
                 parser.on('data', function(data) {
                     rxQueue.enqueue(data);
+                });
+
+                serialPort.open(function (err){
+                    if (err) {
+                        console.log(err.message)
+                        process.exit(1);
+                    }
                 });
 
                 serialPort.on('close', function() {
