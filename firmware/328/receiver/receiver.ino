@@ -10,7 +10,7 @@
  *  MIT license, all text above must be included in any redistribution
  */
  
-const static char VER[] = "RX221208";
+const static char VER[] = "RX221210";
 #include <EEPROM.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>

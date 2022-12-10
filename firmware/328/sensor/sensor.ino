@@ -9,12 +9,8 @@
  *
  *  MIT license, all text above must be included in any redistribution
  */
-const static char VER[] = "TX221208";
+const static char VER[] = "TX221210";
 #include "radio_sensor.h"
-const int wdmTXI = 1;
-const int wdmHBP = 8; 
-const int defaultINTERVAL = 75; //*8 sec = 10 min
-const int defaultHEARTBEAT = 113;//*8sec *16 = 241 min (4 hrs)
 
 //*****************************************
 void setup () { 

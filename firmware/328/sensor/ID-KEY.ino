@@ -61,28 +61,30 @@ char *key_NEW(char *key) { char *ret=key;
 } 
   
 //*****************************************
-void id_MAKEifBAD(int sbn) { sbn++;
-  byte idbyte; word idLoc=(EE_ID-(sbn*6)); bool badID=false;
-  for (byte i=0;i<6;i++) { idbyte=EEPROM.read(idLoc-i);
-    if (((idbyte<'2')||(idbyte>'Z'))|| ((idbyte>'9')&&(idbyte<'A'))) {
-      badID=true; break;
+char *id_GET(char *idOUT, int sbn) { char *ret=idOUT; sbn++;
+  word idLoc=(EE_ID-(sbn*6)); bool badID=false;
+  for (byte i=0;i<6;i++) { idOUT[i]=EEPROM.read(idLoc-i);
+    //Serial.print(idOUT[i]);
+    if (((idOUT[i]<'2')||(idOUT[i]>'Z'))|| ((idOUT[i]>'9')&&(idOUT[i]<'A'))) {
+      id_NEW(idOUT,sbn); 
+      return ret;
     }
   }
-  if (badID==true) { const char idchar[] ="23456789ABCDEFGHJKMNRSTUVWXYZ"; //29, 0-28
-    word rs=analogRead(1); rs=rs*analogRead(2); rs=rs*analogRead(3);
-    rs=rs*analogRead(4);rs=rs*analogRead(5);randomSeed(rs);
-    for (byte j=0;j<6;j++) { byte id=idchar[random(0,29)];
-      EEPROM.write(idLoc-j ,id);
-    }
-  }
+  idOUT[6]=0;
+  return ret;
 }
 
 //*****************************************
-char *id_GET(char *idOUT, int sbn) { char *ret=idOUT; sbn++;
+void id_NEW(char *idNEW, int sbn) {char *ret=idNEW; 
   word idLoc=(EE_ID-(sbn*6));
-  for (byte i=0;i<6;i++) { idOUT[i]=EEPROM.read(idLoc-i);
+  const char idchar[] ="23456789ABCDEFGHJLKMNRSTUVWXYZ"; //30, 0-29
+  word rs=analogRead(1); rs=rs*analogRead(2); rs=rs*analogRead(3);
+  rs=rs*analogRead(4);rs=rs*analogRead(5);randomSeed(rs);
+  for (byte i=0;i<6;i++) {
+    idNEW[i]=idchar[random(0,30)];
+    EEPROM.write((idLoc-i) ,idNEW[i]);
   }
-  idOUT[6]=0;
+  idNEW[6]=0;
   return ret;
 }
 

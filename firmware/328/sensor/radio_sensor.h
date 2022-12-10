@@ -76,15 +76,22 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 #define rssOFFSET 140
 #define keyRSS 80
 
+//timer parameter values limited to 1 byte (255 max).
+//Multiplier needed if longer times than ( 8 sec.* 255) wanted
+#define wdmTXI  1             //WatchDogMultiplier for Data Interval
+#define defaultINTERVAL 75    //*8 sec *wdmTXI =... 10 min
+#define wdmHBI 16             //WatchDogMultiplier for Heartbeat Interval
+#define defaultHEARTBEAT 113  //*8 sec *wdmHBI =... 241 min 
+
 byte optBYTE; 
 
 word MAX1,MIN1,MAX2,MIN2; //for adaptive sensor reference
 word CAL_VAL; //trimpot set value
 
 volatile int SBN; //the Sensor Board Number, -1 is 'no board', 0 is grounded, 22 is tied high
-char SNM[20]; //sensor name
+char SNM[12]; //sensor name 10-char max.
  
-int txPWR; //1-10 default - updateable by gateway?
+int txPWR; //2-20
 int wd_INTERVAL; //wdt counts - 8 sec. per
 int wd_HEARTBEAT;
 volatile int wd_COUNTER; //counter of 8-sec. Heart Beats

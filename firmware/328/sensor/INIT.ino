@@ -19,7 +19,6 @@ void init_SETUP(){
     
   if (SBN==255) {SBN=get_SBNum();}
   Serial.print(F("SBN: "));Serial.print(SBN);Serial.flush();
-  id_MAKEifBAD(SBN); 
   id_GET(txID,SBN);
   Serial.print(F(", txID: "));Serial.println(txID);Serial.flush();
   prm0_EE_GET(SBN);
@@ -163,7 +162,7 @@ void prm0_EE_SET(char *buf,int sbn) { sbn++;
   EEPROM.write((EE_INTERVAL-(sbn*EE_BLKSIZE)),buf[13]);
   wd_INTERVAL=int(byte(buf[13])*wdmTXI);
   EEPROM.write((EE_HRTBEAT-(sbn*EE_BLKSIZE)),buf[15]);
-  wd_HEARTBEAT=int(byte(buf[15])*wdmHBP);
+  wd_HEARTBEAT=int(byte(buf[15])*wdmHBI);
   EEPROM.write((EE_POWER-(sbn*EE_BLKSIZE)),buf[17]);
   txPWR=byte(buf[17]);
   EEPROM.write(EE_OPTBYTE,buf[19]);
@@ -173,13 +172,14 @@ void prm0_EE_SET(char *buf,int sbn) { sbn++;
 //*****************************************
 void prm0_EE_GET(int sbn) { sbn++;
   if (flgEE_ERASED==true){
+    Serial.println(F("flgEE_ERASED"));
     EEPROM.write((EE_INTERVAL-(sbn*EE_BLKSIZE)),defaultINTERVAL);
     EEPROM.write((EE_HRTBEAT-(sbn*EE_BLKSIZE)),defaultHEARTBEAT);
     EEPROM.write((EE_POWER-(sbn*EE_BLKSIZE)),2);
     EEPROM.write(EE_OPTBYTE,0);
   }
   wd_INTERVAL=EEPROM.read(EE_INTERVAL-(sbn*EE_BLKSIZE))*wdmTXI;
-  wd_HEARTBEAT=EEPROM.read(EE_HRTBEAT-(sbn*EE_BLKSIZE))*wdmHBP;
+  wd_HEARTBEAT=EEPROM.read(EE_HRTBEAT-(sbn*EE_BLKSIZE))*wdmHBI;
   txPWR=EEPROM.read(EE_POWER-(sbn*EE_BLKSIZE));
   optBYTE=EEPROM.read(EE_OPTBYTE);
 }

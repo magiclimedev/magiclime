@@ -61,7 +61,7 @@ float get_BatteryVoltage() {
 
 //*****************************************
 void trigger_RESET(int sbn){
-  Serial.println(F("trigger_RESET"));Serial.flush();
+  //Serial.println(F("trigger_RESET"));Serial.flush();
   switch (sbn) { //some sensors need resetting after activation, like E931
     case 5 : {pinMode(pinEVENT, OUTPUT);digitalWrite(pinEVENT,LOW);delay(1);pinMode(pinEVENT, INPUT);} break;
     case 21 : {pinMode(pinEVENT, OUTPUT);digitalWrite(pinEVENT,LOW);delay(1);pinMode(pinEVENT, INPUT);} break;
@@ -106,8 +106,8 @@ void systemSleep() {
 
 //*****************************************
 bool longPress() { bool ret=false;
-  pinMode(pinBOOT_SW, OUTPUT); digitalWrite(pinBOOT_SW, HIGH); 
-  delay(10);
+  //pinMode(pinBOOT_SW, OUTPUT); digitalWrite(pinBOOT_SW, HIGH); 
+  //delay(10);
   pinMode(pinBOOT_SW, INPUT); digitalWrite(pinBOOT_SW, LOW); 
   byte ctr=0;
   if (digitalRead(pinBOOT_SW)==1){delay(200);}
@@ -115,7 +115,7 @@ bool longPress() { bool ret=false;
     ctr++; delay(50); }
   if (ctr==20) { ret=true; }
   Serial.print(F("longPress="));Serial.println(ctr);Serial.flush();
-  digitalWrite(pinBOOT_SW, HIGH);
+  //digitalWrite(pinBOOT_SW, HIGH);
   return ret;
 }
 
