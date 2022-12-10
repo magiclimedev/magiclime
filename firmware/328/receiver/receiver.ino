@@ -97,6 +97,8 @@ static char rxKEY[18]; //16 char + null
 const byte rssOFFSET=140;
 byte keyRSS=90;
 bool flgDONE;
+const int defaultINTERVAL = 75; //*8 sec = 10 min
+const int defaultHEARTBEAT = 113;//*8sec *16 = 241 min (4 hrs)
 
 //**********************************************************************
 void setup() { 
@@ -447,8 +449,8 @@ void prm_EE_SET_DFLT(char *id, word addr) {//ID,Interval,Power
   //Serial.print(F("*  at ")); Serial.println(addr); Serial.flush();
   char sn[]="unassigned";
   for(byte b=0;b<6;b++) { EEPROM.write((addr-b),id[b]); } //0-5
-  EEPROM.write(addr-6,8); //interval sec*8 =64sec    //6
-  EEPROM.write(addr-7,113); //heartbeat sec.*64 =2hrs.    //7
+  EEPROM.write(addr-6,defaultINTERVAL); //interval sec*8 =64sec    //6
+  EEPROM.write(addr-7,defaultHEARTBEAT); //heartbeat sec.*64 =2hrs.    //7
   EEPROM.write(addr-8,2); //2-20 default power    //8
   EEPROM.write(addr-9,0); //Sysbyte bits all 0    //9
   addr=addr-10; //where the name goes - after 6 char ID and four paramters
