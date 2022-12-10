@@ -78,7 +78,7 @@ void trigger_RESET(int sbn){
 void IRPT_D3() {  
   if (flgKEY_GOOD==true) {
     wakeWHY=1;}
-  wd_COUNTER=wd_TIMER;
+  wd_COUNTER=0;
 } 
 
 //*****************************************
@@ -91,8 +91,6 @@ ISR(WDT_vect) { //in avr library
     wd_COUNTER=0;
   }
 }
-
-
 
 //*****************************************
 void systemSleep() {

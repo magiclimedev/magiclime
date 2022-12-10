@@ -74,7 +74,7 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 #define pinSCL  A5
 
 #define rssOFFSET 140
-#define keyRSS 80 
+#define keyRSS 80
 
 byte optBYTE; 
 
@@ -107,5 +107,4 @@ char dataOLD[12]; //for discriminating against redundent TX's
 bool flgLED_KEY=false;
 bool flgEE_ERASED=false;
 volatile bool flgKEY_GOOD=false;
-  
  

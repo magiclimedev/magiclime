@@ -13,8 +13,8 @@ const static char VER[] = "TX221208";
 #include "radio_sensor.h"
 const int wdmTXI = 1;
 const int wdmHBP = 8; 
-const int defaultINTERVAL = 16;
-const int defaultHEARTBEAT = 113;
+const int defaultINTERVAL = 75; //*8 sec = 10 min
+const int defaultHEARTBEAT = 113;//*8sec *16 = 241 min (4 hrs)
 
 //*****************************************
 void setup () { 
@@ -26,6 +26,7 @@ void setup () {
 
 //*****************************************
 void loop () {
+  //Serial.println(wd_COUNTER);Serial.flush();
   if (wakeWHY!=0) {//1 is Data, 2 is Heartbeat
     get_DATA(txDATA,SBN,wakeWHY);
     packet_SEND(SBN,txID,txBV,rxKEY,txDATA,txPWR);
