@@ -93,7 +93,9 @@ boolean flgShowHex;
 static char rxBUF[64]; //for the rx buf
 static byte rxLEN; //for the length
 static char rxKEY[18]; //16 char + null
- 
+
+char jsn[64]; //general purpose c-string  for json format packets
+
 const byte rssOFFSET=140;
 byte keyRSS=90;
 bool flgDONE;
@@ -104,17 +106,17 @@ const int defaultHEARTBEAT = 113;//*8sec *16 = 241 min (4 hrs)
 void setup() { 
   while (!Serial);
   Serial.begin(57600);
-  jsonVER();
+  json_VER();
   if (EEPROM.read(EE_KEY_RSS)<200) {keyRSS=EEPROM.read(EE_KEY_RSS);} 
-  jsonKSS();
+  json_KSS();
   
   if (rf95.init()) { rf95.setFrequency(RF95_FREQ); 
-    char info[10]; strcpy(info,"rf95.init !OK!");
-    jsonINFO(info); 
+    strcpy(jsn,"{\"rf95 module status\":\"!OK!\"}");
+    json_INFO_RX(jsn); 
   }
   else {
-    char info[10]; strcpy(info,"rf95.init !FAIL!");
-    jsonINFO(info);
+    strcpy(jsn,"{\"rf95 module status\":\"!FAIL!\"}");
+    json_INFO_RX(jsn);
     while (1);
   }
 
@@ -128,7 +130,8 @@ void setup() {
     key_EE_MAKE();
     key_EE_GET(rxKEY); //Serial.print(F("* key new="));Serial.println(rxKEY);
   }
-  jsonINFO(rxKEY);
+  char jsn[64]; strcpy(jsn,"{\"RX KEY\":\""); strcat(jsn,rxKEY); strcat(jsn,"\"}\"");
+  json_INFO_RX(jsn);
   flgDONE=false;
 } // End Of SETUP ******************
 
@@ -237,24 +240,28 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
           //strcat(jp[3],"");   //value was number - no close quote
           strcat(jp[4],"\""); //value was string 
           
-          json_PRINTdata(jp,pNum); //move this down if data validation works well
+          json_DATA(jp,pNum); //move this down if data validation works well
             
         } //End of case:'1'
       } //EndOfSwtchProtocol
       return;
     }//validate protocol format
+    
 //*************************    
     char prm[24];
     pur_LOOK(prm,msg); //strips off the 'PUR:', is "" if not 'PUR:'. // RX expects PUR:0:IDxxxx:NAME...
     if (prm[0]!=0) { //is this a request for parameters?
       pur_PROCESS(prm); //sends paramters if OK
-     // Serial.println(F("pur_PROCESS-done"));  Serial.flush();
+      //Serial.println(F("pur_PROCESS-done"));  Serial.flush();
       return;
     }
+    
 //*************************    
     pak_LOOK(prm,msg); //PAK:0:IDxxxx:10:30:2,7 -ish , 
     if (prm[0]!=0) { 
-      jsonINFO(prm);
+      strcpy(jsn,"{\"PARAMETER ACK PACKET\":\"");
+      strcat(jsn,prm); strcat(jsn,"\"}");
+      json_INFO_TX(jsn);
     }
     
   } //end of rxDECODED OK msg[0]!=0
@@ -322,9 +329,9 @@ void key_SETREF(char *buf,byte len) {
     keyRSS=byte(atoi(kss));
     if ((keyRSS<80) and (keyRSS>120)) {keyRSS=90;}
     EEPROM.write(EE_KEY_RSS,keyRSS);
-    jsonKSS();
+    json_KSS();
   }
-  else {jsonKSS();}
+  else {json_KSS();}
 }
 
 //**********************************************************************
@@ -361,15 +368,14 @@ void prm_PROCESS(char *buf,byte len){
           if (val>255) {val=0;}
           prm_EEPROM_SET(p_id,3,val); } break;
       }
-      char pkt[32];
-      prm_2pkt_0(pkt,p_id);
-      jsonINFO(pkt);  
+      prm0_packet(jsn,p_id);
+      json_INFO_RX(jsn);  
     }
   }
 }
 
 //*****************************************
-char *prm_2pkt_0(char *pktOUT, char *id) { char *ret = pktOUT;
+char *prm0_packet(char *pktOUT, char *id) { char *ret = pktOUT;
   word addr=addr_FIND_ID(id);
   if (addr!=0) {
     int intvl = EEPROM.read(addr-6);
@@ -377,11 +383,12 @@ char *prm_2pkt_0(char *pktOUT, char *id) { char *ret = pktOUT;
     int pwr = EEPROM.read(addr-8);
     int opt = EEPROM.read(addr-9);   
     char *ret=pktOUT;  char n2a[10]; // for Number TO Ascii things
-    strcpy(pktOUT,"PRM:0:"); strcat(pktOUT,id); 
+    strcpy(pktOUT,"{\"PARAMETER PACKET TO SENSOR\":\"PRM:0:"); strcat(pktOUT,id); 
     strcat(pktOUT,":"); itoa(intvl,n2a,10); strcat(pktOUT,n2a); n2a[0]=0;
     strcat(pktOUT,":"); itoa(hb,n2a,10);  strcat(pktOUT,n2a); n2a[0]=0;
     strcat(pktOUT,":"); itoa(pwr,n2a,10); strcat(pktOUT,n2a);
     strcat(pktOUT,":"); itoa(opt,n2a,10); strcat(pktOUT,n2a);
+    strcat(pktOUT,"\"}");
     return ret;
   }
 }
@@ -625,7 +632,7 @@ bool id_VALIDATE(char *id) { //check EEPROM for proper character range
 }
 
 //*****************************************
-void json_PRINTdata(char jsn[][24], byte pNum) {
+void json_DATA(char jsn[][24], byte pNum) {
   Serial.print(F("{\"source\":\"tx\","));
   for (byte pn=0;pn<pNum;pn++) { //Pair Number
     Serial.print( jsn[pn] ); }
@@ -633,24 +640,31 @@ void json_PRINTdata(char jsn[][24], byte pNum) {
 }
 
 //**********************************************************************
-void jsonINFO(char *info) { 
-  Serial.print(F("{\"source\":\"rx\",\"info\":\""));
+void json_INFO_RX(char *info) { 
+  Serial.print(F("{\"source\":\"rx\",\"info\":"));
   Serial.print(info);
-  Serial.println(F("\"}")); Serial.flush();
+  Serial.println(F("}")); Serial.flush();
 }
 
 //**********************************************************************
-void jsonKSS() { 
-  Serial.print(F("{\"source\":\"rx\",\"info\":\"kss="));
+void json_INFO_TX(char *info) { 
+  Serial.print(F("{\"source\":\"tx\",\"info\":"));
+  Serial.print(info);
+  Serial.println(F("}")); Serial.flush();
+}
+
+//**********************************************************************
+void json_KSS() { 
+  Serial.print(F("{\"source\":\"rx\",\"info\":{\"key signal strength\":"));
   Serial.print(keyRSS);
-  Serial.println(F("\"}")); Serial.flush();
+  Serial.println(F("}}")); Serial.flush();
 }
 
 //**********************************************************************
-void jsonVER() { 
-  Serial.print(F("{\"source\":\"rx\",\"info\":\"ver="));
+void json_VER() { 
+  Serial.print(F("{\"source\":\"rx\",\"info\":{\"version\":\""));
   Serial.print(VER);
-  Serial.println(F("\"}")); Serial.flush();
+  Serial.println(F("\"}}")); Serial.flush();
 }
 
 //*****************************************
