@@ -130,7 +130,7 @@ void setup() {
     key_EE_MAKE();
     key_EE_GET(rxKEY); //Serial.print(F("* key new="));Serial.println(rxKEY);
   }
-  char jsn[64]; strcpy(jsn,"{\"RX KEY\":\""); strcat(jsn,rxKEY); strcat(jsn,"\"}\"");
+  char jsn[64]; strcpy(jsn,"{\"RX KEY\":\""); strcat(jsn,rxKEY); strcat(jsn,"\"}");
   json_INFO_RX(jsn);
   flgDONE=false;
 } // End Of SETUP ******************
