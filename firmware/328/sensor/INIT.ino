@@ -44,7 +44,7 @@ void init_SETUP(){
   flgKEY_GOOD=key_VALIDATE(rxKEY);
   delay(100);
 //******************
-  if (flgKEY_GOOD==true) {prm0_EE_GET(SBN); //first, in case the following fails...
+  if (flgKEY_GOOD==true) {
     char msg[40];
     strcpy(msg,"PUR:0:"); strcat(msg,txID);strcat(msg,":"); strcat(msg,SNM);
     msg_SEND(msg, rxKEY,txPWR);
@@ -70,7 +70,7 @@ void init_SETUP(){
   Serial.print(F("wd_TIMER: "));Serial.println(wd_TIMER);Serial.flush();
   Serial.print(F("rxKEY: "));Serial.println(rxKEY);Serial.flush();
   ledBOTTOM_OnOffCnt(1000,500,1);
-  if (flgKEY_GOOD==false){ledBOTTOM_OnOffCnt(1000,500,1);}
+  if (flgKEY_GOOD==false){ledBOTTOM_OnOffCnt(1000,500,1);}  //2nd long flash?
   if (flgLED_KEY==true) { ledBOTTOM_OnOffCnt(200,200,3); } //3 flashes
 
 } //* END OF init_SETUP ************************
