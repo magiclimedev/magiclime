@@ -10,7 +10,7 @@
  *  MIT license, all text above must be included in any redistribution
  */
  
-const static char VER[] = "RX221210";
+const static char VER[] = "RX221214";
 #include <EEPROM.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
@@ -61,10 +61,10 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 //here's the help menu table...
 const char H00[] PROGMEM = "---- commands ----";
 const char H01[] PROGMEM = "  PaRaMeter settings per sensor (ididid = 6 char. id )...";
-const char H02[] PROGMEM = "prm:ididid:0:seconds  - Periodic data interval.";
-const char H03[] PROGMEM = "prm:ididid:1:minutes  - Heartbeat interval.";
+const char H02[] PROGMEM = "prm:ididid:0:seconds  - 8->1800 Periodic data interval.";
+const char H03[] PROGMEM = "prm:ididid:1:minutes  - 2->540 min.Heartbeat interval.";
 const char H04[] PROGMEM = "prm:ididid:2:TX power - 2->20.";
-const char H05[] PROGMEM = "prm:ididid:3:option byte - sensor specific option bits.";
+const char H05[] PROGMEM = "prm:ididid:3:option byte - sensor specific bits.";
 const char H06[] PROGMEM = "kss:xxx       -Key Signal Strength ref. level";  
 const char H07[] PROGMEM = "snr:ididid:sensorname -Sensor Name Replace."; 
 const char H08[] PROGMEM = "idd:ididid    -ID Delete from eeprom";
@@ -130,7 +130,7 @@ void setup() {
     key_EE_MAKE();
     key_EE_GET(rxKEY); //Serial.print(F("* key new="));Serial.println(rxKEY);
   }
-  char jsn[64]; strcpy(jsn,"{\"RX KEY\":\""); strcat(jsn,rxKEY); strcat(jsn,"\"}");
+  char jsn[64]; strcpy(jsn,"{\"RX KEY\":\""); strcat(jsn,rxKEY); strcat(jsn,"\"}\"");
   json_INFO_RX(jsn);
   flgDONE=false;
 } // End Of SETUP ******************
