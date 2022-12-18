@@ -237,7 +237,7 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
           //and now tack on closing quote (or not,because it was a number)
           strcat(jp[1],"\""); //value was string, close quote
           strcat(jp[2],"\""); //value was string, close quote
-          //strcat(jp[3],"");   //value was number - no close quote
+          //strcat(jp[3],""); //value was number - no close quote
           strcat(jp[4],"\""); //value was string 
           
           json_DATA(jp,pNum); //move this down if data validation works well
@@ -356,16 +356,18 @@ void prm_PROCESS(char *buf,byte len){
       switch (pnum) {
         case '0': { val=byte(atoi(asc)/8);       //sec., 8 sec. per wdt
           if (val==0) {val=1;}
+          else if (val>255) {val=255;}
           prm_EEPROM_SET(p_id,0,val); } break;
         case '1': { val=byte( (atoi(asc)*60)/64 ); //min., 64 sec per HB wdt (8x8)
           if (val==0) {val=1;}
+          else if (val>255) {val=255;}
           prm_EEPROM_SET(p_id,1,val); } break;
         case '2': { val=byte(atoi(asc));           //power 2-20
           if (val<2) {val=2;}
           else if (val>20) {val=20;}
           prm_EEPROM_SET(p_id,2,val); } break;
         case '3': { val=byte(atoi(asc));      //option byte
-          if (val>255) {val=0;}
+          if (val>255) {val=0;} //bogus value = no bits
           prm_EEPROM_SET(p_id,3,val); } break;
       }
       prm0_packet(jsn,p_id);
