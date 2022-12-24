@@ -62,7 +62,7 @@ RH_RF95 rf95(RF95_CS, RF95_INT);
 const char H00[] PROGMEM = "---- commands ----";
 const char H01[] PROGMEM = "  PaRaMeter settings per sensor (ididid = 6 char. id )...";
 const char H02[] PROGMEM = "prm:ididid:0:seconds  - 8->1800 Periodic data interval.";
-const char H03[] PROGMEM = "prm:ididid:1:minutes  - 2->540 min.Heartbeat interval.";
+const char H03[] PROGMEM = "prm:ididid:1:minutes  - 2->540  Heartbeat interval.";
 const char H04[] PROGMEM = "prm:ididid:2:TX power - 2->20.";
 const char H05[] PROGMEM = "prm:ididid:3:option byte - sensor specific bits.";
 const char H06[] PROGMEM = "kss:xxx       -Key Signal Strength ref. level";  
