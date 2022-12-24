@@ -33,6 +33,8 @@ void boost_ON() {
 
 //*****************************************
 void boost_OFF() {
+  int dlyRecover=int(20-(int(txBV)*10))*50; //50mS per .1V less than 2.0
+  if (dlyRecover>0) {delay(dlyRecover);}
   digitalWrite(pinRF95_CS,LOW);
   pinMode(pinMOSI, INPUT);digitalWrite(pinMOSI,LOW);
   pinMode(pinSCK, INPUT);digitalWrite(pinSCK,LOW);

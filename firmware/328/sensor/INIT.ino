@@ -28,7 +28,6 @@ void init_SETUP(){
   init_SENSOR(SNM,SBN);
   name_EE_GET(SNM,SBN);
   Serial.print(F("Name:"));Serial.println(SNM);
-  txBV = get_BatteryVoltage();
 
   if (init_RF95(txPWR)==true) {
     key_REQUEST(rxKEY,txID,keyRSS);
@@ -52,7 +51,7 @@ void init_SETUP(){
     if (msg[0]!=0) { prm_PROCESS(msg,txID,SBN); }
     //***********************
     get_DATA(txDATA,SBN,1);
-    packet_SEND(SBN,txID,txBV,rxKEY,txDATA,1); // does boost_OFF();
+    packet_SEND(SBN,txID,txBV,rxKEY,txDATA,1); 
     //***********************
   }
   
