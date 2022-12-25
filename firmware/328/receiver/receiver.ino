@@ -10,7 +10,7 @@
  *  MIT license, all text above must be included in any redistribution
  */
  
-const static char VER[] = "RX221214";
+const static char VER[] = "RX221225";
 #include <EEPROM.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
@@ -252,7 +252,7 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
     pur_LOOK(prm,msg); //strips off the 'PUR:', is "" if not 'PUR:'. // RX expects PUR:0:IDxxxx:NAME...
     if (prm[0]!=0) { //is this a request for parameters?
       pur_PROCESS(prm); //sends paramters if OK
-      //Serial.println(F("pur_PROCESS-done"));  Serial.flush();
+      //Serial.println(F("* pur_PROCESS-done"));  Serial.flush();
       return;
     }
     
@@ -292,7 +292,7 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
     //Serial.print(F("* pcbuf("));Serial.print(bufLEN);Serial.print(F(") "));
     //Serial.println(PCbuf);Serial.flush();
     
-    if ( PCbuf[0] == '?') { Serial.println("");Serial.println(VER); Serial.flush();
+    if ( PCbuf[0] == '?') { Serial.println("* ");Serial.println(VER); Serial.flush();
       if (PCbuf[1]=='?') { showHELP(hlpLIM); }
       return; 
     }
@@ -313,7 +313,7 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
 void eeprom_set_KEY(char *buf,byte len) {
   if (buf[3]==':') { //one more validate 
     char key[18]; mySubStr(key,buf,4,len-4);
-    Serial.println("eeprom_set_KEY...");Serial.println(key); Serial.flush();
+    Serial.print("* eeprom_set_KEY:");
     if (strlen(key)==16) { 
       for (byte i=0;i<16;i++) { EEPROM.write(EE_KEY-i,buf[i+4]); }  
     }
@@ -416,7 +416,7 @@ char *pur_LOOK(char *purOUT, char *purIN) {char *ret=purOUT; // RX expects PUR:0
   char pfx[6];
   mySubStr(pfx,purIN,0,4);
   if (strcmp(pfx,"PUR:")==0) { mySubStr(purOUT,purIN,4,strlen(purIN)); }//strip off the 'PUR:'
-  //Serial.println(purOUT);Serial.flush();
+  //Serial.print(F("* ...pur_OUT..."));Serial.println(purOUT);Serial.flush();
   return ret;
 }
 
@@ -483,7 +483,7 @@ void prm_SEND(byte pnum, word addr) {
   } 
   //print_HEX(prm,24);
   msg_SEND_HEX(prm,20,rxKEY,2); //
- // Serial.println(F(" done"));Serial.flush();
+ // Serial.println(F("*  done"));Serial.flush();
 }
 
 //*****************************************
@@ -503,7 +503,7 @@ word addr_FIND_ID(char *id) { word ret=0; word addr;
   for (addr=EE_ID;addr>EE_BLKSIZE;addr-=EE_BLKSIZE) {
     ptr=0; eeByte=byte(EEPROM.read(addr-ptr));
     while ( eeByte==byte(id[ptr]) ) {
-      //Serial.print(ptr);Serial.print(F(":"));Serial.println(eeByte,HEX);
+      //Serial.print(F("* "));Serial.print(ptr);Serial.print(F(":"));Serial.println(eeByte,HEX);
       ptr++;
       if (ptr==6) { ret=addr; break; }
       eeByte=byte(EEPROM.read(addr-ptr));
@@ -553,8 +553,8 @@ void key_SEND(char *txid, char *txkey, char *rxkey) {
   char txBUF[48]; 
   strcpy(txBUF,txid); strcat(txBUF,":"); strcat(txBUF,rxkey); //ididid:rxkeyrxkeyrxkeyr
   msg_SEND(txBUF,txkey,1); //the TX will decode this, it made the key
-  Serial.print(F("{\"source\":\"rx\",\"info\":\"key2tx\",\"id\":\""));
-  Serial.print(txid); Serial.println(F("\"}")); Serial.flush();
+  char jsn[64]; strcpy(jsn,"{\"key2tx\":\""); strcat(jsn,txid); strcat(jsn,"\"}\"");
+  json_INFO_RX(jsn);
 }
 
 //*****************************************
@@ -674,19 +674,19 @@ void id_DELETE(char *buf) {
   if (buf[3]==':') {
     char id[8]; mySubStr(id,buf,4,6);
     word addr=addr_FIND_ID(id);
-    Serial.print(F("addr=")); Serial.println(addr); Serial.flush();
+    Serial.print(F("* addr=")); Serial.println(addr); Serial.flush();
     if (addr==0) {
-      Serial.print(id); Serial.println(" not found."); Serial.flush(); }
+      Serial.print(F("* "));Serial.print(id); Serial.println(" not found."); Serial.flush(); }
     else { 
       for (byte i=0;i<EE_BLKSIZE;i++) { EEPROM.write(addr-i,0xFF); }
-      Serial.print("removed "); Serial.println(id); Serial.flush(); 
+      Serial.print("* removed "); Serial.println(id); Serial.flush(); 
     }
   }
 }
 
 //*****************************************
 void id_LIST() { char id[8]; char nm[12]; byte blknum=0; char aVal[16];
-  Serial.println("");
+  Serial.println("* ");
   for (word addr=EE_ID;addr>EE_BLKSIZE;addr-=EE_BLKSIZE) {
     for (byte i=0;i<6;i++) { id[i]=EEPROM.read(addr-i); }
     id[6]=0; //null term stringify
@@ -697,7 +697,7 @@ void id_LIST() { char id[8]; char nm[12]; byte blknum=0; char aVal[16];
         if ((byte(nm[n])==0) || (byte(nm[n])==byte(0xFF))) {break;}
       }
       nm[n]=0;
-      Serial.print(blknum); Serial.print(F(":"));
+      Serial.print("* ");Serial.print(blknum); Serial.print(F(":"));
       Serial.print(id); Serial.print(F(":"));
       itoa(int(EEPROM.read(addr-6)),aVal,10);
       Serial.print(aVal); Serial.print(F(":"));
@@ -707,9 +707,10 @@ void id_LIST() { char id[8]; char nm[12]; byte blknum=0; char aVal[16];
       Serial.print(aVal); Serial.print(F(":"));
       itoa(int(EEPROM.read(addr-9)),aVal,10);
       Serial.print(aVal); Serial.print(F(":"));
-      Serial.println(nm); Serial.flush(); 
+      Serial.println(nm);  
     }
   }
+  Serial.println("* ");Serial.flush();
 }
 
 //*****************************************
@@ -748,10 +749,12 @@ void print_CHR(char *buf,byte len) { byte i;
   Serial.println(buf[len-1]);Serial.flush();
 }
 
-void showHELP(byte lim) { char sHLP[80]; 
+void showHELP(byte lim) { char sHLP[80];
+  Serial.println(F("* ")); 
   for (byte i=0;i<lim-1;i++) { *sHLP=0;
-    strcat_P(sHLP, (char*)pgm_read_word(&(table_HLP[i]))); Serial.println(sHLP); }
-  Serial.println("");Serial.flush();
+    strcat_P(sHLP, (char*)pgm_read_word(&(table_HLP[i])));
+    Serial.print(F("* ")); Serial.println(sHLP); }
+  Serial.println(F("* "));Serial.flush();
 }
 
 //*****************************************
