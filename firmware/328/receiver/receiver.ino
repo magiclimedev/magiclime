@@ -600,7 +600,7 @@ char* rx_DECODE_0(char *msgOUT, char *rxBUF, byte rxLEN, char *key) { char *ret=
 void key_EE_MAKE() {
   long rs=analogRead(2);  rs=rs+analogRead(3); rs=rs+analogRead(4);
   rs=rs+analogRead(5); randomSeed(rs);
-  for (byte i=0;i<16;i++) { EEPROM.write(EE_KEY-i,random(34,126)); }
+  for (byte i=0;i<16;i++) { EEPROM.write(EE_KEY-i,random(36,126)); } //exclude " for json string value issue
 }
 
 //*****************************************
@@ -616,7 +616,7 @@ bool key_VALIDATE(char *key) { //check EEPROM for proper character range
   byte len=strlen(key); 
   if (len!=16) { return false; }
   for (byte i=0;i<len;i++) {
-    if ((key[i]<34) || (key[i]>126)) { return false; }
+    if ((key[i]<36) || (key[i]>126)) { return false; }
   }
   return true;
 }
