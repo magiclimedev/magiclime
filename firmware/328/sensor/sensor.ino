@@ -9,7 +9,7 @@
  *
  *  MIT license, all text above must be included in any redistribution
  */
-const static char VER[] = "TX221224";
+const static char VER[] = "TX221225";
 #include "radio_sensor.h"
 
 //*****************************************

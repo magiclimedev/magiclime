@@ -39,14 +39,7 @@ extern char *__brkval;
 RH_RF95 rf95(RF95_CS, RF95_INT);
 
 #define EE_SYSBYTE  1023 //System byte, misc flag/status/mode bits for ???? nothing yet.
-//bit#0: erase the current ID (so it makes a new one on boot)
-//bit#1: reset max's (to 0)
-//bit#2: reset min's (to 1023) 
-//bit#3: Stream data count MSB (streaming is to be a non-repeating one-time thing)
-//bit#4: Stream data count LSB (where it returns to regular interval afterwords)
-//bit#5: 
-//bit#6: 
-//bit#7:
+
 #define EE_KEY_RSS        EE_SYSBYTE-1 // rss for key exchange
 #define EE_KEY            EE_KEY_RSS-1  //KEY is 16 - no string null 
 #define EE_ID       EE_KEY-16     // 6 char
@@ -130,7 +123,7 @@ void setup() {
     key_EE_MAKE();
     key_EE_GET(rxKEY); //Serial.print(F("* key new="));Serial.println(rxKEY);
   }
-  char jsn[64]; strcpy(jsn,"{\"RX KEY\":\""); strcat(jsn,rxKEY); strcat(jsn,"\"}\"");
+  char jsn[64]; strcpy(jsn,"{\"RX KEY\":\""); strcat(jsn,rxKEY); strcat(jsn,"\"}");
   json_INFO_RX(jsn);
   flgDONE=false;
 } // End Of SETUP ******************
@@ -249,21 +242,20 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
     
 //*************************    
     char prm[24];
-    pur_LOOK(prm,msg); //strips off the 'PUR:', is "" if not 'PUR:'. // RX expects PUR:0:IDxxxx:NAME...
+    pur_LOOK(prm,msg); //strips off the 'PUR:', is "" if not 'PUR:'. // RX expects PUR:IDxxxx:0:NAME...
     if (prm[0]!=0) { //is this a request for parameters?
       pur_PROCESS(prm); //sends paramters if OK
       //Serial.println(F("* pur_PROCESS-done"));  Serial.flush();
       return;
     }
-    
-//*************************    
-    pak_LOOK(prm,msg); //PAK:0:IDxxxx:10:30:2,7 -ish , 
-    if (prm[0]!=0) { 
-      strcpy(jsn,"{\"PARAMETER ACK PACKET\":\"");
-      strcat(jsn,prm); strcat(jsn,"\"}");
-      json_INFO_TX(jsn);
+    else {
+      pak_LOOK(prm,msg); //PAK:IDxxxx:0:10:30:2,7 -ish , 
+      if (prm[0]!=0) { 
+        strcpy(jsn,"{\"PARAMETER ACK PACKET\":\"");
+        strcat(jsn,prm); strcat(jsn,"\"}");
+        json_INFO_TX(jsn);
+      }
     }
-    
   } //end of rxDECODED OK msg[0]!=0
 } //end of rxBUF_PROCESS() 
 
@@ -346,7 +338,7 @@ void name_REPLACE(char *buf, byte len){ // snr:ididid:snsnsnsnsn
 }
 
 //**********************************************************************
-void prm_PROCESS(char *buf,byte len){
+void prm_PROCESS(char *buf,byte len){  //prm:ididid:x:yyy
   if ((buf[3]==':') && (buf[10]==':') && (buf[12]==':')) {// validate
     char p_id[8]; mySubStr(p_id,buf,4,6);
     char pnum=buf[11]; 
@@ -385,9 +377,10 @@ char *prm0_packet(char *pktOUT, char *id) { char *ret = pktOUT;
     int pwr = EEPROM.read(addr-8);
     int opt = EEPROM.read(addr-9);   
     char *ret=pktOUT;  char n2a[10]; // for Number TO Ascii things
-    strcpy(pktOUT,"{\"PARAMETER PACKET TO SENSOR\":\"PRM:0:"); strcat(pktOUT,id); 
-    strcat(pktOUT,":"); itoa(intvl,n2a,10); strcat(pktOUT,n2a); n2a[0]=0;
-    strcat(pktOUT,":"); itoa(hb,n2a,10);  strcat(pktOUT,n2a); n2a[0]=0;
+    strcpy(pktOUT,"{\"PARAMETER PACKET TO SENSOR\":\"PRM:"); strcat(pktOUT,id);
+    strcat(pktOUT,":0"); //parameter format type
+    strcat(pktOUT,":"); itoa(intvl,n2a,10); strcat(pktOUT,n2a);
+    strcat(pktOUT,":"); itoa(hb,n2a,10);  strcat(pktOUT,n2a); 
     strcat(pktOUT,":"); itoa(pwr,n2a,10); strcat(pktOUT,n2a);
     strcat(pktOUT,":"); itoa(opt,n2a,10); strcat(pktOUT,n2a);
     strcat(pktOUT,"\"}");
@@ -410,7 +403,7 @@ char *pair_PROCESS(char *idkey, char *rxbuf, byte rxlen, char *pkey) { char *ret
 }
   
 //*****************************************
-char *pur_LOOK(char *purOUT, char *purIN) {char *ret=purOUT; // RX expects PUR:0:IDxxxx:SENSORNAME
+char *pur_LOOK(char *purOUT, char *purIN) {char *ret=purOUT; // RX expects PUR:IDxxxx:0:SENSORNAME
   //Serial.print(F("* ...pur_LOOK..."));Serial.println(purIN);Serial.flush();
   purOUT[0]=0; //default failflag
   char pfx[6];
@@ -421,29 +414,29 @@ char *pur_LOOK(char *purOUT, char *purIN) {char *ret=purOUT; // RX expects PUR:0
 }
 
 //***************************************** Paramter AcK - spit back to rcvr as info
-//expecting... PAK:0:IdIdId:10:30:2:0 - like
+//expecting... PAK:IdIdId:0:10:30:2:0 - like
 char *pak_LOOK(char *pakOUT, char *pakIN) {char *ret=pakOUT; 
   //Serial.println(F("* ...pak_LOOK..."));Serial.flush();
-  char pfx[6];  mySubStr(pfx,pakIN,0,3);
-  if (strcmp(pfx,"PAK")==0) { strcpy(pakOUT,pakIN); }
+  char pfx[6];  mySubStr(pfx,pakIN,0,4);
+  if (strcmp(pfx,"PAK:")==0) { strcpy(pakOUT,pakIN); }
   else {pakOUT[0]=0; }//default failflag
   return ret;
 }
 
 //*****************************************
-void pur_PROCESS(char *pktIDNM) { //looking for 0:txidxx:SENSORNAME
+void pur_PROCESS(char *pktIDNM) { //looking for txidxx:0:SENSORNAME
   //Serial.print(F("* pur_PROCESS: ")); Serial.print(pktIDNM); 
   byte pktLEN=strlen(pktIDNM);
-  if (pktIDNM[0]='0') { //parameter set #0?
+  if (pktIDNM[7]='0') { //parameter set #0?
     char txid[10];
-    mySubStr(txid,pktIDNM,2,6); //2-7, 
+    mySubStr(txid,pktIDNM,0,6); //0-5, 
     //Serial.print(F("* txid= ")); Serial.println(txid); Serial.flush();
     word addr= addr_FIND_ID(txid); //overflow writes over addr=10
     if (addr==0) {addr=addr_FIND_NEW(); }
     //Serial.print(F("* addr= ")); Serial.println(addr); Serial.flush();
     char snm[12];
     byte nmLEN=pktLEN-9; 
-    mySubStr(snm,pktIDNM,9,nmLEN); //0:ididid: 9-end
+    mySubStr(snm,pktIDNM,9,nmLEN); //ididid:0: 9-end
     //Serial.print(F("* snm= ")); Serial.println(snm); Serial.flush();
     if (byte(EEPROM.read(addr))==byte(0xFF)) { //new addition
       prm_EE_SET_DFLT(txid,addr);  } //sensor name="unassigned";
@@ -458,12 +451,12 @@ void prm_EE_SET_DFLT(char *id, word addr) {//ID,Interval,Power
   //Serial.print(F("*  at ")); Serial.println(addr); Serial.flush();
   char sn[]="unassigned";
   for(byte b=0;b<6;b++) { EEPROM.write((addr-b),id[b]); } //0-5
-  EEPROM.write(addr-6,defaultINTERVAL); //interval sec*8 =64sec    //6
-  EEPROM.write(addr-7,defaultHEARTBEAT); //heartbeat sec.*64 =2hrs.    //7
+  EEPROM.write(addr-6,defaultINTERVAL); //6
+  EEPROM.write(addr-7,defaultHEARTBEAT); //7
   EEPROM.write(addr-8,2); //2-20 default power    //8
   EEPROM.write(addr-9,0); //Sysbyte bits all 0    //9
   addr=addr-10; //where the name goes - after 6 char ID and four paramters
-  for(byte b=0;b<10;b++) { EEPROM.write((addr-b),sn[b]); }//10-19    
+  for(byte b=0;b<10;b++) { EEPROM.write((addr-b),sn[b]); } //10-19    
     delay(20);
 }
 
@@ -472,9 +465,10 @@ void prm_SEND(byte pnum, word addr) {
   //Serial.print(F("* prm0_SEND addr= ")); Serial.println(eeAddr); Serial.flush();
   byte prm[24]; word eeID;  //Param Pointer 
   switch (pnum) {
-    case 0: { //PRM:0:ididid:i:h:p:o
-      memcpy(prm,"PRM:0:",6); //0-5
-      for (byte i=0;i<6;i++) { prm[i+6]=EEPROM.read(addr-i); } //6-11, ID to prm
+    case 0: { //PRM:ididid:0:i:h:p:o
+      memcpy(prm,"PRM:",4); //0-3
+      for (byte i=0;i<6;i++) { prm[i+4]=EEPROM.read(addr-i); } //4-9, ID to prm
+      prm[10]=':'; prm[11]='0'; //parameter packet format type
       prm[12]=':'; prm[13]=EEPROM.read(addr-6);//interval in wdt timeouts * multiplier in sensor (wdmTXI)
       prm[14]=':'; prm[15]=EEPROM.read(addr-7);//heartbeat, in wdt timeouts * multiplier in sensor (wdmHBP)
       prm[16]=':'; prm[17]=EEPROM.read(addr-8); //power
@@ -620,8 +614,10 @@ char *key_EE_GET(char *key) { char *ret=key;
 //*****************************************
 bool key_VALIDATE(char *key) { //check EEPROM for proper character range
   byte len=strlen(key); 
-  if (len<16) { return false; }
-  for (byte i=0;i<len;i++) { if ((key[i]<34) || (key[i]>126)) { return false; } }
+  if (len!=16) { return false; }
+  for (byte i=0;i<len;i++) {
+    if ((key[i]<34) || (key[i]>126)) { return false; }
+  }
   return true;
 }
 

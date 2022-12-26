@@ -45,7 +45,7 @@ void init_SETUP(){
 //******************
   if (flgKEY_GOOD==true) {
     char msg[40];
-    strcpy(msg,"PUR:0:"); strcat(msg,txID);strcat(msg,":"); strcat(msg,SNM);
+    strcpy(msg,"PUR:");strcat(msg,txID);strcat(msg,":0:");strcat(msg,SNM);
     msg_SEND(msg, rxKEY,txPWR);
     rx_LOOK(msg,rxKEY,25);
     if (msg[0]!=0) { prm_PROCESS(msg,txID,SBN); }
@@ -116,13 +116,13 @@ char *eeSTR_GET(char *str, word addr, byte bix,  byte nl, byte bs) { char *ret=s
 
 //*****************************************
 void prm_PROCESS(char *buf, char *id, int sbn) {
-  char cmp[6]; mySubStr(cmp,buf,0,4);//PRM:0:ididid:i:h:p:o
+  char cmp[6]; mySubStr(cmp,buf,0,4);//PRM:ididid:0:i:h:p:o
   if (strcmp(cmp,"PRM:")==0) {
-    switch (buf[4]) {
+    switch (buf[11]) {
       case '0': {  prm0_EE_GET(SBN);
-        char tmp[8]; mySubStr(tmp,buf,6,6);
-        if (strcmp(tmp,id)==0) {
-          if ((buf[3]==':') && (buf[5]==':') && (buf[12]==':') && (buf[14]==':')
+        char uid[8]; mySubStr(uid,buf,4,6);
+        if (strcmp(uid,id)==0) {
+          if ((buf[3]==':') && (buf[10]==':') && (buf[12]==':') && (buf[14]==':')
           && (buf[16]==':') && (buf[18]==':') ) {
             prm0_EE_SET(buf,sbn);
             prm0_PAKOUT();
@@ -141,11 +141,14 @@ void prm0_PAKOUT() {
   Serial.print(F("  txhb="));Serial.println(wd_HEARTBEAT);Serial.flush();
   char n2a[10]; // for Number TO Ascii things
   char msg[32];
-  strcpy(msg,"PAK:0:");
-  strcat(msg,txID); 
-  strcat(msg,":"); dtoa(n2a,(float(wd_INTERVAL)*8.0),1); strcat(msg,n2a); //sec.
-  strcat(msg,":"); dtoa(n2a,((float(wd_HEARTBEAT)*8.0)/60.0),1); strcat(msg,n2a); //min.
-  strcat(msg,":"); itoa((txPWR),n2a,10); strcat(msg,n2a);
+  strcpy(msg,"PAK:"); strcat(msg,txID);
+  strcat(msg,":0"); //packet type to define data that follows 
+  strcat(msg,":"); dtoa(n2a,(float(wd_INTERVAL)*8.0),1);
+  strcat(msg,n2a); //sec.
+  strcat(msg,":"); dtoa(n2a,((float(wd_HEARTBEAT)*8.0)/60.0),1);
+  strcat(msg,n2a); //min.
+  strcat(msg,":"); itoa((txPWR),n2a,10);
+  strcat(msg,n2a);
   static const char hex[] = "0123456789ABCDEF";
   byte msnb = byte((optBYTE>>4)& 0x0F); byte lsnb=byte(optBYTE & 0x0F);
   char msn[2]; msn[0]=hex[msnb]; msn[1]=0;
@@ -157,7 +160,7 @@ void prm0_PAKOUT() {
 }
 
 //*****************************************
-void prm0_EE_SET(char *buf,int sbn) { sbn++;
+void prm0_EE_SET(char *buf,int sbn) { sbn++; //PRM:ididid:0:i:h:p:o
   EEPROM.write((EE_INTERVAL-(sbn*EE_BLKSIZE)),buf[13]);
   wd_INTERVAL=int(byte(buf[13])*wdmTXI);
   EEPROM.write((EE_HRTBEAT-(sbn*EE_BLKSIZE)),buf[15]);
