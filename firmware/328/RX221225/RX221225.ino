@@ -39,14 +39,7 @@ extern char *__brkval;
 RH_RF95 rf95(RF95_CS, RF95_INT);
 
 #define EE_SYSBYTE  1023 //System byte, misc flag/status/mode bits for ???? nothing yet.
-//bit#0: erase the current ID (so it makes a new one on boot)
-//bit#1: reset max's (to 0)
-//bit#2: reset min's (to 1023) 
-//bit#3: Stream data count MSB (streaming is to be a non-repeating one-time thing)
-//bit#4: Stream data count LSB (where it returns to regular interval afterwords)
-//bit#5: 
-//bit#6: 
-//bit#7:
+
 #define EE_KEY_RSS        EE_SYSBYTE-1 // rss for key exchange
 #define EE_KEY            EE_KEY_RSS-1  //KEY is 16 - no string null 
 #define EE_ID       EE_KEY-16     // 6 char
@@ -130,7 +123,7 @@ void setup() {
     key_EE_MAKE();
     key_EE_GET(rxKEY); //Serial.print(F("* key new="));Serial.println(rxKEY);
   }
-  char jsn[64]; strcpy(jsn,"{\"RX KEY\":\""); strcat(jsn,rxKEY); strcat(jsn,"\"}\"");
+  char jsn[64]; strcpy(jsn,"{\"RX KEY\":\""); strcat(jsn,rxKEY); strcat(jsn,"\"}");
   json_INFO_RX(jsn);
   flgDONE=false;
 } // End Of SETUP ******************
@@ -255,15 +248,14 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
       //Serial.println(F("* pur_PROCESS-done"));  Serial.flush();
       return;
     }
-    
-//*************************    
-    pak_LOOK(prm,msg); //PAK:IDxxxx:0:10:30:2,7 -ish , 
-    if (prm[0]!=0) { 
-      strcpy(jsn,"{\"PARAMETER ACK PACKET\":\"");
-      strcat(jsn,prm); strcat(jsn,"\"}");
-      json_INFO_TX(jsn);
+    else {
+      pak_LOOK(prm,msg); //PAK:IDxxxx:0:10:30:2,7 -ish , 
+      if (prm[0]!=0) { 
+        strcpy(jsn,"{\"PARAMETER ACK PACKET\":\"");
+        strcat(jsn,prm); strcat(jsn,"\"}");
+        json_INFO_TX(jsn);
+      }
     }
-    
   } //end of rxDECODED OK msg[0]!=0
 } //end of rxBUF_PROCESS() 
 
@@ -464,7 +456,7 @@ void prm_EE_SET_DFLT(char *id, word addr) {//ID,Interval,Power
   EEPROM.write(addr-8,2); //2-20 default power    //8
   EEPROM.write(addr-9,0); //Sysbyte bits all 0    //9
   addr=addr-10; //where the name goes - after 6 char ID and four paramters
-  for(byte b=0;b<10;b++) { EEPROM.write((addr-b),sn[b]); }//10-19    
+  for(byte b=0;b<10;b++) { EEPROM.write((addr-b),sn[b]); } //10-19    
     delay(20);
 }
 
@@ -622,8 +614,10 @@ char *key_EE_GET(char *key) { char *ret=key;
 //*****************************************
 bool key_VALIDATE(char *key) { //check EEPROM for proper character range
   byte len=strlen(key); 
-  if (len<16) { return false; }
-  for (byte i=0;i<len;i++) { if ((key[i]<34) || (key[i]>126)) { return false; } }
+  if (len!=16) { return false; }
+  for (byte i=0;i<len;i++) {
+    if ((key[i]<34) || (key[i]>126)) { return false; }
+  }
   return true;
 }
 
