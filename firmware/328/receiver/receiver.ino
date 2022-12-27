@@ -10,7 +10,7 @@
  *  MIT license, all text above must be included in any redistribution
  */
  
-const static char VER[] = "RX221225";
+const static char VER[] = "RX221227";
 #include <EEPROM.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
@@ -123,7 +123,7 @@ void setup() {
     key_EE_MAKE();
     key_EE_GET(rxKEY); //Serial.print(F("* key new="));Serial.println(rxKEY);
   }
-  char jsn[64]; strcpy(jsn,"{\"RX KEY\":\""); strcat(jsn,rxKEY); strcat(jsn,"\"}");
+  strcpy(jsn,"{\"RX KEY\":\""); strcat(jsn,rxKEY); strcat(jsn,"\"}");
   json_INFO_RX(jsn);
   flgDONE=false;
 } // End Of SETUP ******************
@@ -305,13 +305,14 @@ void pcBUF_CHECK() { // Look for Commands from the Host PC
 void eeprom_set_KEY(char *buf,byte len) {
   if (buf[3]==':') { //one more validate 
     char key[18]; mySubStr(key,buf,4,len-4);
-    Serial.print("* eeprom_set_KEY:");
+    //Serial.print("* eeprom_set_KEY:");
     if (strlen(key)==16) { 
       for (byte i=0;i<16;i++) { EEPROM.write(EE_KEY-i,buf[i+4]); }  
     }
   }
   key_EE_GET(rxKEY);
-  Serial.println(rxKEY); Serial.flush();
+  strcpy(jsn,"{\"KEY SET\":\""); strcat(jsn,rxKEY); strcat(jsn,"\"}");
+  json_INFO_RX(jsn); 
 }
 
 //**********************************************************************
@@ -333,7 +334,9 @@ void name_REPLACE(char *buf, byte len){ // snr:ididid:snsnsnsnsn
     mySubStr(id,buf,4,6);
     mySubStr(nm,buf,11,len-11);
     word addr=addr_FIND_ID(id);
-    if (addr>0) {nameTO_EE(addr, nm);}
+    if (addr>0) {nameTO_EE(addr, nm);
+    strcpy(jsn,"{\"NAME REPLACE\":\""); strcat(jsn,buf); strcat(jsn,"\"}");
+    json_INFO_RX(jsn); }
   }
 }
 
