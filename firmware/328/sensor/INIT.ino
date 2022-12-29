@@ -36,6 +36,7 @@ void init_SETUP(){
         key_EE_SET(rxKEY);
         flgLED_KEY=true;
       }
+    ver_SEND(txID,rxKEY,VER);  
     }
   }
   
@@ -44,11 +45,14 @@ void init_SETUP(){
   delay(100);
 //******************
   if (flgKEY_GOOD==true) {
-    char msg[40];
+    char msg[40]; 
     strcpy(msg,"PUR:");strcat(msg,txID);strcat(msg,":0:");strcat(msg,SNM);
-    msg_SEND(msg, rxKEY,txPWR);
-    rx_LOOK(msg,rxKEY,25);
+    msg_SEND(msg, rxKEY,txPWR); //Parameter Update Request to RX
+    rx_LOOK(msg,rxKEY,25); //250mSec
     if (msg[0]!=0) { prm_PROCESS(msg,txID,SBN); }
+    rx_LOOK(msg,rxKEY,25); //ver?
+    if (msg[0]!=0) { ver_SEND(msg,txID,VER); }
+    
     //***********************
     get_DATA(txDATA,SBN,1);
     packet_SEND(SBN,txID,txBV,rxKEY,txDATA,1); 
@@ -115,6 +119,14 @@ char *eeSTR_GET(char *str, word addr, byte bix,  byte nl, byte bs) { char *ret=s
 }
 
 //*****************************************
+void ver_SEND(char *id,char *key, char *ver) {
+  char msg[24]; 
+  strcpy(msg,"VER:");strcat(msg,id);strcat(msg,":");strcat(msg,ver);    
+  Serial.print(F("ver_SEND:"));Serial.println(msg);Serial.flush();
+  msg_SEND(msg,key,1);
+}  
+  
+//*****************************************
 void prm_PROCESS(char *buf, char *id, int sbn) {
   char cmp[6]; mySubStr(cmp,buf,0,4);//PRM:ididid:0:i:h:p:o
   if (strcmp(cmp,"PRM:")==0) {
@@ -137,8 +149,8 @@ void prm_PROCESS(char *buf, char *id, int sbn) {
 
 //*****************************************
 void prm0_PAKOUT() {
-  Serial.print(F("...prm0_PAK, txi="));Serial.print(wd_INTERVAL);
-  Serial.print(F("  txhb="));Serial.println(wd_HEARTBEAT);Serial.flush();
+  //Serial.print(F("...prm0_PAK, txi="));Serial.print(wd_INTERVAL);
+  //Serial.print(F("  txhb="));Serial.println(wd_HEARTBEAT);Serial.flush();
   char n2a[10]; // for Number TO Ascii things
   char msg[32];
   strcpy(msg,"PAK:"); strcat(msg,txID);

@@ -24,7 +24,7 @@ bool key_VALIDATE(char *key2VAL) {
   boolean ret=true;
   if (lenKEY<16) {ret=false;}
   for (byte i=0;i<lenKEY;i++) {
-    if ((key2VAL[i]<34) || (key2VAL[i]>126)|| (lenKEY<4)) { ret=false; break; }
+    if ((key2VAL[i]<36) || (key2VAL[i]>126)|| (lenKEY<4)) { ret=false; break; }
   }
     return ret;
 }

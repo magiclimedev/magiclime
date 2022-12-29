@@ -10,7 +10,7 @@
  *  MIT license, all text above must be included in any redistribution
  */
  
-const static char VER[] = "RX221227";
+const static char VER[] = "RX221229";
 #include <EEPROM.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
@@ -75,9 +75,10 @@ const char H19[] PROGMEM = "snr:SGPOJS:MOT_STAIRS (10-char. max)";
 const char H20[] PROGMEM = "idd:SGPOJS";
 const char H21[] PROGMEM = "";
 
-PGM_P const table_HLP[] PROGMEM ={H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,
-                                  H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,
-                                  H20,H21};
+PGM_P const table_HLP[] PROGMEM ={
+  H00,H01,H02,H03,H04,H05,H06,H07,H08,H09,
+  H10,H11,H12,H13,H14,H15,H16,H17,H18,H19,
+  H20,H21};
 const byte hlpLIM=22;
 
 boolean flgShowChar;
@@ -158,11 +159,13 @@ byte rxBUF_CHECK() { //********* get RF Messages - return RSS=0 for no rx
 //  1.  a key - if rss is big.
 //  2.  data
 //  3.  a request for stored parameter settings. ('PUR')
-//  4.  an ack of those parameters with time in minutes. ('PAK')
+//  4.  an ack of those parameters ('PAK:ididid:0:sec:min:pwr:opt')
+//  5.  a tx version info packet ('VER:ididid:version#')
 
 void rxBUF_PROCESS(byte rss) { flgDONE=true;
   //Serial.println(F("* rxBUF_PROCESS..."));Serial.flush();
-  char msg[64]; 
+  char msg[64]; //for incoming packets
+  char ret[24]; //for returning processed packet data  
   if (rss>=keyRSS) { //first requirement for pairing
    // Serial.print(F("* rss>keyRSS:"));Serial.println(rss);Serial.flush();
     //special decode key - not the regular rxKEY
@@ -180,6 +183,7 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
         prm_EE_SET_DFLT(txid,addr);  } //sensor name="unassigned";
       return;
     }
+
   } 
   
 //************ not key stuff ... *************
@@ -209,7 +213,7 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
           byte bx=2; //Buf indeX start: [0] is protocol, [1] is first delimiter 
           char ps[24];  //Pair String accumulator
           byte psx=0; //ps's indeX
-          char id[10];
+          char id[8];// could be 7, but i like one more
           jpx=1; //json Pair # indeX, '0' is rss - already done.  
           while (bx<=msgLEN) {
             if ((msg[bx]=='|')||(bx==(msgLEN))) { // hit next delim? - got a pair
@@ -240,22 +244,30 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
       return;
     }//validate protocol format
     
-//*************************    
-    char prm[24];
-    pur_LOOK(prm,msg); //strips off the 'PUR:', is "" if not 'PUR:'. // RX expects PUR:IDxxxx:0:NAME...
-    if (prm[0]!=0) { //is this a request for parameters?
-      pur_PROCESS(prm); //sends paramters if OK
+//******  
+    pur_LOOK(ret,msg); //strips off the 'PUR:', is "" if not 'PUR:'. // RX expects PUR:IDxxxx:0:NAME...
+    if (ret[0]!=0) { //is this a request for parameters?
+      pur_PROCESS(ret); //sends paramters if OK
       //Serial.println(F("* pur_PROCESS-done"));  Serial.flush();
       return;
     }
-    else {
-      pak_LOOK(prm,msg); //PAK:IDxxxx:0:10:30:2,7 -ish , 
-      if (prm[0]!=0) { 
-        strcpy(jsn,"{\"PARAMETER ACK PACKET\":\"");
-        strcat(jsn,prm); strcat(jsn,"\"}");
-        json_INFO_TX(jsn);
-      }
+//******    
+    pak_LOOK(ret,msg); //PAK:IDxxxx:0:10:30:2,7 -ish , 
+    if (ret[0]!=0) { 
+      strcpy(jsn,"{\"PARAMETER ACK PACKET\":\"");
+      strcat(jsn,ret); strcat(jsn,"\"}");
+      json_INFO_TX(jsn);
+      return;
     }
+//******    
+    ver_LOOK(ret,msg); //VER:ididid:version# , 
+    if (ret[0]!=0) { 
+      strcpy(jsn,"{\"TX VERSION\":\"");
+      strcat(jsn,ret); strcat(jsn,"\"}");
+      json_INFO_TX(jsn);
+      return;
+    }
+//******
   } //end of rxDECODED OK msg[0]!=0
 } //end of rxBUF_PROCESS() 
 
@@ -426,6 +438,16 @@ char *pak_LOOK(char *pakOUT, char *pakIN) {char *ret=pakOUT;
   return ret;
 }
 
+//***************************************** Paramter AcK - spit back to rcvr as info
+//expecting... VER:IdIdId:version#
+char *ver_LOOK(char *verOUT, char *verIN) {char *ret=verOUT; 
+  //Serial.println(F("* ...ver_LOOK..."));Serial.flush();
+  char pfx[6];  mySubStr(pfx,verIN,0,4);
+  if (strcmp(pfx,"VER:")==0) { strcpy(verOUT,verIN); }
+  else {verOUT[0]=0; }//default failflag
+  return ret;
+}
+
 //*****************************************
 void pur_PROCESS(char *pktIDNM) { //looking for txidxx:0:SENSORNAME
   //Serial.print(F("* pur_PROCESS: ")); Serial.print(pktIDNM); 
@@ -550,7 +572,7 @@ void key_SEND(char *txid, char *txkey, char *rxkey) {
   char txBUF[48]; 
   strcpy(txBUF,txid); strcat(txBUF,":"); strcat(txBUF,rxkey); //ididid:rxkeyrxkeyrxkeyr
   msg_SEND(txBUF,txkey,1); //the TX will decode this, it made the key
-  char jsn[64]; strcpy(jsn,"{\"key2tx\":\""); strcat(jsn,txid); strcat(jsn,"\"}\"");
+  char jsn[64]; strcpy(jsn,"{\"key2tx\":\""); strcat(jsn,txid); strcat(jsn,"\"}");
   json_INFO_RX(jsn);
 }
 
