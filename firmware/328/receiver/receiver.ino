@@ -254,7 +254,7 @@ void rxBUF_PROCESS(byte rss) { flgDONE=true;
 //******    
     pak_LOOK(ret,msg); //PAK:IDxxxx:0:10:30:2,7 -ish , 
     if (ret[0]!=0) { 
-      strcpy(jsn,"{\"PARAMETER ACK PACKET\":\"");
+      strcpy(jsn,"{\"PARAMETER ACK\":\"");
       strcat(jsn,ret); strcat(jsn,"\"}");
       json_INFO_TX(jsn);
       return;
