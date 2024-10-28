@@ -8,7 +8,7 @@
 
 ## Key Features
 
-### 1. **Open and Accessible Design**
+### 1. **Open and Accessible Design**xf
    - **Inexpensive Components:** Built using Atmel’s 8-bit AVR RISC-based Atmega328, MagicLime sensors are affordable and readily programmable through the Arduino IDE.
    - **Compatibility:** The USB dongle-based base station is platform-agnostic, enabling use on any common desktop or embedded system, with a focus on simple setup and deployment.
    - **Power Efficiency:** Sensors are battery-powered, utilizing standard AAA batteries with a projected lifespan of up to 2 years, ensuring low maintenance and high availability.
@@ -49,5 +49,5 @@ The RSSI-based setup offers users a quick and straightforward **“1-click”** 
 
 ---
 
-MagicLime aims to bring accessible, reliable, and secure IoT sensor networks to developers worldwide. Future development plans include implementing mesh networking and enhancing integration with various cloud-based IoT platforms, ensuring MagicLime remains versatile and scalable for both experimental and production environments.
+MagicLime aims to bring accessible, reliable, and secure IoT sensor networks to the market. Future development plans include implementing mesh networking and enhancing integration with various cloud-based IoT platforms, ensuring MagicLime remains versatile and scalable for both experimental and production environments.
 
