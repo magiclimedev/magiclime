@@ -8,7 +8,7 @@
 
 ## Key Features
 
-### 1. **Open and Accessible Design**xf
+### 1. **Open and Accessible Design**
    - **Inexpensive Components:** Built using Atmel’s 8-bit AVR RISC-based Atmega328, MagicLime sensors are affordable and readily programmable through the Arduino IDE.
    - **Compatibility:** The USB dongle-based base station is platform-agnostic, enabling use on any common desktop or embedded system, with a focus on simple setup and deployment.
    - **Power Efficiency:** Sensors are battery-powered, utilizing standard AAA batteries with a projected lifespan of up to 2 years, ensuring low maintenance and high availability.
