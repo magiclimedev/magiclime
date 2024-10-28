@@ -5,7 +5,7 @@ $(document).ready(function(){
     var markup;
 
     var ip = location.host;
-    var socket = new WebSocket(`ws://${ip}/ws`);
+    var socket = new WebSocket(`ws://${ip}:8080/ws`);
 
     // daemon for degrading 'active' status on dashboard rows
     let degradeStatusTime = 3600 * 3 * 1000;
