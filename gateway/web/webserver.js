@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const lib = require("../lib.js");
 require('dotenv').config();
 var path = require('path');
 var ip = require("ip");
@@ -27,7 +28,8 @@ app.use(express.static('web/gui'));
 
 /** Listen * */
 app.listen(80, () => {
-   console.log(`Webserver started: http://${ip.address()}/`);
+   const formatter = lib.createFormatter(20);
+   formatter("Webserver", `Started on http://${ip.address()}/`);
 });
 
 module.exports = app;

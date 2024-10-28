@@ -1,6 +1,6 @@
 const { SerialPort } = require('serialport')
 const { ReadlineParser } = require('@serialport/parser-readline');
-
+const lib = require("./lib.js");
 const {
     list
 } = require('serialport');
@@ -22,7 +22,8 @@ setInterval(async () => {
     await getSerialPort(function(error, result) {
         if (error) {
             if (bootup) {
-                console.log("Serial server:   Receiver not connected");
+                const formatter = lib.createFormatter(20);
+                formatter("Serial", "Receiver not connected");
                 bootup = false;
                 globals.receiverStatus = "DIS";
             }
@@ -31,7 +32,8 @@ setInterval(async () => {
             serialPortName = result;
 
             if (disconnected) {
-                console.log("Serial server:   started on " + serialPortName);
+                const formatter = lib.createFormatter(20);
+                formatter("Serial", `Started on ${serialPortName}`);
                 globals.receiverStatus = "CON";
                 var obj = new Object();
                 obj.channel = "RECEIVER";

@@ -1,5 +1,5 @@
 const ipc = require('node-ipc').default;	   
-
+const lib = require("./lib.js");
 
 
 /* Set up IPC server for dummy data */
@@ -14,8 +14,8 @@ ipc.server.start();
 
 
 ipc.server.on('start', () => {
-    console.log('IPC server:      started on ' + ipc.config.socketRoot + ipc.config.appspace
-        + ipc.config.id );
+    const formatter = lib.createFormatter(20);
+    formatter("IPC", `Started on ${ipc.config.socketRoot}${ipc.config.appspace}${ipc.config.id}`);
 });
 
 ipc.server.on('message', function(data, socket) {

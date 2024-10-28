@@ -20,5 +20,18 @@ module.exports = {
     time = yyyy + '-' + mm + '-' + dd + ' ' + h + ':' + min + ':' + sec;
       
     return time;
+  },
+
+  createFormatter: function(initialModuleLength = 0) {
+    let maxModuleLength = initialModuleLength;
+  
+    return function(module, message) {
+        // Update max module length if the current module is longer
+        maxModuleLength = Math.max(maxModuleLength, module.length);
+  
+        // Format output with updated padding
+        const paddedModule = module.padEnd(maxModuleLength + 2, ' '); // extra 2 spaces for padding
+        console.log(`${paddedModule}${message}`);
+    };
   }
 };

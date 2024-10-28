@@ -13,8 +13,9 @@ class MQTTClient{
     }
     
     checkMQTTServer() {   
+        const formatter = lib.createFormatter(20);
         var client  = mqtt.connect(`mqtt://${this.host}`);
-        console.log(`MQTT Broker:     found on ${this.host}:1883`)
+        formatter("MQTT", `Broker found on ${this.host}:1883`)
     }
     
 

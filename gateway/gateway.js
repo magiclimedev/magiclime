@@ -41,7 +41,6 @@ const clientObj = {mqttClientList:null}
 main()
 
 async function main() {
-  
   clientObj.mqttClientList = new MQTTClientList()
   const {mqttClientList} = clientObj;
   var Queue = require("queue-fifo");

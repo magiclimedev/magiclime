@@ -1,5 +1,5 @@
 const globals = require('../globals.js');
-
+const lib = require("../lib.js");
 const WebSocketServer = require('ws');
 const WS_PORT = 8080;
 
@@ -45,7 +45,8 @@ function handleWSConnection(client) {
 }
 
 server.listen(WS_PORT, () => {
-  console.log(`http/ws server listening on port: ${WS_PORT}`);
+  const formatter = lib.createFormatter(20);
+  formatter("WebSocket", `Started on port: ${WS_PORT}`);
 });
 
 module.exports = {
