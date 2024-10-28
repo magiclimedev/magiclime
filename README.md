@@ -4,7 +4,7 @@
 
 # MagicLime: An Open Platform for High-Performance, Secure IoT Sensors
 
-**MagicLime** is an open-source platform designed to create secure, affordable, and high-performance IoT sensor networks. Ideal for hobbyists, developers, and industry professionals, MagicLime emphasizes ease of use, reliable connectivity, and long-term sensor endurance. MagicLime’s sensors communicate over sub-1GHz ISM (Industrial, Scientific, and Medical) bands, facilitating low-power and encrypted communication for secure and resilient IoT networks. The platform’s USB dongle base station is highly versatile, compatible across Windows, Mac, and Linux environments, and thoroughly tested on the Raspberry Pi.
+**MagicLime** is an open-source platform designed to create secure, affordable, and high-performance IoT sensor networks. Ideal for hobbyists, developers, and industry professionals, MagicLime emphasizes ease of use, reliable connectivity, and long-term sensor endurance. MagicLime’s sensors communicate over unlicensed sub-1GHz ISM (Industrial, Scientific, and Medical) bands, facilitating low-power and encrypted communication for secure and resilient IoT networks. The platform’s USB dongle base station is highly versatile, compatible across Windows, Mac, and Linux environments, and thoroughly tested on the Raspberry Pi.
 
 ## Key Features
 
@@ -37,6 +37,7 @@
      - **Light**
      - **Sound**
      - **Moisture**
+     - **...many more planned**
 
 ### 5. **Expandable Architecture**
    - Firmware on both sensors and base station is developed in Arduino C, with gateway code on the host side (e.g., Raspberry Pi) written in Node.js, allowing users to customize and expand functionality as desired.
