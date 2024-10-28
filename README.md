@@ -39,7 +39,12 @@
      - **Moisture**
      - **...many more planned**
 
-### 5. **Expandable Architecture**
+### 5. **Proximity-Based Pairing for Rapid and Secure Sensor Provisioning**
+MagicLime introduces an efficient and secure **"proximity-based pairing"** system to streamline sensor provisioning and re-provisioning. By using RSSI (Received Signal Strength Indicator) to gauge the signal’s strength, the base station can accurately determine the sensor’s proximity. If the RSSI reading is over -95 dBm, it is inferred that the sensor is within a few inches of the base station. This close-range detection triggers a private key exchange that is stored on the sensor’s EEPROM. This pairing mechanism provides “good enough” security for MagicLime’s purposes, where simplicity and speed are priorities.
+
+The RSSI-based setup offers users a quick and straightforward **“1-click”** pairing experience, allowing rapid deployment without the technical complexities and limitations associated with NFC (Near Field Communication) protocols. Although not a strict NFC implementation, this pairing approach offers similar benefits by enabling fast, location-sensitive setup and secure reconfiguration. This **“near-field pairing”** system makes MagicLime adaptable to changing network setups and reduces the overhead typically associated with secure provisioning, facilitating seamless sensor management for various IoT applications.
+
+### 6. **Expandable Architecture**
    - Firmware on both sensors and base station is developed in Arduino C, with gateway code on the host side (e.g., Raspberry Pi) written in Node.js, allowing users to customize and expand functionality as desired.
 
 ---
