@@ -4,12 +4,12 @@
 
 # MagicLime: An Open Platform for High-Performance, Secure IoT Sensors
 
-**MagicLime** is an open-source platform designed to create secure, affordable, and high-performance IoT sensor networks. Ideal for hobbyists, developers, and industry professionals, MagicLime emphasizes ease of use, reliable connectivity, and long-term sensor endurance. MagicLime’s sensors communicate over unlicensed sub-1GHz ISM (Industrial, Scientific, and Medical) bands, facilitating low-power and encrypted communication for secure and resilient IoT networks. The platform’s USB dongle base station is highly versatile, compatible across Windows, Mac, and Linux environments, and thoroughly tested on the Raspberry Pi.
+**MagicLime** is an open-source platform designed to create secure, affordable, and high-performance IoT sensor networks. Ideal for hobbyists, developers, and industry professionals, MagicLime emphasizes ease of use, reliable connectivity, and long-term sensor endurance. MagicLime's sensors communicate over unlicensed sub-1GHz ISM (Industrial, Scientific, and Medical) bands, facilitating low-power and encrypted communication for secure and resilient IoT networks. The platform's USB dongle base station is highly versatile, compatible across Windows, Mac, and Linux environments, and thoroughly tested on the Raspberry Pi.
 
 ## Key Features
 
 ### 1. **Open and Accessible Design**
-   - **Inexpensive Components:** Built using Atmel’s 8-bit AVR RISC-based Atmega328, MagicLime sensors are affordable and readily programmable through the Arduino IDE.
+   - **Inexpensive Components:** Built using Atmel's 8-bit AVR RISC-based Atmega328, MagicLime sensors are affordable and readily programmable through the Arduino IDE.
    - **Compatibility:** The USB dongle-based base station is platform-agnostic, enabling use on any common desktop or embedded system, with a focus on simple setup and deployment.
    - **Power Efficiency:** Sensors are battery-powered, utilizing standard AAA batteries with a projected lifespan of up to 2 years, ensuring low maintenance and high availability.
 
@@ -40,9 +40,9 @@
      - **...many more planned**
 
 ### 5. **Proximity-Based Pairing for Rapid and Secure Sensor Provisioning**
-MagicLime introduces an efficient and secure **"proximity-based pairing"** system to streamline sensor provisioning and re-provisioning. By using RSSI (Received Signal Strength Indicator) to gauge the signal’s strength, the base station can accurately determine the sensor’s proximity. If the RSSI reading is over -95 dBm, it is inferred that the sensor is within a few inches of the base station. This close-range detection triggers a private key exchange that is stored on the sensor’s EEPROM. This pairing mechanism provides “good enough” security for MagicLime’s purposes, where simplicity and speed are priorities.
+MagicLime introduces an efficient and secure **"proximity-based pairing"** system to streamline sensor provisioning and re-provisioning. By using RSSI (Received Signal Strength Indicator) to gauge the signal's strength, the base station can accurately determine the sensor's proximity. If the RSSI reading is over -95 dBm, it is inferred that the sensor is within a few inches of the base station. This close-range detection triggers a private key exchange that is stored on the sensor's EEPROM. This pairing mechanism provides "good enough" security for MagicLime's purposes, where simplicity and speed are priorities.
 
-The RSSI-based setup offers users a quick and straightforward **“1-click”** pairing experience, allowing rapid deployment without the technical complexities and limitations associated with NFC (Near Field Communication) protocols. Although not a strict NFC implementation, this pairing approach offers similar benefits by enabling fast, location-sensitive setup and secure reconfiguration. This **“near-field pairing”** system makes MagicLime adaptable to changing network setups and reduces the overhead typically associated with secure provisioning, facilitating seamless sensor management for various IoT applications.
+The RSSI-based setup offers users a quick and straightforward **"1-click"** pairing experience, allowing rapid deployment without the technical complexities and limitations associated with NFC (Near Field Communication) protocols. Although not a strict NFC implementation, this pairing approach offers similar benefits by enabling fast, location-sensitive setup and secure reconfiguration. This **"near-field pairing"** system makes MagicLime adaptable to changing network setups and reduces the overhead typically associated with secure provisioning, facilitating seamless sensor management for various IoT applications.
 
 ### 6. **Expandable Architecture**
    - Firmware on both sensors and base station is developed in Arduino C, with gateway code on the host side (e.g., Raspberry Pi) written in Node.js, allowing users to customize and expand functionality as desired.
@@ -50,4 +50,37 @@ The RSSI-based setup offers users a quick and straightforward **“1-click”** 
 ---
 
 MagicLime aims to bring accessible, reliable, and secure IoT sensor networks to the market. Future development plans include implementing mesh networking and enhancing integration with various cloud-based IoT platforms, ensuring MagicLime remains versatile and scalable for both experimental and production environments.
+
+# Sensor Firmware Project
+
+This project contains firmware for sensor nodes using Arduino/AVR microcontrollers.
+
+## Required Libraries
+
+To compile this project, you'll need to install the following libraries through the Arduino Library Manager:
+
+1. DHTlib (v0.1.36) - For DHT temperature & humidity sensors
+2. OneWire (v2.3.8) - For 1-wire temperature sensors
+3. RadioHead (v1.143.1) - For packet radio communication
+
+## Installation Instructions
+
+1. Open Arduino IDE
+2. Go to Tools -> Manage Libraries (or press Ctrl + Shift + I)
+3. Search and install each required library:
+   - Search for "DHTlib" and install version 0.1.36
+   - Search for "OneWire" and install version 2.3.8
+   - Search for "RadioHead" and install version 1.143.1
+
+## Building the Project
+
+1. Open the project in Arduino IDE
+2. Select your board type from Tools -> Board menu
+3. Select the correct port from Tools -> Port menu
+4. Click the Verify button to compile
+5. Click Upload to flash to your device
+
+## Questions or Issues?
+
+Please open an issue in the project repository if you encounter any problems.
 
