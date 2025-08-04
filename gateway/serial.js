@@ -4,15 +4,13 @@ const lib = require("./lib.js");
 const {
     list
 } = require('serialport');
-const websocket = require("./web/websocket.js");
-const { obj } = require('pumpify');
-
-const globals = require('./globals.js');
 
 
 var serialPortName;
 var disconnected = true;
 var bootup = true;
+var currentSerialPort = null;
+var currentParser = null;
 
 /*
  * Set up Serial Port. Reconnect when unplugged/plugged
@@ -25,7 +23,6 @@ setInterval(async () => {
                 const formatter = lib.createFormatter(20);
                 formatter("Serial", "Receiver not connected");
                 bootup = false;
-                globals.receiverStatus = "DIS";
             }
 
         } else {
@@ -34,39 +31,64 @@ setInterval(async () => {
             if (disconnected) {
                 const formatter = lib.createFormatter(20);
                 formatter("Serial", `Started on ${serialPortName}`);
-                globals.receiverStatus = "CON";
-                var obj = new Object();
-                obj.channel = "RECEIVER";
-                obj.status = "CON";
-                websocket.wsBroadcast(JSON.stringify(obj));
                 
-                var serialPort = new SerialPort({
+                // Close existing serial port if it exists
+                if (currentSerialPort && currentSerialPort.isOpen) {
+                    try {
+                        currentSerialPort.close();
+                    } catch (error) {
+                        console.error("Error closing existing serial port:", error);
+                    }
+                }
+
+                currentSerialPort = new SerialPort({
                     path: serialPortName,
                     baudRate: 57600,
                     autoOpen: false
-                })
-                const parser = new ReadlineParser();
-                serialPort.pipe(parser);
-                parser.on('data', function(data) {
-                    rxQueue.enqueue(data);
                 });
-
-                serialPort.open(function (err){
-                    if (err) {
-                        console.log(err.message)
-                        process.exit(1);
+                
+                currentParser = new ReadlineParser();
+                currentSerialPort.pipe(currentParser);
+                
+                currentParser.on('data', function(data) {
+                    if (global.rxQueue) {
+                        global.rxQueue.enqueue(data);
                     }
                 });
 
-                serialPort.on('close', function() {
+                currentSerialPort.open(function (err){
+                    if (err) {
+                        console.error("Error opening serial port:", err.message);
+                        disconnected = true;
+                        return;
+                    }
+                    
+                    // Forward receiver connected status to web server
+                    if (global.forwardReceiverStatus) {
+                        global.forwardReceiverStatus('connected');
+                    }
+                });
+
+                currentSerialPort.on('close', function() {
                     console.log("Serial server:   receiver disconnected");
                     disconnected = true;
-                    globals.receiverStatus = "DIS";
-                    var obj = new Object();
-                    obj.channel = "RECEIVER";
-                    obj.status = "DIS";
-                    websocket.wsBroadcast(JSON.stringify(obj));
+                    
+                    // Forward receiver status to web server
+                    if (global.forwardReceiverStatus) {
+                        global.forwardReceiverStatus('disconnected');
+                    }
                 });
+                
+                currentSerialPort.on('error', function(err) {
+                    console.error("Serial port error:", err.message);
+                    disconnected = true;
+                    
+                    // Forward receiver status to web server
+                    if (global.forwardReceiverStatus) {
+                        global.forwardReceiverStatus('disconnected');
+                    }
+                });
+                
                 disconnected = false;
                 bootup = false;
             }
@@ -79,18 +101,34 @@ setInterval(async () => {
  *
  */
 async function getSerialPort(callback) {
-    var path;
-    await SerialPort.list().then(function(ports) {
-        ports.forEach(function(port) {
-            if (port.manufacturer === "FTDI") {
-                //console.log(port.path);
-                path = port.path;
-            }
-        });
-    });
-
-    if (path)
-        callback(undefined, path);
-    else
-        callback("Receiver not found", undefined);
+    try {
+        const ports = await SerialPort.list();
+        const ftdiPort = ports.find(port => port.manufacturer === "FTDI");
+        
+        if (ftdiPort) {
+            callback(undefined, ftdiPort.path);
+        } else {
+            callback("Receiver not found", undefined);
+        }
+    } catch (error) {
+        console.error("Error listing serial ports:", error);
+        callback("Error listing ports: " + error.message, undefined);
+    }
 }
+
+// Cleanup on process exit
+process.on('exit', () => {
+    if (currentSerialPort && currentSerialPort.isOpen) {
+        currentSerialPort.close();
+    }
+});
+
+process.on('SIGINT', () => {
+    if (currentSerialPort && currentSerialPort.isOpen) {
+        currentSerialPort.close(() => {
+            process.exit();
+        });
+    } else {
+        process.exit();
+    }
+});

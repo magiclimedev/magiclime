@@ -1,0 +1,483 @@
+/* Modern Cloud Dashboard Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #f5f5f7;
+    min-height: 100vh;
+    color: #333;
+    font-size: 14px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header Styles */
+.header {
+    background: #ffffff;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e5e7;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo {
+    height: 40px;
+    width: auto;
+}
+
+.logo-section h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1d1d1f;
+}
+
+.status-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.gateway-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-label {
+    font-weight: 500;
+    color: #4a5568;
+}
+
+.status-indicator {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-indicator.connected {
+    background: #48bb78;
+    color: white;
+}
+
+.status-indicator.disconnected {
+    background: #f56565;
+    color: white;
+}
+
+.status-indicator.reconnecting {
+    background: #ed8936;
+    color: white;
+}
+
+.last-seen {
+    font-size: 0.9rem;
+    color: #718096;
+}
+
+/* Navigation Tabs */
+.nav-tabs {
+    display: flex;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e5e7;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    color: #86868b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.tab-button.active {
+    background: #007aff;
+    color: white;
+    box-shadow: 0 2px 6px rgba(0, 122, 255, 0.3);
+}
+
+.tab-button:hover:not(.active) {
+    background: #f5f5f7;
+    color: #1d1d1f;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Sensors Grid */
+.sensors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    padding: 20px 0;
+}
+
+/* Sensor Card */
+.sensor-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e5e7;
+    transition: all 0.2s ease;
+    position: relative;
+    min-height: 120px;
+}
+
+.sensor-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.sensor-card.dead {
+    opacity: 0.6;
+    filter: grayscale(0.3);
+}
+
+.sensor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.sensor-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sensor-uid {
+    color: #86868b;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+}
+
+.sensor-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d1d1f;
+    cursor: pointer;
+}
+
+.sensor-name:hover {
+    color: #667eea;
+}
+
+.sensor-status {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.sensor-status.active {
+    color: #48bb78;
+}
+
+.sensor-status.dead {
+    color: #e53e3e;
+}
+
+.sensor-readings {
+    margin-bottom: 8px;
+}
+
+.temp-humidity {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    padding: 8px 0;
+}
+
+.reading {
+    text-align: center;
+}
+
+.reading .value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1d1d1f;
+    display: block;
+    line-height: 1;
+}
+
+.reading .unit {
+    font-size: 12px;
+    color: #86868b;
+    font-weight: 400;
+    margin-left: 2px;
+}
+
+.no-data {
+    text-align: center;
+    color: #86868b;
+    font-size: 12px;
+    padding: 16px 0;
+}
+
+
+
+.sensor-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.sensor-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sensor-type {
+    font-size: 10px;
+    color: #86868b;
+    font-weight: 400;
+}
+
+.battery {
+    font-size: 10px;
+    color: #86868b;
+    font-weight: 400;
+}
+
+.signal-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 12px;
+}
+
+.signal-bars .bar {
+    width: 2px;
+    background: #d1d1d6;
+    border-radius: 1px;
+}
+
+.signal-bars .bar:nth-child(1) { height: 3px; }
+.signal-bars .bar:nth-child(2) { height: 6px; }
+.signal-bars .bar:nth-child(3) { height: 9px; }
+.signal-bars .bar:nth-child(4) { height: 12px; }
+
+.signal-bars .bar.active {
+    background: #34c759;
+}
+
+.btn-details {
+    background: #007aff;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn-details:hover {
+    background: #0056d6;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state h2 {
+    color: #4a5568;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #718096;
+}
+
+/* Raw Data Styles */
+.raw-data-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.raw-data-feed {
+    background: #1a202c;
+    color: #e2e8f0;
+    padding: 20px;
+    border-radius: 8px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 0.9rem;
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #2d3748;
+}
+
+/* Settings Styles */
+.settings-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #4a5568;
+    min-width: 120px;
+}
+
+.form-group input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #5a67d8;
+}
+
+.btn-secondary {
+    background: #718096;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: #4a5568;
+}
+
+.sensor-settings {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.sensor-setting {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.sensor-setting label {
+    font-weight: 500;
+    color: #4a5568;
+    min-width: 100px;
+    font-size: 0.9rem;
+}
+
+.sensor-setting input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .status-section {
+        align-items: center;
+    }
+    
+    .sensors-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .nav-tabs {
+        flex-direction: column;
+    }
+    
+    .form-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .form-group label {
+        min-width: auto;
+        margin-bottom: 5px;
+    }
+}

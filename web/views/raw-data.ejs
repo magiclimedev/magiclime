@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raw Data - Gateway <%= gateway.serial_num %></title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="/static/magiclime.png" alt="MagicLime" class="logo">
+                    <h1>Raw Data - Gateway <%= gateway.serial_num %></h1>
+                </div>
+                <div class="status-section">
+                    <a href="/<%= gateway.serial_num %>" style="background: #667eea; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none;">
+                        ← Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Raw Data Feed -->
+        <div class="raw-data-container">
+            <h2>Live Data Feed</h2>
+            <div class="raw-data-feed" id="raw-data-feed">
+                <% if (logs && logs.length > 0) { %>
+                    <% logs.forEach(log => { %>
+                        <div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #2d3748;">
+                            <div style="color: #68d391; font-size: 0.8rem;"><%= new Date(log.created_at).toISOString() %></div>
+                            <div style="margin-top: 4px;">
+                                <span style="color: #90cdf4;">UID:</span> <%= log.sensor.uid %> |
+                                <span style="color: #90cdf4;">Type:</span> <%= log.sensor.type %> |
+                                <span style="color: #90cdf4;">RSS:</span> <%= log.rss %> |
+                                <span style="color: #90cdf4;">Battery:</span> <%= log.bat %>V
+                            </div>
+                            <div style="margin-top: 4px; color: #fbb6ce;">
+                                <span style="color: #90cdf4;">Data:</span> <%= JSON.stringify(log.data, null, 2) %>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div style="color: #718096; padding: 20px; text-align: center;">
+                        No recent data available. Waiting for sensor data...
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize WebSocket for real-time updates
+        const socket = io();
+        const feed = document.getElementById('raw-data-feed');
+        
+        socket.on('LOG_DATA', (data) => {
+            const timestamp = new Date().toISOString();
+            const entry = document.createElement('div');
+            entry.style.marginBottom = '10px';
+            entry.style.paddingBottom = '10px';
+            entry.style.borderBottom = '1px solid #2d3748';
+            
+            entry.innerHTML = `
+                <div style="color: #68d391; font-size: 0.8rem;">${timestamp}</div>
+                <div style="margin-top: 4px;">
+                    <span style="color: #90cdf4;">UID:</span> ${data.uid} |
+                    <span style="color: #90cdf4;">Type:</span> ${data.sensor || data.type || 'unknown'} |
+                    <span style="color: #90cdf4;">RSS:</span> ${data.rss} |
+                    <span style="color: #90cdf4;">Battery:</span> ${data.bat}V
+                </div>
+                <div style="margin-top: 4px; color: #fbb6ce;">
+                    <span style="color: #90cdf4;">Data:</span> ${JSON.stringify(data.data, null, 2)}
+                </div>
+            `;
+            
+            // Add to top of feed
+            feed.insertBefore(entry, feed.firstChild);
+            
+            // Keep only last 50 entries
+            while (feed.children.length > 50) {
+                feed.removeChild(feed.lastChild);
+            }
+        });
+        
+        socket.on('connect', () => {
+            console.log('Connected to WebSocket');
+            socket.emit('subscribe', { gateway_serial_num: '<%= gateway.serial_num %>' });
+        });
+    </script>
+</body>
+</html>

@@ -30,31 +30,18 @@ module.exports = {
 
   insertSensor: function (obj) {
     let sql = `INSERT INTO sensor(id, uid, name, type, first_seen, last_seen) VALUES 
-      (NULL, 
-      '${obj.uid}',
-      '${obj.uid}',
-      '${obj.sensor}',
-      strftime('%s', 'now'),
-      strftime('%s', 'now')
-      )     
-      `
+      (NULL, ?, ?, ?, strftime('%s', 'now'), strftime('%s', 'now'))`
     
     let stmt = db.prepare(sql);
-    var info = stmt.run();
+    var info = stmt.run(obj.uid, obj.uid, obj.sensor);
     //return rowID from newly inserted sensor
     return info.lastInsertRowid;
   },
 
   updateLastSeen: function(obj, id){
-    var sql = `
-              UPDATE sensor
-              SET last_seen = strftime('%s', 'now')
-              WHERE
-                id = '${id}'
-    `
+    var sql = `UPDATE sensor SET last_seen = strftime('%s', 'now') WHERE id = ?`
     let stmt = db.prepare(sql);
-    stmt.run();
-
+    stmt.run(id);
   },
 
   insertLog: function (obj, id) {
@@ -68,24 +55,15 @@ module.exports = {
     }
 
     var sql = `INSERT INTO log(id, sensor_id, rss, bat, data, date_created) VALUES 
-    (NULL, 
-      '${record.sensor_id}',
-      '${record.rss}',
-      '${record.bat}',
-      '${record.data}',
-      strftime('%s', 'now')
-      )     
-      `
+    (NULL, ?, ?, ?, ?, strftime('%s', 'now'))`
 
     let stmt = db.prepare(sql);
-    stmt.run();
+    stmt.run(record.sensor_id, record.rss, record.bat, record.data);
   },
 
   checkUid: function (id) {
-    let stmt = db.prepare(
-      "SELECT id, name FROM sensor WHERE  uid = '" + id + "'"
-    );
-    let result = stmt.get();
+    let stmt = db.prepare("SELECT id, name FROM sensor WHERE uid = ?");
+    let result = stmt.get(id);
 
     if (result === undefined) {
       return false;
@@ -96,10 +74,8 @@ module.exports = {
   },
 
   getSensorName: function (id) {
-    let stmt = db.prepare(
-      "SELECT name FROM sensor WHERE uid = '" + id + "'"
-    );
-    let sensorName = stmt.get();
+    let stmt = db.prepare("SELECT name FROM sensor WHERE uid = ?");
+    let sensorName = stmt.get(id);
 
     if (sensorName === undefined) {
       return id;
@@ -109,16 +85,9 @@ module.exports = {
   },
 
   updateSensorName: function (uid, name) {
-    var sql = `
-              UPDATE 
-                    sensor
-              SET 
-                    name = '${name}'
-              WHERE
-                    uid = '${uid}'
-    `
+    var sql = `UPDATE sensor SET name = ? WHERE uid = ?`
     let stmt = db.prepare(sql);
-    stmt.run();
+    stmt.run(name, uid);
   },
 
   getSensor: function (uid) {
@@ -132,10 +101,9 @@ module.exports = {
       FROM 
               sensor 
       WHERE 
-              uid = '${uid}'
-      `
+              uid = ?`
     );
-    let sensor = stmt.get();
+    let sensor = stmt.get(uid);
 
     if (sensor === undefined) {
       return uid;
@@ -158,13 +126,13 @@ module.exports = {
                 FROM log 
                     left join sensor on log.sensor_id = sensor.id 
                 WHERE 
-                  sensor.uid =  '${uid}'
+                  sensor.uid = ?
                 ORDER BY 
                   log.id 
                 DESC 
                   limit 10`);
 
-    let sensorLog = stmt.all();
+    let sensorLog = stmt.all(uid);
 
     if (sensorLog === undefined) {
       return "error";

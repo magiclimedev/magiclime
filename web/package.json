@@ -1,0 +1,40 @@
+{
+  "name": "magiclime-web-server",
+  "version": "1.0.0",
+  "description": "MagicLime cloud dashboard and data ingestion server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js --dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "iot",
+    "sensors",
+    "dashboard",
+    "magiclime",
+    "cloud"
+  ],
+  "author": "MagicLime Team",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "sequelize": "^6.37.0",
+    "sqlite3": "^5.1.7",
+    "cors": "^2.8.5",
+    "ejs": "^3.1.10",
+    "socket.io": "^4.7.5",
+    "dotenv": "^17.2.0",
+    "helmet": "^8.0.0",
+    "express-rate-limit": "^7.4.1",
+    "mqtt": "^5.13.3",
+    "aedes": "^0.51.3"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.2",
+    "nodemon": "^3.1.7"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

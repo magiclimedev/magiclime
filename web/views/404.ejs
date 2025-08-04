@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gateway Not Found - MagicLime</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <div class="empty-state">
+            <img src="/static/magiclime.png" alt="MagicLime" class="logo" style="height: 60px; margin-bottom: 20px;">
+            <h2>Page Not Found</h2>
+            <% if (typeof serial_num !== 'undefined') { %>
+                <p>Gateway with serial number "<%= serial_num %>" could not be found.</p>
+            <% } else { %>
+                <p>The page you're looking for doesn't exist.</p>
+            <% } %>
+            <p>Please check the URL and try again.</p>
+            <div style="margin-top: 30px;">
+                <a href="/" style="background: #667eea; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none;">
+                    Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

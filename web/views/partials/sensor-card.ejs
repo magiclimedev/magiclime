@@ -1,0 +1,66 @@
+<div class="sensor-card <%= sensor.status %>" data-sensor-id="<%= sensor.id %>" data-sensor-uid="<%= sensor.uid %>">
+    <div class="sensor-header">
+        <h3 class="sensor-name" data-editable="<%= sensor.id %>"><%= sensor.name %></h3>
+        <div class="sensor-header-right">
+            <span class="sensor-status <%= sensor.status %>">
+                <%= sensor.status === 'active' ? '●' : '○' %>
+            </span>
+            <span class="sensor-uid"><%= sensor.uid %></span>
+        </div>
+    </div>
+    
+    <div class="sensor-readings">
+        <% if (sensor.logs && sensor.logs.length > 0) { %>
+            <% 
+            const logData = sensor.logs[0].data;
+            let temperature = '';
+            let humidity = '';
+            
+            if (typeof logData === 'object' && logData !== null) {
+                if (logData.temperature && logData.humidity) {
+                    temperature = logData.temperature;
+                    humidity = logData.humidity;
+                } else if (logData.value1 && logData.value2) {
+                    temperature = logData.value1;
+                    humidity = logData.value2;
+                }
+            }
+            %>
+            <div class="temp-humidity">
+                <div class="reading">
+                    <span class="value" id="temp-<%= sensor.id %>"><%= temperature %></span>
+                    <span class="unit">°F</span>
+                </div>
+                <div class="reading">
+                    <span class="value" id="humidity-<%= sensor.id %>"><%= humidity %></span>
+                    <span class="unit">%</span>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="no-data">No recent data</div>
+        <% } %>
+    </div>
+    
+    <div class="sensor-footer">
+        <div class="sensor-meta">
+            <span class="sensor-type"><%= sensor.type %></span>
+            <% if (sensor.logs && sensor.logs.length > 0) { %>
+                <span class="battery"><%= sensor.logs[0].bat || 'N/A' %>V</span>
+                <div class="signal-bars">
+                    <% 
+                    const rss = sensor.logs[0].rss || 0;
+                    let bars = 0;
+                    if (rss >= 100) bars = 4;
+                    else if (rss >= 70) bars = 3;
+                    else if (rss >= 50) bars = 2;
+                    else if (rss >= 30) bars = 1;
+                    %>
+                    <% for (let i = 1; i <= 4; i++) { %>
+                        <div class="bar <%= i <= bars ? 'active' : '' %>"></div>
+                    <% } %>
+                </div>
+            <% } %>
+        </div>
+        <button class="btn-details" onclick="viewSensorDetails(<%= sensor.id %>)">Details</button>
+    </div>
+</div>

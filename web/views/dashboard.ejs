@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MagicLime Gateway <%= gateway.serial_num %></title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="/static/magiclime.png" alt="MagicLime" class="logo">
+                    <h1>Gateway <%= gateway.serial_num %></h1>
+                </div>
+                <div class="status-section">
+                    <div class="gateway-status">
+                        <span class="status-label">Gateway:</span>
+                        <span class="status-indicator <%= gatewayStatus %>" id="gateway-status">
+                            <%= gatewayStatus === 'connected' ? 'Connected' : 'Disconnected' %>
+                        </span>
+                    </div>
+                    <div class="last-seen">
+                        <span class="last-seen-label">Last seen:</span>
+                        <span id="last-seen"><%= gateway.last_seen ? new Date(gateway.last_seen).toLocaleString() : 'Never' %></span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="tab-button active" data-tab="dashboard">Dashboard</button>
+            <button class="tab-button" data-tab="raw-data">Raw Data</button>
+            <button class="tab-button" data-tab="settings">Settings</button>
+        </nav>
+
+        <!-- Dashboard Tab -->
+        <div class="tab-content active" id="dashboard-tab">
+            <% if (sensors.length === 0) { %>
+                <div class="empty-state">
+                    <h2>No Active Sensors</h2>
+                    <p>No sensors have reported data in the last 3 hours.</p>
+                </div>
+            <% } else { %>
+                <div class="sensors-grid" id="sensors-grid">
+                    <% sensors.forEach(sensor => { %>
+                        <%- include('partials/sensor-card', { sensor: sensor }) %>
+                    <% }); %>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Raw Data Tab -->
+        <div class="tab-content" id="raw-data-tab">
+            <div class="raw-data-container">
+                <h2>Live Data Feed</h2>
+                <div class="raw-data-feed" id="raw-data-feed">
+                    <!-- Real-time data will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-content" id="settings-tab">
+            <div class="settings-container">
+                <h2>Gateway Settings</h2>
+                <div class="settings-form">
+                    <div class="form-group">
+                        <label for="gateway-name">Gateway Name:</label>
+                        <input type="text" id="gateway-name" value="<%= gateway.name %>" />
+                        <button onclick="updateGatewayName()" class="btn-primary">Update</button>
+                    </div>
+                </div>
+                
+                <h3>Sensor Settings</h3>
+                <div class="sensor-settings" id="sensor-settings">
+                    <% sensors.forEach(sensor => { %>
+                        <div class="sensor-setting">
+                            <label><%= sensor.uid %>:</label>
+                            <input type="text" value="<%= sensor.name %>" data-sensor-id="<%= sensor.id %>" />
+                            <button onclick="updateSensorName(<%= sensor.id %>)" class="btn-secondary">Update</button>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        const gatewaySerialNum = '<%= gateway.serial_num %>';
+        let socket = null;
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTabs();
+            initializeWebSocket();
+            updateTimestamps();
+            setInterval(updateTimestamps, 30000); // Update every 30 seconds
+        });
+    </script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

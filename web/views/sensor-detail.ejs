@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor <%= sensor.name %> - MagicLime</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="/static/magiclime.png" alt="MagicLime" class="logo">
+                    <h1>Sensor Details</h1>
+                </div>
+                <div class="status-section">
+                    <a href="/<%= gateway.serial_num %>" style="background: #667eea; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none;">
+                        ← Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sensor Info -->
+        <div class="sensor-detail-container" style="background: rgba(255, 255, 255, 0.95); border-radius: 16px; padding: 30px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);">
+            <h2><%= sensor.name %></h2>
+            <div class="sensor-detail-info" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0;">
+                <div class="info-item">
+                    <span class="label">UID:</span>
+                    <span class="value"><%= sensor.uid %></span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Type:</span>
+                    <span class="value"><%= sensor.type %></span>
+                </div>
+                <div class="info-item">
+                    <span class="label">First Seen:</span>
+                    <span class="value"><%= sensor.first_seen || 'Unknown' %></span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Last Seen:</span>
+                    <span class="value"><%= sensor.last_seen || 'Unknown' %></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-container" style="background: rgba(255, 255, 255, 0.95); border-radius: 16px; padding: 30px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);">
+            <h3>24-Hour Data History</h3>
+            <canvas id="sensor-chart" style="width: 100%; height: 400px;"></canvas>
+        </div>
+
+        <!-- Recent Logs -->
+        <div class="logs-container" style="background: rgba(255, 255, 255, 0.95); border-radius: 16px; padding: 30px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);">
+            <h3>Recent Data (Last 10 entries)</h3>
+            <div class="logs-table" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f7fafc;">
+                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0;">Time</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0;">Data</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0;">Battery</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0;">Signal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (logs && logs.length > 0) { %>
+                            <% logs.forEach(log => { %>
+                                <tr>
+                                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+                                        <%= new Date(log.created_at).toLocaleString() %>
+                                    </td>
+                                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+                                        <%= typeof log.data === 'object' ? JSON.stringify(log.data) : log.data %>
+                                    </td>
+                                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+                                        <%= log.bat ? log.bat + 'V' : 'N/A' %>
+                                    </td>
+                                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+                                        <%= log.rss ? log.rss + ' dBm' : 'N/A' %>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4" style="padding: 20px; text-align: center; color: #718096;">
+                                    No data available
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize chart
+        document.addEventListener('DOMContentLoaded', function() {
+            const chartData = <%- chartData || '[]' %>;
+            
+            if (chartData.length > 0) {
+                const ctx = document.getElementById('sensor-chart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: chartData.map(point => new Date(point.time).toLocaleTimeString()),
+                        datasets: [{
+                            label: 'Sensor Value',
+                            data: chartData.map(point => point.value),
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Last 24 Hours'
+                            }
+                        }
+                    }
+                });
+            } else {
+                document.getElementById('sensor-chart').style.display = 'none';
+                document.querySelector('.chart-container h3').innerHTML = '24-Hour Data History (No data available)';
+            }
+        });
+    </script>
+</body>
+</html>

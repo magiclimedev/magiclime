@@ -1,17 +1,36 @@
 {
+  "name": "magiclime-gateway",
+  "version": "1.0.0",
+  "description": "MagicLime IoT gateway - pure data collector",
+  "main": "gateway.js",
+  "scripts": {
+    "start": "node gateway.js",
+    "local": "node gateway.js --local",
+    "cloud": "node gateway.js --cloud",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "iot",
+    "sensors",
+    "gateway",
+    "collector",
+    "magiclime"
+  ],
+  "author": "MagicLime Team",
+  "license": "ISC",
   "dependencies": {
-    "aedes": "^0.51.3",
     "axios": "^1.11.0",
     "better-sqlite3": "^12.2.0",
-    "cors": "^2.8.5",
     "dotenv": "^17.2.0",
-    "ejs": "^3.1.10",
-    "express": "^5.1.0",
-    "ip": "^2.0.1",
-    "mqtt": "^5.13.3",
-    "node-ipc": "^12.0.0",
-    "pumpify": "^2.0.1",
     "queue-fifo": "^0.2.6",
-    "serialport": "^13.0.0"
+    "sequelize": "^6.37.0",
+    "serialport": "^13.0.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - MagicLime</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <div class="empty-state">
+            <img src="/static/magiclime.png" alt="MagicLime" class="logo" style="height: 60px; margin-bottom: 20px;">
+            <h2>Something went wrong</h2>
+            <p><%= message %></p>
+            <% if (error) { %>
+                <p style="color: #e53e3e; font-size: 0.9rem; margin-top: 10px;">
+                    <%= error %>
+                </p>
+            <% } %>
+            <div style="margin-top: 30px;">
+                <button onclick="history.back()" style="background: #667eea; color: white; padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; margin-right: 10px;">
+                    Go Back
+                </button>
+                <a href="/" style="background: #718096; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none;">
+                    Home
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
