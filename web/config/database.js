@@ -3,7 +3,7 @@ const path = require('path');
 module.exports = {
   local: {
     dialect: 'sqlite',
-    storage: path.join(__dirname, '..', 'gateway.db'),
+    storage: path.join(__dirname, '..', 'web.db'),
     logging: false,
     define: {
       underscored: true,

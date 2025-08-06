@@ -35,11 +35,34 @@ router.get('/:serial_num', async (req, res) => {
     
     // Add recent logs to each sensor
     const sensors = await Promise.all(sensorsBasic.map(async (sensor) => {
+      // Get the most recent log
       const recentLogs = await models.Log.findAll({
         where: { sensor_id: sensor.id },
         order: [['created_at', 'DESC']],
         limit: 1
       });
+      
+      // If the most recent log shows repeater, check if sensor has direct connectivity
+      if (recentLogs.length > 0 && 
+          (recentLogs[0].pathIndicator === 'R' || recentLogs[0].path === 'repeater')) {
+        // Look back through recent logs to see if any came direct
+        const checkLogs = await models.Log.findAll({
+          where: { sensor_id: sensor.id },
+          order: [['created_at', 'DESC']],
+          limit: 20 // Check last 20 logs
+        });
+        
+        // Find the first direct packet if any
+        const directLog = checkLogs.find(log => 
+          log.pathIndicator === 'D' || log.path === 'direct'
+        );
+        
+        if (directLog) {
+          // Use the direct log's path indicator but keep the latest data
+          recentLogs[0].pathIndicator = 'D';
+          recentLogs[0].path = 'direct';
+        }
+      }
       
       return {
         ...sensor,

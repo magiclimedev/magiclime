@@ -50,7 +50,9 @@
         <!-- Chart -->
         <div class="chart-container" style="background: rgba(255, 255, 255, 0.95); border-radius: 16px; padding: 30px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);">
             <h3>24-Hour Data History</h3>
-            <canvas id="sensor-chart" style="width: 100%; height: 400px;"></canvas>
+            <div style="position: relative; height: 400px; width: 100%;">
+                <canvas id="sensor-chart"></canvas>
+            </div>
         </div>
 
         <!-- Recent Logs -->
@@ -71,7 +73,42 @@
                             <% logs.forEach(log => { %>
                                 <tr>
                                     <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
-                                        <%= new Date(log.created_at).toLocaleString() %>
+                                        <% 
+                                        try {
+                                            const dateStr = log.created_at || log.createdAt;
+                                            let date;
+                                            
+                                            // Handle different date formats
+                                            if (typeof dateStr === 'string' && dateStr.includes('T')) {
+                                                // ISO format
+                                                date = new Date(dateStr);
+                                            } else if (typeof dateStr === 'number') {
+                                                // Unix timestamp
+                                                date = new Date(dateStr);
+                                            } else {
+                                                // Try parsing as-is
+                                                date = new Date(dateStr);
+                                            }
+                                            
+                                            if (isNaN(date.getTime())) {
+                                                throw new Error('Invalid date');
+                                            }
+                                            
+                                            // Format with proper US locale and timezone
+                                            const options = {
+                                                year: 'numeric',
+                                                month: 'numeric', 
+                                                day: 'numeric',
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                second: '2-digit',
+                                                hour12: true
+                                            };
+                                            %>
+                                            <%= date.toLocaleString('en-US', options) %>
+                                        <% } catch(e) { %>
+                                            <%= log.created_at || log.createdAt || 'Unknown' %>
+                                        <% } %>
                                     </td>
                                     <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
                                         <%= typeof log.data === 'object' ? JSON.stringify(log.data) : log.data %>
@@ -107,30 +144,200 @@
                 new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: chartData.map(point => new Date(point.time).toLocaleTimeString()),
-                        datasets: [{
-                            label: 'Sensor Value',
-                            data: chartData.map(point => point.value),
-                            borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4
-                        }]
+                        labels: chartData.map((point, index) => {
+                            try {
+                                // Debug: log the first few points to see what data we have
+                                if (index < 3) {
+                                    console.log('Chart point data:', point);
+                                }
+                                
+                                const dateStr = point.time || point.created_at || point.createdAt;
+                                
+                                // If no date field, use index-based time
+                                if (!dateStr) {
+                                    const now = new Date();
+                                    const hoursAgo = Math.floor((chartData.length - index) / (chartData.length / 24));
+                                    const estimatedTime = new Date(now.getTime() - (hoursAgo * 60 * 60 * 1000));
+                                    return estimatedTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                                }
+                                
+                                let date;
+                                if (typeof dateStr === 'string' && dateStr.includes('T')) {
+                                    date = new Date(dateStr);
+                                } else if (typeof dateStr === 'number') {
+                                    date = new Date(dateStr);
+                                } else {
+                                    date = new Date(dateStr);
+                                }
+                                
+                                if (isNaN(date.getTime())) {
+                                    throw new Error('Invalid date');
+                                }
+                                
+                                return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            } catch(e) {
+                                // Fallback: create estimated time based on position
+                                const now = new Date();
+                                const hoursAgo = Math.floor((chartData.length - index) / (chartData.length / 24));
+                                const estimatedTime = new Date(now.getTime() - (hoursAgo * 60 * 60 * 1000));
+                                return estimatedTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            }
+                        }),
+                        datasets: [
+                            // Comfort zone background (summer range 72-78°F)
+                            {
+                                label: 'Comfort Zone',
+                                data: chartData.map(() => 78), // Upper comfort limit
+                                borderColor: 'rgba(34, 197, 94, 0)', // Transparent border
+                                backgroundColor: 'rgba(34, 197, 94, 0.08)', // Light green fill
+                                fill: '+1', // Fill to next dataset
+                                pointRadius: 0,
+                                pointHoverRadius: 0,
+                                tension: 0,
+                                order: 2
+                            },
+                            {
+                                label: 'Comfort Zone Lower',
+                                data: chartData.map(() => 72), // Lower comfort limit
+                                borderColor: 'rgba(34, 197, 94, 0)', // Transparent border
+                                backgroundColor: 'rgba(34, 197, 94, 0)', // Transparent
+                                fill: false,
+                                pointRadius: 0,
+                                pointHoverRadius: 0,
+                                tension: 0,
+                                order: 3
+                            },
+                            // Actual temperature data
+                            {
+                                label: 'Temperature',
+                                data: chartData.map((point, index) => {
+                                    // Debug: log the first and last few values
+                                    if (index < 3 || index >= chartData.length - 3) {
+                                        console.log(`Chart value [${index}]:`, point.value, 'from data:', point);
+                                    }
+                                    return point.value;
+                                }),
+                                borderColor: '#2563eb', // Blue for temperature
+                                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                                borderWidth: 3,
+                                fill: false,
+                                tension: 0.4,
+                                pointBackgroundColor: '#2563eb',
+                                pointBorderColor: '#ffffff',
+                                pointBorderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                order: 1
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false
+                        },
                         scales: {
                             y: {
-                                beginAtZero: false
+                                beginAtZero: false,
+                                suggestedMin: (() => {
+                                    const values = chartData.map(point => point.value);
+                                    const minValue = Math.min(...values);
+                                    const maxValue = Math.max(...values);
+                                    
+                                    // If all data is within 60-80 range, use 60 as min
+                                    if (minValue >= 60 && maxValue <= 80) {
+                                        return 60;
+                                    }
+                                    // If data goes below 60, use a bit below the minimum
+                                    if (minValue < 60) {
+                                        return Math.floor(minValue - 2);
+                                    }
+                                    // If minimum is above 60 but below 80, still use 60 for better range
+                                    return 60;
+                                })(),
+                                suggestedMax: (() => {
+                                    const values = chartData.map(point => point.value);
+                                    const minValue = Math.min(...values);
+                                    const maxValue = Math.max(...values);
+                                    
+                                    // If all data is within 60-80 range, use 80 as max
+                                    if (minValue >= 60 && maxValue <= 80) {
+                                        return 80;
+                                    }
+                                    // If data goes above 80, use a bit above the maximum
+                                    if (maxValue > 80) {
+                                        return Math.ceil(maxValue + 2);
+                                    }
+                                    // If maximum is below 80, still use 80 for better range
+                                    return 80;
+                                })(),
+                                ticks: {
+                                    stepSize: 2
+                                }
                             }
                         },
                         plugins: {
                             title: {
                                 display: true,
                                 text: 'Last 24 Hours'
+                            },
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    filter: function(legendItem, chartData) {
+                                        // Hide the comfort zone lower boundary from legend
+                                        return legendItem.text !== 'Comfort Zone Lower';
+                                    },
+                                    generateLabels: function(chart) {
+                                        const original = Chart.defaults.plugins.legend.labels.generateLabels;
+                                        const labels = original.call(this, chart);
+                                        
+                                        // Customize legend labels
+                                        labels.forEach(label => {
+                                            if (label.text === 'Comfort Zone') {
+                                                label.text = 'Comfort Zone (72-78°F)';
+                                            }
+                                        });
+                                        
+                                        return labels;
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        return 'Time: ' + context[0].label;
+                                    },
+                                    label: function(context) {
+                                        if (context.dataset.label === 'Temperature') {
+                                            return `Temperature: ${context.parsed.y.toFixed(1)}°F`;
+                                        }
+                                        return null; // Hide comfort zone tooltips
+                                    },
+                                    afterLabel: function(context) {
+                                        if (context.dataset.label === 'Temperature') {
+                                            const temp = context.parsed.y;
+                                            if (temp >= 72 && temp <= 78) {
+                                                return '✓ In comfort zone';
+                                            } else if (temp < 72) {
+                                                return '❄️ Below comfort zone';
+                                            } else {
+                                                return '🔥 Above comfort zone';
+                                            }
+                                        }
+                                        return null;
+                                    }
+                                },
+                                filter: function(tooltipItem) {
+                                    // Only show tooltip for temperature data
+                                    return tooltipItem.dataset.label === 'Temperature';
+                                }
                             }
+                        },
+                        animation: {
+                            duration: 0
                         }
                     }
                 });

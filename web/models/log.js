@@ -13,6 +13,14 @@ module.exports = (sequelize, DataTypes) => {
     data: {
       type: DataTypes.JSON,
       allowNull: true
+    },
+    path: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    pathIndicator: {
+      type: DataTypes.STRING,
+      allowNull: true
     }
   }, {
     tableName: 'log',
@@ -35,12 +43,15 @@ module.exports = (sequelize, DataTypes) => {
 
   Log.getChartData = async function(sensorId, hours = 24) {
     const logs = await this.getRecentBySensor(sensorId, hours);
-    return logs.map(log => ({
+    const chartData = logs.map(log => ({
       time: log.created_at,
       value: this.extractValue(log.data),
       rss: log.rss,
       bat: log.bat
     }));
+    
+    // Reverse to show oldest to newest (left to right chronologically)
+    return chartData.reverse();
   };
 
   Log.getLatestBySensor = async function(sensorId) {

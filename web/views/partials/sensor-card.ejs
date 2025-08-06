@@ -1,4 +1,4 @@
-<div class="sensor-card <%= sensor.status %>" data-sensor-id="<%= sensor.id %>" data-sensor-uid="<%= sensor.uid %>">
+<div class="sensor-card <%= sensor.status %>" data-sensor-id="<%= sensor.id %>" data-sensor-uid="<%= sensor.uid %>" onclick="viewSensorDetails(<%= sensor.id %>)">
     <div class="sensor-header">
         <h3 class="sensor-name" data-editable="<%= sensor.id %>"><%= sensor.name %></h3>
         <div class="sensor-header-right">
@@ -43,24 +43,77 @@
     
     <div class="sensor-footer">
         <div class="sensor-meta">
-            <span class="sensor-type"><%= sensor.type %></span>
             <% if (sensor.logs && sensor.logs.length > 0) { %>
-                <span class="battery"><%= sensor.logs[0].bat || 'N/A' %>V</span>
-                <div class="signal-bars">
+                <% 
+                const batteryVoltage = sensor.logs[0].bat || 0;
+                let batteryPercent = 0;
+                let batteryClass = 'dead';
+                
+                if (batteryVoltage >= 3.0) {
+                    batteryPercent = 100;
+                    batteryClass = 'good';
+                } else if (batteryVoltage >= 2.7) {
+                    // Linear scale from 2.7V (80%) to 3.0V (100%)
+                    batteryPercent = Math.round(80 + ((batteryVoltage - 2.7) / 0.3) * 20);
+                    batteryClass = 'good';
+                } else if (batteryVoltage >= 2.5) {
+                    // Linear scale from 2.5V (40%) to 2.7V (80%)
+                    batteryPercent = Math.round(40 + ((batteryVoltage - 2.5) / 0.2) * 40);
+                    if (batteryPercent >= 70) batteryClass = 'good';
+                    else if (batteryPercent >= 50) batteryClass = 'warning';
+                    else batteryClass = 'low';
+                } else if (batteryVoltage > 0) {
+                    // Linear scale from 0V (0%) to 2.5V (40%)
+                    batteryPercent = Math.round((batteryVoltage / 2.5) * 40);
+                    batteryClass = 'dead';
+                } else {
+                    batteryPercent = 0;
+                    batteryClass = 'dead';
+                }
+                %>
+                <div class="battery-icon <%= batteryClass %>" title="<%= batteryVoltage ? batteryVoltage + 'V' : 'N/A' %>">
+                    <div class="battery-body">
+                        <div class="battery-fill" style="width: <%= batteryPercent %>%"></div>
+                        <span class="battery-percent"><%= batteryPercent %>%</span>
+                    </div>
+                    <div class="battery-tip"></div>
+                </div>
+                <div class="signal-bars" title="RSS: <%= sensor.logs[0].rss %> (Type: <%= typeof sensor.logs[0].rss %>)">
                     <% 
-                    const rss = sensor.logs[0].rss || 0;
+                    const rawRss = sensor.logs[0].rss;
+                    const rss = parseInt(rawRss) || 0;
                     let bars = 0;
-                    if (rss >= 100) bars = 4;
-                    else if (rss >= 70) bars = 3;
-                    else if (rss >= 50) bars = 2;
-                    else if (rss >= 30) bars = 1;
+                    
+                    // RSS values are positive for strong signals, not negative
+                    // Don't use absolute value - direct RSS comparison
+                    const signalStrength = rss;
+                    
+                    // Fixed thresholds: 90+ = 4 bars, 30-89 = scaled bars
+                    if (signalStrength >= 90) bars = 4;
+                    else if (signalStrength >= 70) bars = 3;
+                    else if (signalStrength >= 50) bars = 2;
+                    else if (signalStrength >= 30) bars = 1;
+                    else bars = 0;
+                    
+                    const pathIndicator = sensor.logs[0].pathIndicator || sensor.logs[0].path;
+                    const isRepeater = pathIndicator === 'R' || pathIndicator === 'repeater';
                     %>
+                    <!-- Debug: RSS=<%= rawRss %> (type=<%= typeof rawRss %>), Num=<%= rss %>, Strength=<%= signalStrength %>, Bars=<%= bars %> -->
                     <% for (let i = 1; i <= 4; i++) { %>
                         <div class="bar <%= i <= bars ? 'active' : '' %>"></div>
+                    <% } %>
+                    <% if (isRepeater) { %>
+                        <span class="path-indicator">R</span>
                     <% } %>
                 </div>
             <% } %>
         </div>
-        <button class="btn-details" onclick="viewSensorDetails(<%= sensor.id %>)">Details</button>
+        <% if (sensor.logs && sensor.logs.length > 0) { %>
+            <span class="last-updated" id="last-update-<%= sensor.id %>" data-timestamp="<%= sensor.logs[0].createdAt %>">
+                <%= new Date(sensor.logs[0].createdAt).toLocaleString() %>
+            </span>
+        <% } else { %>
+            <span class="last-updated">No data</span>
+        <% } %>
     </div>
 </div>

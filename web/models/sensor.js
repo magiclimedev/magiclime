@@ -106,7 +106,9 @@ module.exports = (sequelize, DataTypes) => {
         sensor_id: sensorId,
         rss: data.rss,
         bat: data.bat,
-        data: data.data
+        data: data.data,
+        path: data.path,
+        pathIndicator: data.pathIndicator
       }, { transaction });
       
       await transaction.commit();

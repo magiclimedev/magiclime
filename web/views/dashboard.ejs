@@ -6,7 +6,6 @@
     <title>MagicLime Gateway <%= gateway.serial_num %></title>
     <link rel="stylesheet" href="/static/css/dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div class="container">
@@ -47,10 +46,92 @@
                     <p>No sensors have reported data in the last 3 hours.</p>
                 </div>
             <% } else { %>
-                <div class="sensors-grid" id="sensors-grid">
-                    <% sensors.forEach(sensor => { %>
-                        <%- include('partials/sensor-card', { sensor: sensor }) %>
-                    <% }); %>
+                <!-- View Toggle Buttons -->
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="grid" title="Grid View">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <rect x="1" y="1" width="5" height="5" rx="1"/>
+                            <rect x="9" y="1" width="5" height="5" rx="1"/>
+                            <rect x="1" y="9" width="5" height="5" rx="1"/>
+                            <rect x="9" y="9" width="5" height="5" rx="1"/>
+                        </svg>
+                    </button>
+                    <button class="view-btn" data-view="list" title="List View">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <rect x="1" y="2" width="14" height="2" rx="0.5"/>
+                            <rect x="1" y="7" width="14" height="2" rx="0.5"/>
+                            <rect x="1" y="12" width="14" height="2" rx="0.5"/>
+                        </svg>
+                    </button>
+                    <button class="view-btn disabled" data-view="map" title="Map View (Coming Soon)">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 1C4.5 1 1.5 3.5 1.5 7c0 4.5 6.5 8 6.5 8s6.5-3.5 6.5-8c0-3.5-3-6-6.5-6zm0 8.5c-1.5 0-2.5-1-2.5-2.5s1-2.5 2.5-2.5 2.5 1 2.5 2.5-1 2.5-2.5 2.5z"/>
+                        </svg>
+                        <span class="coming-soon">Soon</span>
+                    </button>
+                </div>
+                
+                <!-- Grid View -->
+                <div class="view-content active" id="grid-view">
+                    <div class="sensors-grid" id="sensors-grid">
+                        <% sensors.forEach(sensor => { %>
+                            <%- include('partials/sensor-card', { sensor: sensor }) %>
+                        <% }); %>
+                    </div>
+                </div>
+                
+                <!-- List View -->
+                <div class="view-content" id="list-view">
+                    <table class="sensors-table" id="sensors-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th class="sortable" data-sort="name">
+                                    Sensor Name
+                                    <svg class="sort-icon" width="12" height="12" viewBox="0 0 12 12">
+                                        <path d="M6 2L9 6H3L6 2Z" fill="currentColor"/>
+                                        <path d="M6 10L3 6H9L6 10Z" fill="currentColor" opacity="0.3"/>
+                                    </svg>
+                                </th>
+                                <th>UID</th>
+                                <th class="sortable" data-sort="temperature">
+                                    Temperature
+                                    <svg class="sort-icon" width="12" height="12" viewBox="0 0 12 12">
+                                        <path d="M6 2L9 6H3L6 2Z" fill="currentColor"/>
+                                        <path d="M6 10L3 6H9L6 10Z" fill="currentColor" opacity="0.3"/>
+                                    </svg>
+                                </th>
+                                <th class="sortable" data-sort="humidity">
+                                    Humidity
+                                    <svg class="sort-icon" width="12" height="12" viewBox="0 0 12 12">
+                                        <path d="M6 2L9 6H3L6 2Z" fill="currentColor"/>
+                                        <path d="M6 10L3 6H9L6 10Z" fill="currentColor" opacity="0.3"/>
+                                    </svg>
+                                </th>
+                                <th>Battery</th>
+                                <th class="sortable" data-sort="signal">
+                                    Signal
+                                    <svg class="sort-icon" width="12" height="12" viewBox="0 0 12 12">
+                                        <path d="M6 2L9 6H3L6 2Z" fill="currentColor"/>
+                                        <path d="M6 10L3 6H9L6 10Z" fill="currentColor" opacity="0.3"/>
+                                    </svg>
+                                </th>
+                                <th>Path</th>
+                                <th class="sortable" data-sort="lastUpdate">
+                                    Last Update
+                                    <svg class="sort-icon" width="12" height="12" viewBox="0 0 12 12">
+                                        <path d="M6 2L9 6H3L6 2Z" fill="currentColor"/>
+                                        <path d="M6 10L3 6H9L6 10Z" fill="currentColor" opacity="0.3"/>
+                                    </svg>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="sensors-table-body">
+                            <% sensors.forEach(sensor => { %>
+                                <%- include('partials/sensor-row', { sensor: sensor }) %>
+                            <% }); %>
+                        </tbody>
+                    </table>
                 </div>
             <% } %>
         </div>
@@ -94,16 +175,58 @@
     <script>
         // Global variables
         const gatewaySerialNum = '<%= gateway.serial_num %>';
-        let socket = null;
+        let isRefreshing = false;
+        let refreshInterval = null;
         
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initializeTabs();
-            initializeWebSocket();
+            initializeViewToggle();
+            initializeAutoRefresh();
+            initializeTableSorting();
+            initializeGatewayStatusSocket();
             updateTimestamps();
-            setInterval(updateTimestamps, 30000); // Update every 30 seconds
         });
+
+        // Gateway status WebSocket connection
+        function initializeGatewayStatusSocket() {
+            if (typeof io !== 'undefined') {
+                const socket = io();
+                
+                // Listen for receiver status updates
+                socket.on('RECEIVER', function(data) {
+                    if (data.gateway_serial_num === gatewaySerialNum) {
+                        updateGatewayStatus(data.status);
+                    }
+                });
+                
+                // Also listen for the alternative event name
+                socket.on('receiver_status', function(data) {
+                    if (data.gateway_serial_num === gatewaySerialNum) {
+                        updateGatewayStatus(data.status);
+                    }
+                });
+                
+                console.log('Gateway status WebSocket initialized');
+            }
+        }
+        
+        // Update gateway status indicator
+        function updateGatewayStatus(status) {
+            const statusElement = document.getElementById('gateway-status');
+            if (statusElement) {
+                // Update text
+                statusElement.textContent = status === 'connected' ? 'Connected' : 'Disconnected';
+                
+                // Update CSS classes
+                statusElement.className = 'status-indicator ' + status;
+                
+                console.log('Gateway status updated:', status);
+            }
+        }
     </script>
     <script src="/static/js/dashboard.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/static/js/raw-logs.js"></script>
 </body>
 </html>

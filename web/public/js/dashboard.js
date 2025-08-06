@@ -19,63 +19,120 @@ function initializeTabs() {
             button.classList.add('active');
             document.getElementById(tabName + '-tab').classList.add('active');
             
-            // Initialize charts when dashboard tab is shown
+            // Handle tab-specific initialization
             if (tabName === 'dashboard') {
-                setTimeout(initializeSensorCharts, 100);
+                // Don't reinitialize charts - they're already initialized on page load
+                // Cleanup raw logs WebSocket if switching away from raw data
+                if (typeof cleanupRawLogsWebSocket === 'function') {
+                    cleanupRawLogsWebSocket();
+                }
+            } else if (tabName === 'raw-data') {
+                // Initialize raw logs WebSocket when switching to raw data tab
+                setTimeout(async () => {
+                    if (typeof initializeRawLogsWebSocket === 'function') {
+                        await initializeRawLogsWebSocket();
+                    }
+                }, 100);
+            } else {
+                // Cleanup raw logs WebSocket if switching to settings or other tabs
+                if (typeof cleanupRawLogsWebSocket === 'function') {
+                    cleanupRawLogsWebSocket();
+                }
             }
         });
     });
     
-    // Initialize charts on page load
-    setTimeout(initializeSensorCharts, 500);
+    // Charts are only used in sensor detail view, not dashboard
+    // initializeSensorCharts();
 }
 
-// WebSocket functionality
-function initializeWebSocket() {
+// View toggle functionality
+function initializeViewToggle() {
+    const viewButtons = document.querySelectorAll('.view-btn');
+    const viewContents = document.querySelectorAll('.view-content');
+    
+    if (!viewButtons.length) return; // Exit if no view buttons found
+    
+    viewButtons.forEach(button => {
+        if (!button.classList.contains('disabled')) {
+            button.addEventListener('click', () => {
+                const viewName = button.getAttribute('data-view');
+                
+                // Update active button
+                viewButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Update active content
+                viewContents.forEach(content => content.classList.remove('active'));
+                const viewContent = document.getElementById(`${viewName}-view`);
+                if (viewContent) {
+                    viewContent.classList.add('active');
+                }
+                
+                // Save preference
+                localStorage.setItem('preferredView', viewName);
+            });
+        }
+    });
+    
+    // Load saved preference
+    const savedView = localStorage.getItem('preferredView');
+    if (savedView && savedView !== 'grid') {
+        const savedButton = document.querySelector(`.view-btn[data-view="${savedView}"]`);
+        if (savedButton && !savedButton.classList.contains('disabled')) {
+            savedButton.click();
+        }
+    }
+}
+
+// Auto-refresh functionality
+function initializeAutoRefresh() {
+    // Start auto-refresh every 3 minutes (180000ms)
+    refreshInterval = setInterval(refreshSensorData, 180000);
+    
+    // Add manual refresh button
+    addRefreshButton();
+    
+    // Update timestamps every 30 seconds
+    setInterval(updateTimestamps, 30000);
+    
+    console.log('Auto-refresh initialized - updating every 3 minutes');
+}
+
+// Refresh sensor data from server
+async function refreshSensorData() {
+    if (isRefreshing) return; // Prevent multiple concurrent refreshes
+    
     try {
-        socket = io();
+        isRefreshing = true;
+        updateRefreshButton(true); // Show loading state
         
-        socket.on('connect', () => {
-            console.log('Connected to WebSocket');
-            updateConnectionStatus('connected');
+        // Get current gateway serial from URL path
+        const pathParts = window.location.pathname.split('/');
+        const gatewaySerial = pathParts[1]; // Assumes URL format: /SERIAL/
+        
+        // Fetch latest sensor data
+        const response = await fetch(`/api/gateway/${gatewaySerial}/sensors`);
+        if (!response.ok) throw new Error('Failed to fetch sensor data');
+        
+        const sensors = await response.json();
+        
+        // Update each sensor card
+        sensors.forEach(sensor => {
+            updateSensorCardFromData(sensor);
         });
         
-        socket.on('disconnect', () => {
-            console.log('Disconnected from WebSocket');
-            updateConnectionStatus('disconnected');
-        });
+        // Update last refresh time
+        updateLastRefreshTime();
         
-        // Listen for sensor data updates
-        socket.on('LOG_DATA', (data) => {
-            handleSensorDataUpdate(data);
-        });
-        
-        // Listen for receiver status updates
-        socket.on('RECEIVER', (data) => {
-            handleReceiverStatusUpdate(data.status);
-        });
+        console.log(`Refreshed ${sensors.length} sensors`);
         
     } catch (error) {
-        console.error('WebSocket initialization failed:', error);
-    }
-}
-
-// Handle incoming sensor data
-function handleSensorDataUpdate(data) {
-    console.log('Received sensor data:', data);
-    
-    // Update sensor card if it exists
-    const sensorCard = document.querySelector(`[data-sensor-uid="${data.uid}"]`);
-    if (sensorCard) {
-        updateSensorCard(sensorCard, data);
-    }
-    
-    // Add to raw data feed
-    addToRawDataFeed(data);
-    
-    // Update chart if exists
-    if (sensorCharts[data.uid]) {
-        updateSensorChart(data.uid, data);
+        console.error('Failed to refresh sensor data:', error);
+        showRefreshError();
+    } finally {
+        isRefreshing = false;
+        updateRefreshButton(false); // Hide loading state
     }
 }
 
@@ -83,44 +140,14 @@ function handleSensorDataUpdate(data) {
 function updateSensorCard(card, data) {
     const sensorId = card.getAttribute('data-sensor-id');
     
-    // Update temperature and humidity values
-    if (typeof data.data === 'object' && data.data !== null) {
-        let temperature = '';
-        let humidity = '';
-        
-        if (data.data.temperature && data.data.humidity) {
-            temperature = data.data.temperature;
-            humidity = data.data.humidity;
-        } else if (data.data.value1 && data.data.value2) {
-            temperature = data.data.value1;
-            humidity = data.data.value2;
-        }
-        
-        const tempElement = document.getElementById(`temp-${sensorId}`);
-        const humidityElement = document.getElementById(`humidity-${sensorId}`);
-        
-        if (tempElement && temperature) {
-            tempElement.textContent = temperature;
-        }
-        if (humidityElement && humidity) {
-            humidityElement.textContent = humidity;
-        }
-    }
-    
-    // Update status indicator
-    const statusElement = card.querySelector('.sensor-status');
-    if (statusElement) {
-        statusElement.classList.remove('dead');
-        statusElement.classList.add('active');
-    }
-    
-    // Remove dead class from card
-    card.classList.remove('dead');
-    card.classList.add('active');
+    // This function is kept for backward compatibility but not used in auto-refresh
+    console.warn('updateSensorCard called - this function is deprecated, use updateSensorCardFromData instead');
 }
 
-// Add data to raw feed
+// Add data to raw feed - will be reimplemented for raw logs WebSocket
 function addToRawDataFeed(data) {
+    // This function will be handled by the raw logs WebSocket implementation
+    return;
     const feed = document.getElementById('raw-data-feed');
     if (feed) {
         const timestamp = new Date().toISOString();
@@ -421,4 +448,256 @@ function updateSensorName(sensorId) {
             alert('Error updating sensor name');
         });
     }
+}
+
+// Auto-refresh helper functions
+function addRefreshButton() {
+    const header = document.querySelector('.dashboard-header') || document.querySelector('h1');
+    if (!header) return;
+    
+    const refreshButton = document.createElement('button');
+    refreshButton.id = 'manual-refresh-btn';
+    refreshButton.className = 'refresh-btn';
+    refreshButton.innerHTML = '🔄 Refresh';
+    refreshButton.onclick = () => refreshSensorData();
+    
+    const lastRefreshDiv = document.createElement('div');
+    lastRefreshDiv.id = 'last-refresh-time';
+    lastRefreshDiv.className = 'last-refresh-time';
+    lastRefreshDiv.textContent = 'Last updated: Never';
+    
+    const refreshContainer = document.createElement('div');
+    refreshContainer.className = 'refresh-container';
+    refreshContainer.style.cssText = 'display: flex; gap: 10px; align-items: center; margin-top: 10px;';
+    
+    refreshContainer.appendChild(refreshButton);
+    refreshContainer.appendChild(lastRefreshDiv);
+    
+    header.parentNode.insertBefore(refreshContainer, header.nextSibling);
+}
+
+function updateRefreshButton(loading) {
+    const button = document.getElementById('manual-refresh-btn');
+    if (!button) return;
+    
+    if (loading) {
+        button.innerHTML = '⏳ Refreshing...';
+        button.disabled = true;
+    } else {
+        button.innerHTML = '🔄 Refresh';
+        button.disabled = false;
+    }
+}
+
+function updateLastRefreshTime() {
+    const element = document.getElementById('last-refresh-time');
+    if (element) {
+        element.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+    }
+}
+
+function showRefreshError() {
+    const element = document.getElementById('last-refresh-time');
+    if (element) {
+        element.textContent = 'Error refreshing data';
+        element.style.color = 'red';
+        setTimeout(() => {
+            element.style.color = '';
+        }, 3000);
+    }
+}
+
+function updateSensorCardFromData(sensor) {
+    const card = document.querySelector(`[data-sensor-uid="${sensor.uid}"]`);
+    if (!card) return;
+    
+    const sensorId = sensor.id;
+    
+    // Update temperature and humidity values if logs exist
+    if (sensor.logs && sensor.logs.length > 0) {
+        const latestLog = sensor.logs[0];
+        
+        if (latestLog.data && typeof latestLog.data === 'object') {
+            const tempElement = document.getElementById(`temp-${sensorId}`);
+            const humidityElement = document.getElementById(`humidity-${sensorId}`);
+            
+            if (tempElement && latestLog.data.temperature) {
+                tempElement.textContent = latestLog.data.temperature;
+            }
+            
+            if (humidityElement && latestLog.data.humidity) {
+                humidityElement.textContent = latestLog.data.humidity;
+            }
+        }
+        
+        // Update battery level
+        const batteryElement = card.querySelector('.battery');
+        if (batteryElement && latestLog.bat) {
+            batteryElement.textContent = latestLog.bat + 'V';
+        }
+        
+        // Update signal bars based on RSS
+        updateSignalBars(card, latestLog.rss || 0);
+        
+        // Update path indicator
+        const signalBarsElement = card.querySelector('.signal-bars');
+        if (signalBarsElement) {
+            let pathIndicatorElement = signalBarsElement.querySelector('.path-indicator');
+            const isRepeater = latestLog.pathIndicator === 'p' || latestLog.path === 'repeater';
+            
+            if (isRepeater && !pathIndicatorElement) {
+                pathIndicatorElement = document.createElement('span');
+                pathIndicatorElement.className = 'path-indicator';
+                pathIndicatorElement.textContent = 'R';
+                signalBarsElement.appendChild(pathIndicatorElement);
+            } else if (!isRepeater && pathIndicatorElement) {
+                pathIndicatorElement.remove();
+            }
+        }
+        
+        // Update last updated timestamp
+        const timestampElement = card.querySelector('.last-updated');
+        if (timestampElement && latestLog.created_at) {
+            const lastUpdate = new Date(latestLog.created_at);
+            timestampElement.textContent = lastUpdate.toLocaleString();
+            timestampElement.setAttribute('data-timestamp', latestLog.created_at);
+        }
+    }
+    
+    // Update sensor status
+    const statusElement = card.querySelector('.sensor-status');
+    if (statusElement) {
+        statusElement.className = `sensor-status ${sensor.status}`;
+        card.className = card.className.replace(/\b(active|dead)\b/g, '') + ` ${sensor.status}`;
+    }
+}
+
+function updateSignalBars(card, rss) {
+    const signalBarsElement = card.querySelector('.signal-bars');
+    if (!signalBarsElement) return;
+    
+    const bars = signalBarsElement.querySelectorAll('.bar');
+    let activeBars = 0;
+    
+    // Fixed thresholds: 90+ = 4 bars, matching EJS templates
+    if (rss >= 90) activeBars = 4;
+    else if (rss >= 70) activeBars = 3;
+    else if (rss >= 50) activeBars = 2;
+    else if (rss >= 30) activeBars = 1;
+    
+    bars.forEach((bar, index) => {
+        if (index < activeBars) {
+            bar.classList.add('active');
+        } else {
+            bar.classList.remove('active');
+        }
+    });
+}
+
+function updateTimestamps() {
+    // Update relative timestamps for "X minutes ago" display
+    const timestampElements = document.querySelectorAll('.last-updated[data-timestamp]');
+    timestampElements.forEach(element => {
+        const timestamp = element.getAttribute('data-timestamp');
+        if (timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMinutes = Math.floor((now - date) / (1000 * 60));
+            
+            if (diffMinutes < 1) {
+                element.textContent = 'Just now';
+            } else if (diffMinutes < 60) {
+                element.textContent = `${diffMinutes}m ago`;
+            } else {
+                const diffHours = Math.floor(diffMinutes / 60);
+                element.textContent = `${diffHours}h ago`;
+            }
+        }
+    });
+}
+
+// Table sorting functionality
+function initializeTableSorting() {
+    const sortableHeaders = document.querySelectorAll('.sortable');
+    
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const sortField = header.getAttribute('data-sort');
+            const currentSort = header.classList.contains('sort-asc') ? 'asc' : 
+                               header.classList.contains('sort-desc') ? 'desc' : 'none';
+            
+            // Clear all other sort indicators
+            sortableHeaders.forEach(h => {
+                h.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Determine new sort direction
+            let newSort = 'asc';
+            if (currentSort === 'asc') {
+                newSort = 'desc';
+            } else if (currentSort === 'desc') {
+                newSort = 'asc';
+            }
+            
+            // Apply sort class
+            header.classList.add(`sort-${newSort}`);
+            
+            // Sort the table
+            sortTable(sortField, newSort);
+        });
+    });
+}
+
+function sortTable(field, direction) {
+    const tbody = document.getElementById('sensors-table-body');
+    if (!tbody) return;
+    
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    rows.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch (field) {
+            case 'name':
+                aValue = a.querySelector('.name-cell .sensor-name').textContent.toLowerCase();
+                bValue = b.querySelector('.name-cell .sensor-name').textContent.toLowerCase();
+                break;
+                
+            case 'temperature':
+                aValue = parseFloat(a.querySelector('.temp-cell').textContent) || -999;
+                bValue = parseFloat(b.querySelector('.temp-cell').textContent) || -999;
+                break;
+                
+            case 'humidity':
+                aValue = parseFloat(a.querySelector('.humidity-cell').textContent) || -999;
+                bValue = parseFloat(b.querySelector('.humidity-cell').textContent) || -999;
+                break;
+                
+            case 'signal':
+                // Count active signal bars
+                aValue = a.querySelectorAll('.signal-bars-small .bar.active').length;
+                bValue = b.querySelectorAll('.signal-bars-small .bar.active').length;
+                break;
+                
+            case 'lastUpdate':
+                const aTimestamp = a.querySelector('.update-cell').getAttribute('data-timestamp') || '1970-01-01';
+                const bTimestamp = b.querySelector('.update-cell').getAttribute('data-timestamp') || '1970-01-01';
+                aValue = new Date(aTimestamp).getTime();
+                bValue = new Date(bTimestamp).getTime();
+                break;
+                
+            default:
+                return 0;
+        }
+        
+        // Handle string vs number comparison
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+            return direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+        } else {
+            return direction === 'asc' ? aValue - bValue : bValue - aValue;
+        }
+    });
+    
+    // Re-append sorted rows
+    rows.forEach(row => tbody.appendChild(row));
 }

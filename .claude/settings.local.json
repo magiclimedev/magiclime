@@ -9,7 +9,10 @@
       "Bash(grep:*)",
       "Bash(find:*)",
       "Bash(node:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(ls:*)",
+      "Bash(sqlite3:*)",
+      "Bash(npm run local:*)"
     ],
     "deny": []
   }

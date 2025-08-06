@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const models = require('../models');
 const { Op } = require('sequelize');
+const deduplicationService = require('../services/packet-deduplication');
 
 // Receiver status endpoint - for gateways to send receiver connection status
 router.post('/receiver-status/:serial_num', async (req, res) => {
@@ -62,7 +63,7 @@ router.post('/receiver-status/:serial_num', async (req, res) => {
 router.post('/data/:serial_num', async (req, res) => {
   try {
     const { serial_num } = req.params;
-    const { uid, type, rss, bat, data } = req.body;
+    const { uid, type, rss, bat, data, path, pathIndicator, rawPacket } = req.body;
     
     // Validate required fields
     if (!uid || !data) {
@@ -81,34 +82,105 @@ router.post('/data/:serial_num', async (req, res) => {
       type || 'unknown'
     );
     
-    // Log the data
-    const log = await models.Sensor.logData(sensor.id, {
-      rss: rss,
-      bat: bat,
-      data: data
-    });
+    // First check with deduplication service BEFORE logging
+    const packetInfo = {
+      uid,
+      type,
+      rss,
+      bat,
+      data,
+      path,
+      pathIndicator
+    };
+    
+    // Temporarily use a placeholder ID for deduplication check
+    const tempId = Date.now();
+    const deduplicationResult = deduplicationService.processPacket(packetInfo, tempId);
+    
+    // Check if we should update the main sensor display
+    let shouldUpdateMain = deduplicationResult.isFirstPacket;
+    
+    // Also update if this is a significantly better signal from any path
+    if (!shouldUpdateMain && rss) {
+      const latestLog = await models.Log.findOne({
+        where: { sensor_id: sensor.id },
+        order: [['created_at', 'DESC']]
+      });
+      
+      // Update if signal is significantly better (5+ RSS improvement)
+      if (latestLog && latestLog.rss && rss > latestLog.rss + 5) {
+        shouldUpdateMain = true;
+        console.log(`📶 RSS improved from ${latestLog.rss} to ${rss} for ${uid} - updating main display`);
+      }
+    }
+    
+    let log;
+    if (shouldUpdateMain) {
+      // First packet or significantly better signal - update main sensor display
+      log = await models.Sensor.logData(sensor.id, {
+        rss: rss,
+        bat: bat,
+        data: data,
+        path: path,
+        pathIndicator: pathIndicator
+      });
+    } else {
+      // Duplicate packet - create log entry but don't update sensor last_seen
+      log = await models.Log.create({
+        sensor_id: sensor.id,
+        rss: rss,
+        bat: bat,
+        data: data,
+        path: path,
+        pathIndicator: pathIndicator
+      });
+    }
     
     // Update gateway last seen
     await models.Gateway.updateLastSeen(serial_num);
     
-    // Broadcast to WebSocket clients if available
+    // Always broadcast ALL packets to raw logs WebSocket (no deduplication)
     try {
       if (global.io) {
-        const broadcastData = {
+        // Use raw packet data if available, otherwise fall back to processed data
+        const rawLogData = rawPacket || {
           uid: uid,
           sensor: type,
           rss: rss,
           bat: bat,
           data: data,
-          timestamp: new Date().toISOString(),
-          gateway_serial_num: serial_num
+          path: path,
+          pathIndicator: pathIndicator
         };
         
-        // Broadcast to all clients
+        const broadcastData = {
+          ...rawLogData,
+          timestamp: new Date().toISOString(),
+          gateway_serial_num: serial_num,
+          log_id: log.id,
+          is_duplicate: !deduplicationResult.isFirstPacket,
+          duplicate_info: deduplicationResult.duplicateInfo
+        };
+        
+        // Always broadcast to raw logs (shows all packets)
         global.io.emit('LOG_DATA', broadcastData);
         
-        // Broadcast to specific gateway subscribers
-        global.io.to(`gateway_${serial_num}`).emit('sensor_data', broadcastData);
+        // Only broadcast to main dashboard if this is the first packet (deduplication)
+        // Use processed format for dashboard
+        if (deduplicationResult.shouldUpdate) {
+          const dashboardData = {
+            uid: uid,
+            sensor: type,
+            rss: rss,
+            bat: bat,
+            data: data,
+            path: path,
+            pathIndicator: pathIndicator,
+            timestamp: new Date().toISOString(),
+            gateway_serial_num: serial_num
+          };
+          global.io.to(`gateway_${serial_num}`).emit('sensor_data', dashboardData);
+        }
       }
     } catch (wsError) {
       console.error('WebSocket broadcast failed:', wsError);
@@ -117,7 +189,9 @@ router.post('/data/:serial_num', async (req, res) => {
     res.json({ 
       success: true, 
       log_id: log.id,
-      sensor_id: sensor.id 
+      sensor_id: sensor.id,
+      should_update_display: deduplicationResult.shouldUpdate,
+      is_first_packet: deduplicationResult.isFirstPacket
     });
     
   } catch (error) {
@@ -372,6 +446,48 @@ router.get('/health', async (req, res) => {
       timestamp: new Date().toISOString(),
       database: 'disconnected',
       error: error.message
+    });
+  }
+});
+
+// Get raw logs from gateway database
+router.get('/gateway/:serial_num/raw-logs', async (req, res) => {
+  try {
+    const { serial_num } = req.params;
+    const { limit = 20 } = req.query;
+    
+    // Find gateway
+    const gateway = await models.Gateway.findOne({
+      where: { serial_num: serial_num }
+    });
+    
+    if (!gateway) {
+      return res.status(404).json({ error: 'Gateway not found' });
+    }
+    
+    // Make HTTP request to gateway API to get raw logs
+    try {
+      const gatewayApiUrl = `http://localhost:3001/raw-logs?limit=${limit}`;
+      const response = await fetch(gatewayApiUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Gateway API responded with ${response.status}`);
+      }
+      
+      const rawLogs = await response.json();
+      res.json(rawLogs);
+      
+    } catch (gatewayError) {
+      console.error('Failed to fetch from gateway API:', gatewayError);
+      // Return empty array if gateway API is not available
+      res.json([]);
+    }
+    
+  } catch (error) {
+    console.error('Error fetching raw logs:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch raw logs',
+      message: error.message 
     });
   }
 });

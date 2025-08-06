@@ -7,6 +7,7 @@
     "start": "node gateway.js",
     "local": "node gateway.js --local",
     "cloud": "node gateway.js --cloud",
+    "migrate": "node database-migration.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
