@@ -77,10 +77,21 @@ class Logger {
   prettyPrint(level, message, meta, timestamp) {
     const color = COLORS[level] || COLORS.reset;
     const emoji = EMOJI_PREFIXES[level] || '';
-    const timeStr = new Date(timestamp).toLocaleTimeString();
     
-    // Base message
-    let output = `${color}${emoji} ${message}${COLORS.reset}`;
+    // Format timestamp for display
+    const date = new Date(timestamp);
+    const timeStr = date.toLocaleTimeString('en-US', { 
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    
+    // Start with timestamp
+    let output = `${COLORS.debug}[${timeStr}]${COLORS.reset} `;
+    
+    // Add level indicator and message
+    output += `${color}${emoji} ${message}${COLORS.reset}`;
     
     // Add metadata if present
     if (Object.keys(meta).length > 0) {

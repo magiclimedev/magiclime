@@ -15,6 +15,13 @@ if (config.use_env_variable) {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
 
+// Enable WAL mode for SQLite
+if (config.dialect === 'sqlite') {
+  sequelize.query('PRAGMA journal_mode = WAL;').catch(() => {});
+  sequelize.query('PRAGMA synchronous = NORMAL;').catch(() => {});
+  sequelize.query('PRAGMA temp_store = MEMORY;').catch(() => {});
+}
+
 fs
   .readdirSync(__dirname)
   .filter(file => {

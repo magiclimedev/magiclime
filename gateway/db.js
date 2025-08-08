@@ -478,9 +478,7 @@ class SensorDatabase {
    */
   getStats() {
     try {
-      const stats = this.db.prepare(this.adapter.getStatsSQL()).get(
-        Math.floor(Date.now() / 1000)
-      );
+      const stats = this.db.prepare(this.adapter.getStatsSQL()).get();
       
       return stats;
     } catch (error) {

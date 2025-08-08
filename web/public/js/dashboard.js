@@ -438,14 +438,33 @@ function updateSensorName(sensorId) {
                 if (nameElement) {
                     nameElement.textContent = newName;
                 }
-                alert('Sensor name updated successfully');
+                
+                // Show subtle confirmation by briefly changing input border to green
+                input.style.borderColor = '#10b981';
+                input.style.boxShadow = '0 0 0 1px #10b981';
+                setTimeout(() => {
+                    input.style.borderColor = '';
+                    input.style.boxShadow = '';
+                }, 2000);
             } else {
-                alert('Failed to update sensor name');
+                // Show error with red border
+                input.style.borderColor = '#ef4444';
+                input.style.boxShadow = '0 0 0 1px #ef4444';
+                setTimeout(() => {
+                    input.style.borderColor = '';
+                    input.style.boxShadow = '';
+                }, 3000);
             }
         })
         .catch(error => {
             console.error('Error updating sensor name:', error);
-            alert('Error updating sensor name');
+            // Show error with red border
+            input.style.borderColor = '#ef4444';
+            input.style.boxShadow = '0 0 0 1px #ef4444';
+            setTimeout(() => {
+                input.style.borderColor = '';
+                input.style.boxShadow = '';
+            }, 3000);
         });
     }
 }

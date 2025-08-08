@@ -35,7 +35,7 @@ class PacketDeduplicationService {
       // This is a duplicate - don't update main display
       const timeDiff = now - existing.timestamp;
       
-      console.log(`🔄 Duplicate packet: ${uid} via ${path} (${timeDiff}ms after ${existing.path})`);
+      // Duplicate packet filtered (debug only)
       
       // Add this packet to the duplicates list
       existing.duplicates = existing.duplicates || [];
@@ -69,7 +69,7 @@ class PacketDeduplicationService {
       duplicates: []
     });
     
-    console.log(`✨ First packet: ${uid} via ${path} - will update main display`);
+    // First packet received for sensor (debug only)
     
     return {
       shouldUpdate: true,
@@ -185,7 +185,7 @@ class PacketDeduplicationService {
     }
     
     if (cleaned > 0) {
-      console.log(`🧹 Cleaned up ${cleaned} old packet entries, ${this.recentPackets.size} remaining`);
+      // Cleaned up old packets (debug only)
     }
   }
 

@@ -177,11 +177,6 @@ class Gateway {
       // Setup processing intervals
       this.setupIntervals();
       
-      // In local mode, start test data simulation
-      if (process.argv.includes('--local')) {
-        this.startTestDataSimulation();
-      }
-      
       // Setup shutdown handlers
       this.setupShutdownHandlers();
       
@@ -387,11 +382,13 @@ class Gateway {
       try {
         const dbData = {
           ...enhancedPacket,
+          source: obj.source || (enhancedPacket._pathIndicator === 'R' ? 'rp' : 'tx'),
           _lastPath: pathInfo
         };
         database.log(dbData);
       } catch (dbError) {
-        logger.error('Local database error', { 
+        // Silently skip database errors - web server is the primary data store
+        logger.debug('Local database error', { 
           error: dbError.message,
           uid: enhancedPacket.uid 
         });
@@ -639,75 +636,6 @@ class Gateway {
     });
   }
 
-  /**
-   * Start test data simulation for local development
-   */
-  startTestDataSimulation() {
-    logger.info('Starting test data simulation');
-    
-    const testSensors = [
-      { uid: 'EWNXXR', label: 'Office', baseTemp: 75, baseHum: 45 },
-      { uid: 'GE47CJ', label: 'Basement', baseTemp: 68, baseHum: 55 },
-      { uid: '8EDFFF', label: 'Basement Garage', baseTemp: 70, baseHum: 80 },
-      { uid: 'SNWZ5Y', label: 'Bonus Room', baseTemp: 72, baseHum: 50 }
-    ];
-    
-    // Send test data every 30 seconds
-    this.intervals.testData = setInterval(() => {
-      testSensors.forEach(sensor => {
-        // Generate realistic variations in temperature and humidity
-        const tempVariation = (Math.random() - 0.5) * 4; // ±2°F
-        const humVariation = (Math.random() - 0.5) * 10; // ±5%
-        
-        const temperature = (sensor.baseTemp + tempVariation).toFixed(1);
-        const humidity = Math.round(sensor.baseHum + humVariation);
-        
-        // Generate realistic RSS values (30-120)
-        const rss = Math.round(80 + (Math.random() - 0.5) * 40);
-        
-        // Generate realistic battery values (2.8-3.2V)
-        const battery = (2.8 + Math.random() * 0.4).toFixed(1);
-        
-        // Simulate direct vs repeater (80% direct, 20% repeater)
-        const isDirect = Math.random() > 0.2;
-        
-        const testPacket = {
-          source: isDirect ? 'tx' : 'rp',
-          uid: sensor.uid,
-          rss: rss,
-          bat: parseFloat(battery),
-          ppv: '1',
-          label: sensor.label,
-          data1: temperature,
-          data2: humidity.toString(),
-          _path: isDirect ? 'direct' : 'repeater',
-          _pathIndicator: isDirect ? 'D' : 'R'
-        };
-        
-        // Process the test packet
-        this.processSensorData(testPacket);
-      });
-    }, 30000); // Every 30 seconds
-    
-    // Send initial data immediately
-    setTimeout(() => {
-      testSensors.forEach(sensor => {
-        const testPacket = {
-          source: 'tx',
-          uid: sensor.uid,
-          rss: 95,
-          bat: 3.0,
-          ppv: '1',
-          label: sensor.label,
-          data1: sensor.baseTemp.toString(),
-          data2: sensor.baseHum.toString(),
-          _path: 'direct',
-          _pathIndicator: 'D'
-        };
-        this.processSensorData(testPacket);
-      });
-    }, 2000); // After 2 seconds
-  }
 }
 
 // Main entry point

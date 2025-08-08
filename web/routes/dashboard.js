@@ -119,8 +119,8 @@ router.get('/:serial_num/sensor/:sensor_id', async (req, res) => {
       });
     }
     
-    // Get recent logs
-    const logs = await models.Log.getRecentBySensor(sensor_id, 24);
+    // Get deduplicated recent logs for display
+    const logs = await models.Log.getDeduplicatedRecentBySensor(sensor_id, 24);
     const chartData = await models.Log.getChartData(sensor_id, 24);
     
     res.render('sensor-detail', {

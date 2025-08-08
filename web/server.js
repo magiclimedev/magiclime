@@ -68,7 +68,7 @@ app.use('/', dashboardRoutes);
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log(`Client connected: ${socket.id}`);
+  // Client connected (debug only)
   
   socket.on('subscribe', (data) => {
     if (data.gateway_serial_num) {
@@ -78,7 +78,7 @@ io.on('connection', (socket) => {
   });
   
   socket.on('disconnect', () => {
-    console.log(`Client disconnected: ${socket.id}`);
+    // Client disconnected (debug only)
   });
 });
 
@@ -131,7 +131,7 @@ async function startServer() {
     
     // Initialize database
     console.log('📦 Connecting to database...');
-    await models.sequelize.sync({ alter: isDev });
+    await models.sequelize.sync({ alter: false }); // Don't alter tables - use migrations
     console.log('✅ Database connected and synchronized');
     
     // Ensure default settings

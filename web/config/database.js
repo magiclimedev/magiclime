@@ -8,6 +8,24 @@ module.exports = {
     define: {
       underscored: true,
       freezeTableName: true
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
+    dialectOptions: {
+      // SQLite specific options to handle locking
+      busyTimeout: 30000
+    },
+    // Enable SQLite retry options
+    retry: {
+      match: [
+        /SQLITE_BUSY/,
+        /SQLITE_LOCKED/,
+      ],
+      max: 3
     }
   },
   cloud: {
